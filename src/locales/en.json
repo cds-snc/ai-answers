@@ -1832,25 +1832,14 @@
     },
     "evalAnalysis": {
       "title": "Eval analysis",
-      "description": "Analyze the expert evaluations matching the current filters to surface patterns: score differences by service, what the explanations indicate, content issues, English vs French differences, and per-evaluator scores.",
+      "description": "Analyze the expert evaluations matching the current filters to surface patterns: what the explanations indicate, content issues, English vs French differences, and per-evaluator scores.",
       "selectInstitution": "Select an institution in the filters above to enable analysis.",
-      "checkingEligibility": "Checking eligibility…",
-      "precheckCount": "{count} expert evaluations match the current filters.",
-      "tooFew": "Not enough evaluations to analyze — at least {min} are needed ({count} match the current filters).",
-      "tooMany": "Too many evaluations for one analysis — narrow the date range until {max} or fewer match ({count} currently match).",
       "runButton": "Run eval analysis",
-      "viewRunning": "View current results",
-      "exportRunning": "Export current results",
-      "error": "The analysis failed. Partial results may be shown below.",
-      "running": {
-        "preparing": "Preparing analysis…",
-        "classifying": "Classifying services… {done} of {total}",
-        "synthesizing": "Writing findings…"
-      },
+      "error": "The analysis failed. Try again.",
+      "running": "Analyzing the evaluations. This can take a minute.",
       "status": {
-        "running": "Preparing",
-        "classifying": "Classifying",
-        "synthesizing": "Synthesizing",
+        "inProgress": "In progress",
+        "incomplete": "Did not finish",
         "complete": "Complete",
         "error": "Failed"
       },
@@ -1872,11 +1861,7 @@
         "excluded": "{count} without a score excluded from score statistics",
         "unclassified": "{count} could not be classified by service",
         "partial": "This analysis did not finish — the results below are partial.",
-        "running": "This analysis is still running ({status}). The results below are partial.",
         "incomplete": "This analysis was interrupted before it finished and has no report to display. Run a new analysis.",
-        "rowsTitle": "Evaluation details",
-        "viewRowData": "View all row data",
-        "noValue": "Not available",
         "programActionsTitle": "Scores by service and action",
         "colProgramAction": "Service — action",
         "singlesSkipped": "{groups} groups with only one evaluation are not shown ({count} evaluations).",
@@ -1887,6 +1872,8 @@
         "allPerfect": "All perfect",
         "themesTitle": "What the explanations say",
         "themeCount": "{count} evaluations",
+        "basedOn": "The findings use {sent} of {total} evaluations scored below perfect: errors first, then the most recent.",
+        "basedOnContentIssues": "The content issue findings use {sent} of {total} flagged evaluations: errors first, then the most recent.",
         "contentIssuesTitle": "Content issues",
         "contentIssuesCount": "{count} evaluations flagged a content issue.",
         "languageTitle": "English vs French",
@@ -1899,11 +1886,6 @@
         },
         "evaluatorsTitle": "Evaluators",
         "colEvaluator": "Evaluator",
-        "colQuestion": "Question",
-        "colScore": "Score",
-        "colProgram": "Service",
-        "colAction": "Action",
-        "colDetails": "Details",
         "flagged": "Review"
       }
     }

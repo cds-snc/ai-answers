@@ -1,25 +1,24 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { GcdsButton } from '@gcds-core/components-react';
 import { useTranslations } from '../../../hooks/useTranslations.js';
 import { useEvalAnalysis } from '../../../hooks/admin/useEvalAnalysis.js';
+import { useResultsLoadedAnnouncement } from '../../../hooks/admin/useResultsLoadedAnnouncement.js';
 import { formatNumber } from '../../../utils/numberFormat.js';
 import EvalAnalysisReport from './EvalAnalysisReport.js';
-import EvalAnalysisService from '../../../services/EvalAnalysisService.js';
 import StatusMessage from '../StatusMessage.js';
 
+// How long a stored 'running' run counts as in progress rather than
+// abandoned. Well past the server's 300-second request limit.
+const IN_PROGRESS_WINDOW_MS = 10 * 60 * 1000;
+
 // "Run eval analysis" section at the bottom of the partner dashboard.
-// Disabled until an institution filter is applied; the precheck endpoint
-// supplies the volume gates (too few / too many evals) before a run is
-// allowed. Runs are driven client-side step by step (see useEvalAnalysis),
-// and past runs for the institution can be re-displayed without re-running.
+// Disabled until an institution filter is applied. A run is one request that
+// returns the finished report (see useEvalAnalysis), and past runs for the
+// institution can be re-displayed without re-running.
 const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilters = null }) => {
   const { t } = useTranslations(lang);
   const fmtN = (n) => formatNumber(n, lang);
-  const [showResults, setShowResults] = useState(false);
   const {
-    precheck,
-    precheckLoading,
-    runPrecheck,
     running,
     analysis,
     runError,
@@ -33,101 +32,52 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
 
   // Key the effect on the filters' VALUES, not the object identity — the
   // FilterPanel emits a fresh object on every Apply, so re-applying identical
-  // filters must not refire the precheck aggregation. The ref carries the
-  // latest object for the effect body without widening the dep array.
+  // filters must not clear the report or refetch the list.
   const filtersRef = useRef(appliedFilters);
   filtersRef.current = appliedFilters;
   const filtersKey = appliedFilters ? JSON.stringify(appliedFilters) : '';
 
   useEffect(() => {
     // Filters changed: drop any displayed report — it may belong to another
-    // institution or date range — then re-run the volume precheck.
+    // institution or date range — then refresh the past-runs list.
     clearAnalysis();
     if (appliedDepartment && filtersRef.current) {
-      runPrecheck(filtersRef.current);
       refreshList(appliedDepartment);
     }
-  }, [filtersKey, appliedDepartment, clearAnalysis, runPrecheck, refreshList]);
+  }, [filtersKey, appliedDepartment, clearAnalysis, refreshList]);
 
-  const count = precheck?.count ?? null;
-  const tooFew = count !== null && count < (precheck?.min ?? 0);
-  const tooMany = count !== null && count > (precheck?.max ?? Infinity);
-  const canRun = Boolean(appliedDepartment) && !running && !precheckLoading && count !== null && !tooFew && !tooMany;
+  const canRun = Boolean(appliedDepartment) && !running;
 
-  // Ties the (possibly disabled) Run analysis button to whichever
-  // explanatory text is currently showing above it, so screen reader users
-  // hear *why* it's disabled instead of just "dimmed". Mirrors the same
-  // condition order as the JSX below — only one of these is ever rendered
-  // at a time. `running` and `precheckLoading` each need their own id here
-  // too: they're async gaps where the button is aria-disabled (GcdsButton
-  // doesn't use native `disabled`, so it stays focusable) but no
-  // explanatory text was previously mounted.
+  // The report appears silently below, after a wait of up to a minute (a
+  // run) or a fetch (a past run's View): say it arrived, like every other
+  // dashboard. A failure has its own error message instead.
+  // A past run that never finished shows a warning instead, which announces
+  // itself.
+  const loadingPastRun = Boolean(loadingAnalysisId);
+  const reportShown = Boolean(analysis) && (analysis.status === 'complete' || analysis.status === 'error');
+  const loadedCount = reportShown ? null : 0;
+  useResultsLoadedAnnouncement({ loading: running, count: loadedCount, error: runError, t });
+  useResultsLoadedAnnouncement({ loading: loadingPastRun, count: loadedCount, error: runError, t });
+
+  // Ties the (possibly disabled) Run analysis button to the text explaining
+  // why, so screen reader users hear the reason instead of just "dimmed".
+  // GcdsButton doesn't use native `disabled`, so it stays focusable while
+  // running and needs the description then too.
   const runButtonDescribedBy = !appliedDepartment
     ? 'eval-analysis-select-institution'
     : running
       ? 'eval-analysis-running'
-      : precheckLoading
-        ? 'eval-analysis-checking'
-        : tooFew
-          ? 'eval-analysis-too-few'
-          : tooMany
-            ? 'eval-analysis-too-many'
-            : (count !== null ? 'eval-analysis-precheck-count' : undefined);
+      : undefined;
 
-  const progressLabel = () => {
-    if (!analysis) return t('partnerDashboard.evalAnalysis.running.preparing');
-    if (analysis.status === 'classifying') {
-      return t('partnerDashboard.evalAnalysis.running.classifying')
-        .replace('{done}', fmtN(analysis.progress?.classified ?? 0))
-        .replace('{total}', fmtN(analysis.progress?.total ?? 0));
-    }
-    if (analysis.status === 'synthesizing') return t('partnerDashboard.evalAnalysis.running.synthesizing');
-    return t('partnerDashboard.evalAnalysis.running.preparing');
-  };
-
-  const runErrorLabel = () => {
-    if (!runError) return null;
-    if (runError.code === 'tooFew') {
-      return t('partnerDashboard.evalAnalysis.tooFew')
-        .replace('{min}', fmtN(precheck?.min ?? 0))
-        .replace('{count}', fmtN(runError.count ?? 0));
-    }
-    if (runError.code === 'tooMany') {
-      return t('partnerDashboard.evalAnalysis.tooMany')
-        .replace('{max}', fmtN(precheck?.max ?? 0))
-        .replace('{count}', fmtN(runError.count ?? 0));
-    }
-    return t('partnerDashboard.evalAnalysis.error');
-  };
-
-  const loadFullAnalysis = async () => {
-    if (!analysis?._id) return;
-    try {
-      setShowResults(true);
-      // The running state is updated by the driver; this loads the complete
-      // current snapshot for viewing/export without advancing the run.
-      await loadAnalysis(analysis._id, { includeRows: true });
-    } catch (e) {
-      console.error('Failed to load current eval analysis:', e);
-    }
-  };
-
-  const exportAnalysis = async () => {
-    if (!analysis?._id) return;
-    try {
-      const full = await EvalAnalysisService.get(analysis._id, { includeRows: true });
-      const blob = new Blob([JSON.stringify(full, null, 2)], { type: 'application/json' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `eval-analysis-${analysis._id}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (e) {
-      console.error('Failed to export current eval analysis:', e);
-    }
+  // A run that isn't complete or failed is in progress if it started
+  // recently (someone else's run, or one whose request timed out while the
+  // server kept going). Older ones, and v1's 'classifying'/'synthesizing',
+  // never finished.
+  const statusLabel = (run) => {
+    if (run.status === 'complete' || run.status === 'error') return t(`partnerDashboard.evalAnalysis.status.${run.status}`);
+    const startedAt = new Date(run.createdAt).getTime();
+    const recent = run.status === 'running' && Date.now() - startedAt < IN_PROGRESS_WINDOW_MS;
+    return t(`partnerDashboard.evalAnalysis.status.${recent ? 'inProgress' : 'incomplete'}`);
   };
 
   const locale = lang === 'fr' ? 'fr-CA' : 'en-CA';
@@ -146,49 +96,12 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
           <p id="eval-analysis-select-institution" className="font-size-text-small">{t('partnerDashboard.evalAnalysis.selectInstitution')}</p>
         )}
 
-        {appliedDepartment && precheckLoading && (
-          <StatusMessage
-            loading
-            id="eval-analysis-checking"
-            className="font-size-text-small"
-            message={t('partnerDashboard.evalAnalysis.checkingEligibility')}
-          />
-        )}
-
-        {appliedDepartment && !precheckLoading && count !== null && !running && (
-          <>
-            {tooFew && (
-              <StatusMessage
-                id="eval-analysis-too-few"
-                variant="info"
-                message={t('partnerDashboard.evalAnalysis.tooFew')
-                  .replace('{min}', fmtN(precheck.min))
-                  .replace('{count}', fmtN(count))}
-              />
-            )}
-            {tooMany && (
-              <StatusMessage
-                id="eval-analysis-too-many"
-                variant="info"
-                message={t('partnerDashboard.evalAnalysis.tooMany')
-                  .replace('{max}', fmtN(precheck.max))
-                  .replace('{count}', fmtN(count))}
-              />
-            )}
-            {!tooFew && !tooMany && (
-              <p id="eval-analysis-precheck-count" className="font-size-text-small">
-                {t('partnerDashboard.evalAnalysis.precheckCount').replace('{count}', fmtN(count))}
-              </p>
-            )}
-          </>
-        )}
-
         {running && (
           <StatusMessage
             loading
             id="eval-analysis-running"
             className="font-size-text-small"
-            message={progressLabel()}
+            message={t('partnerDashboard.evalAnalysis.running')}
           />
         )}
 
@@ -201,19 +114,8 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
           {t('partnerDashboard.evalAnalysis.runButton')}
         </GcdsButton>
 
-        {analysis && analysis.status !== 'complete' && analysis.status !== 'error' && (
-          <div style={{ marginTop: 12 }}>
-            <GcdsButton onClick={loadFullAnalysis} className="hydrated">
-              {t('partnerDashboard.evalAnalysis.viewRunning')}
-            </GcdsButton>
-            <GcdsButton onClick={exportAnalysis} className="hydrated">
-              {t('partnerDashboard.evalAnalysis.exportRunning')}
-            </GcdsButton>
-          </div>
-        )}
-
         {runError && (
-          <StatusMessage variant="error" message={runErrorLabel()} />
+          <StatusMessage variant="error" message={t('partnerDashboard.evalAnalysis.error')} />
         )}
       </div>
 
@@ -243,15 +145,21 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
                         <td style={cellStyle}>{fmtDate(run.createdAt)}</td>
                         <td style={cellStyle}>{`${fmtDate(run.startDate)} – ${fmtDate(run.endDate)}`}</td>
                         <td style={{ ...cellStyle, textAlign: 'right' }}>{fmtN(run.evalCount)}</td>
-                        <td style={cellStyle}>{t(`partnerDashboard.evalAnalysis.status.${run.status}`)}</td>
+                        <td style={cellStyle}>{statusLabel(run)}</td>
                         <td style={{ ...cellStyle, wordBreak: 'break-all' }}>{run.requestedBy || '—'}</td>
                         <td style={cellStyle}>
+                          {/* aria-disabled, not native disabled: disabling
+                              the button that has focus drops focus to the
+                              top of the page. */}
                           <button
                             type="button"
                             className="link-button"
-                            onClick={() => loadAnalysis(run._id)}
-                            disabled={running || loadingAnalysisId === run._id}
-                            style={{ background: 'none', border: 'none', padding: 0, color: '#284162', textDecoration: 'underline', cursor: 'pointer' }}
+                            onClick={() => {
+                              if (running || loadingPastRun) return;
+                              loadAnalysis(run._id);
+                            }}
+                            aria-disabled={running || loadingPastRun || undefined}
+                            style={{ background: 'none', border: 'none', padding: 0, color: '#284162', textDecoration: 'underline', cursor: running || loadingPastRun ? 'not-allowed' : 'pointer' }}
                           >
                             {loadingAnalysisId === run._id
                               ? t('common.loading')
@@ -268,7 +176,7 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
       )}
 
       {/* Report (completed run, or partial results after an error) */}
-      {analysis && (showResults || analysis.status === 'complete' || analysis.status === 'error') && (
+      {reportShown && (
         <div className="dashboard-section">
           <EvalAnalysisReport analysis={analysis} lang={lang} />
         </div>

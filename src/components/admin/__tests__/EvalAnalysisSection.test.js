@@ -4,6 +4,7 @@
 import React from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { waitForAnnouncement } from '../../../../test/liveAnnouncer.js';
 
 // EvalAnalysisReport's example-chatId link renders via <GcdsLink> (real
 // custom element, shadow DOM) — jsdom doesn't expose its shadow-DOM anchor
@@ -23,22 +24,16 @@ vi.mock('@gcds-core/components-react', async (importOriginal) => {
 vi.mock('../../../services/EvalAnalysisService.js', () => ({
   __esModule: true,
   default: {
-    precheck: vi.fn().mockResolvedValue({ count: 42, min: 20, max: 200 }),
     create: vi.fn(),
-    advance: vi.fn(),
     get: vi.fn(),
     list: vi.fn().mockResolvedValue([])
   }
 }));
 
-// Real useEvalAnalysis() drives a whole precheck→create→advance state
-// machine off the mocked service above — overkill for a test that only
-// needs one specific `analysis` shape rendered. Mocked here; individual
+// Real useEvalAnalysis() runs its own fetches off the mocked service above —
+// overkill for a test that only needs one specific `analysis` shape rendered. Mocked here; individual
 // tests override just the field(s) they care about by spreading this base.
 const defaultHookResult = {
-  precheck: null,
-  precheckLoading: false,
-  runPrecheck: vi.fn(),
   running: false,
   analysis: null,
   runError: null,
@@ -67,6 +62,62 @@ describe('EvalAnalysisSection', () => {
     expect(screen.getByText('Select an institution in the filters above to enable analysis.')).toBeTruthy();
     const button = document.querySelector('gcds-button, button');
     expect(button).toBeTruthy();
+  });
+
+  it('describes the Run button with the running message while a run is in progress', () => {
+    mockUseEvalAnalysis.mockReturnValueOnce({ ...defaultHookResult, running: true });
+    render(<EvalAnalysisSection lang="en" appliedDepartment="TBS-SCT" appliedFilters={{ department: 'TBS-SCT' }} />);
+    const message = screen.getByText('Analyzing the evaluations. This can take a minute.');
+    const button = document.querySelector('gcds-button, button');
+    expect(button.getAttribute('aria-describedby')).toBe(message.closest('[id]').id);
+  });
+
+  it('labels past runs that never finished, including v1 statuses, and recent ones as in progress', () => {
+    mockUseEvalAnalysis.mockReturnValue({
+      ...defaultHookResult,
+      pastRuns: [
+        { _id: 'r1', status: 'complete', evalCount: 10, createdAt: '2026-11-01T00:00:00Z' },
+        { _id: 'r2', status: 'classifying', evalCount: 50, createdAt: '2026-10-01T00:00:00Z' },
+        { _id: 'r3', status: 'running', evalCount: 0, createdAt: '2026-09-01T00:00:00Z' },
+        { _id: 'r4', status: 'running', evalCount: 0, createdAt: new Date(Date.now() - 60 * 1000).toISOString() }
+      ]
+    });
+    render(<EvalAnalysisSection lang="en" appliedDepartment="TBS-SCT" appliedFilters={{ department: 'TBS-SCT' }} />);
+    expect(screen.getByText('Complete')).toBeTruthy();
+    expect(screen.getAllByText('Did not finish')).toHaveLength(2);
+    expect(screen.getByText('In progress')).toBeTruthy();
+    mockUseEvalAnalysis.mockImplementation(() => defaultHookResult);
+  });
+
+  it('announces when a run finishes with a report', async () => {
+    const props = { lang: 'en', appliedDepartment: 'TBS-SCT', appliedFilters: { department: 'TBS-SCT' } };
+    mockUseEvalAnalysis.mockReturnValue({ ...defaultHookResult, running: true });
+    const { rerender } = render(<EvalAnalysisSection {...props} />);
+    mockUseEvalAnalysis.mockReturnValue({
+      ...defaultHookResult,
+      analysis: { _id: 'a1', status: 'complete', stats: null, insights: null, evalCount: 3 }
+    });
+    rerender(<EvalAnalysisSection {...props} />);
+    await waitForAnnouncement('Results loaded.', 'assertive');
+    mockUseEvalAnalysis.mockImplementation(() => defaultHookResult);
+  });
+
+  it('keeps the View button focusable while its report loads', () => {
+    const loadAnalysis = vi.fn();
+    mockUseEvalAnalysis.mockReturnValue({
+      ...defaultHookResult,
+      loadAnalysis,
+      loadingAnalysisId: 'r1',
+      pastRuns: [{ _id: 'r1', status: 'complete', evalCount: 10, createdAt: '2026-11-01T00:00:00Z' }]
+    });
+    render(<EvalAnalysisSection lang="en" appliedDepartment="TBS-SCT" appliedFilters={{ department: 'TBS-SCT' }} />);
+    const button = screen.getByRole('button', { name: 'Loading...' });
+    // Native disabled would drop focus to the top of the page.
+    expect(button.disabled).toBe(false);
+    expect(button.getAttribute('aria-disabled')).toBe('true');
+    button.click();
+    expect(loadAnalysis).not.toHaveBeenCalled();
+    mockUseEvalAnalysis.mockImplementation(() => defaultHookResult);
   });
 
   it('shows the interrupted-run message as a warning, not info', () => {
@@ -130,7 +181,7 @@ describe('EvalAnalysisReport', () => {
     }
   };
 
-  it('renders a complete stored report', () => {
+  it('still renders a stored v1 report, scores table included', () => {
     render(<EvalAnalysisReport analysis={analysis} lang="en" />);
     expect(screen.getByText('Analysis report')).toBeTruthy();
     expect(screen.getByText('Scores by service and action')).toBeTruthy();
@@ -154,6 +205,37 @@ describe('EvalAnalysisReport', () => {
     expect(link.getAttribute('href')).toBe('/en?chat=chat-abc&review=1&adminLang=en#interaction=interactionId' + encodeURIComponent('int-1'));
     expect(link.getAttribute('target')).toBe('_blank');
     expect(screen.getByText('—')).toBeTruthy();
+  });
+
+  it('renders a v2 report without a scores table, and says when the model saw a subset', () => {
+    const v2 = {
+      ...analysis,
+      crossTab: null,
+      insightInput: { nonPerfectTotal: 200, nonPerfectSent: 150, contentIssueTotal: 2, contentIssueSent: 2 }
+    };
+    render(<EvalAnalysisReport analysis={v2} lang="en" />);
+    expect(screen.queryByText('Scores by service and action')).toBeNull();
+    expect(screen.getByText('The findings use 150 of 200 evaluations scored below perfect: errors first, then the most recent.')).toBeTruthy();
+    expect(screen.queryByText(/^The content issue findings use/)).toBeNull();
+    expect(screen.getByText('English vs French')).toBeTruthy();
+    expect(screen.getByText('Evaluators')).toBeTruthy();
+  });
+
+  it('leaves out the subset note when the model saw every non-perfect evaluation', () => {
+    const v2 = { ...analysis, crossTab: null, insightInput: { nonPerfectTotal: 6, nonPerfectSent: 6, contentIssueTotal: 0, contentIssueSent: 0 } };
+    render(<EvalAnalysisReport analysis={v2} lang="en" />);
+    expect(screen.queryByText(/^The findings use/)).toBeNull();
+  });
+
+  it('says when content issues were cut, even with no themes', () => {
+    const v2 = {
+      ...analysis,
+      crossTab: null,
+      insights: { explanationThemes: [], contentIssues: '' },
+      insightInput: { nonPerfectTotal: 6, nonPerfectSent: 6, contentIssueTotal: 180, contentIssueSent: 150 }
+    };
+    render(<EvalAnalysisReport analysis={v2} lang="en" />);
+    expect(screen.getByText('The content issue findings use 150 of 180 flagged evaluations: errors first, then the most recent.')).toBeTruthy();
   });
 
   it('hides the content-issues card when none were flagged', () => {

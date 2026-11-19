@@ -1,17 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import EvalAnalysisService from '../../services/EvalAnalysisService.js';
 
-// Hard cap on drive iterations: a full 200-eval run is ~13 steps (snapshot +
-// 10 classification chunks + synthesis), so hitting this means the run is
-// stuck — stop driving instead of burning LLM calls; the doc stays viewable.
-const MAX_DRIVE_STEPS = 30;
-
-// State machine for the partner dashboard "Run eval analysis" section:
-// precheck (volume gates) → create → drive advance() until complete/error →
-// refresh the past-runs list. Also loads stored past reports.
+// State for the partner dashboard "Run eval analysis" section: run an
+// analysis (one request that returns the finished report), refresh the
+// past-runs list, and load stored past reports.
 export function useEvalAnalysis(lang = 'en') {
-  const [precheck, setPrecheck] = useState(null);
-  const [precheckLoading, setPrecheckLoading] = useState(false);
   const [running, setRunning] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const [runError, setRunError] = useState(null);
@@ -41,50 +34,22 @@ export function useEvalAnalysis(lang = 'en') {
     }
   }, []);
 
-  const runPrecheck = useCallback(async (filters) => {
-    setPrecheck(null);
-    if (!filters?.department) return;
-    setPrecheckLoading(true);
-    try {
-      const result = await EvalAnalysisService.precheck(filters);
-      if (!cancelledRef.current) setPrecheck(result);
-    } catch (e) {
-      console.error('Eval analysis precheck failed:', e);
-      if (!cancelledRef.current) setPrecheck(null);
-    } finally {
-      if (!cancelledRef.current) setPrecheckLoading(false);
-    }
-  }, []);
-
   const runAnalysis = useCallback(async (filters) => {
     setRunError(null);
     setRunning(true);
     setAnalysis(null);
     try {
-      let current = await EvalAnalysisService.create(filters, lang);
-      if (!cancelledRef.current) setAnalysis(current);
-      let steps = 0;
-      while (
-        !cancelledRef.current &&
-        current.status !== 'complete' &&
-        current.status !== 'error' &&
-        steps < MAX_DRIVE_STEPS
-      ) {
-        current = await EvalAnalysisService.advance(current._id);
-        steps += 1;
-        if (!cancelledRef.current) {
-          // Keep a previously loaded full snapshot visible while the driver
-          // publishes its lighter progress responses.
-          setAnalysis((previous) => current.rows ? current : { ...current, rows: previous?.rows });
-        }
-      }
-      await refreshList(filters.department);
+      const result = await EvalAnalysisService.create(filters, lang);
+      if (!cancelledRef.current) setAnalysis(result);
     } catch (e) {
       console.error('Eval analysis run failed:', e);
       if (!cancelledRef.current) setRunError(e);
     } finally {
       if (!cancelledRef.current) setRunning(false);
     }
+    // Refresh after a failure too: a request that times out can still
+    // finish on the server, and the list is the only way to find that run.
+    await refreshList(filters.department);
   }, [lang, refreshList]);
 
   // Clear the displayed report/error — called when the applied filters
@@ -95,11 +60,11 @@ export function useEvalAnalysis(lang = 'en') {
   }, []);
 
   // Load a stored past report into the report area (no LLM calls).
-  const loadAnalysis = useCallback(async (analysisId, options = {}) => {
+  const loadAnalysis = useCallback(async (analysisId) => {
     setRunError(null);
     setLoadingAnalysisId(analysisId);
     try {
-      const stored = await EvalAnalysisService.get(analysisId, options);
+      const stored = await EvalAnalysisService.get(analysisId);
       if (!cancelledRef.current) setAnalysis(stored);
     } catch (e) {
       console.error('Failed to load eval analysis:', e);
@@ -110,9 +75,6 @@ export function useEvalAnalysis(lang = 'en') {
   }, []);
 
   return {
-    precheck,
-    precheckLoading,
-    runPrecheck,
     running,
     analysis,
     runError,

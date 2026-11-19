@@ -27,6 +27,15 @@ vi.mock('../../../models/chat.js', () => {
   return { Chat: { aggregate, find: vi.fn(), populate: vi.fn(async () => []) } };
 });
 
+// Eval analysis creates its doc before querying; no evaluations come back,
+// so no insights call is made.
+vi.mock('../../../models/evalAnalysis.js', () => ({
+  EvalAnalysis: {
+    create: vi.fn(async (fields) => ({ ...fields, _id: 'a1', save: vi.fn(async () => {}) })),
+    updateOne: vi.fn(async () => {})
+  }
+}));
+
 import { Chat } from '../../../models/chat.js';
 import chatDashboardHandler from '../../chat/chat-dashboard.js';
 import chatExportHandler from '../../chat/chat-export-logs.js';
@@ -100,7 +109,10 @@ describe('reviewer filter reaches every consumer pipeline', () => {
   });
 
   it('eval analysis', async () => {
-    await EvalAnalysisService.countEvals({ ...DATES, department: 'IRCC', group: 'Military transitions' });
+    const analysis = await EvalAnalysisService.createAndSynthesize({
+      filters: { ...DATES, department: 'IRCC', group: 'Military transitions' }
+    });
+    expect(analysis.status).toBe('complete');
     expectReviewerMatchInPipeline();
   });
 });

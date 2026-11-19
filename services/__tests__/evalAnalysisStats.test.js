@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
     toCompactRow,
     computeStats,
-    buildCrossTab,
-    combinedLabel,
-    rowNeedsClassification,
+    combinedLabelFrom,
+    selectInsightRows,
+    withQuestionDetails,
     MIN_EVALS_FOR_FLAG
 } from '../evalAnalysisStats.js';
 import { deriveExpertFeedbackCategory as deriveCategory } from '../../api/util/chat-filters.js';
@@ -121,12 +121,10 @@ describe('toCompactRow', () => {
             _id: 'x',
             program: 'Canada Pension Plan',
             action: 'Apply',
-            answerType: 'normal',
             expertFeedback: {}
         });
         expect(compact.program).toBe('Canada Pension Plan');
         expect(compact.action).toBe('Apply');
-        expect(compact.answerType).toBe('normal');
     });
 
     it("normalizes '' and 'unknown' stored program/action to null (unclassified)", () => {
@@ -135,27 +133,68 @@ describe('toCompactRow', () => {
         expect(toCompactRow({ _id: 'x', program: 'unknown', expertFeedback: {} }).action).toBeNull();
     });
 
-    it('carries the answer type through for the classification gate', () => {
-        expect(toCompactRow({ _id: 'x', answerType: 'clarifying-question', expertFeedback: {} }).answerType)
-            .toBe('clarifying-question');
-        expect(toCompactRow({ _id: 'x', expertFeedback: {} }).answerType).toBe('');
+    it('leaves question and citation empty when the light query has no text', () => {
+        const compact = toCompactRow({ _id: 'x', referringUrl: 'https://www.canada.ca/a', expertFeedback: {} });
+        expect(compact.q).toBe('');
+        expect(compact.cite).toBe('');
+        expect(compact.ref).toBe('https://www.canada.ca/a');
     });
 });
 
-describe('rowNeedsClassification', () => {
-    it('classifies only normal-type rows that lack a reusable program', () => {
-        expect(rowNeedsClassification({ program: null, answerType: 'normal' })).toBe(true);
-        expect(rowNeedsClassification({ program: null, answerType: '' })).toBe(true); // empty = normal
+describe('withQuestionDetails', () => {
+    it('adds truncated question and citation text to a compact row', () => {
+        const enriched = withQuestionDetails(row({ q: '', cite: '' }), { question: 'x'.repeat(400), citationUrl: 'https://www.canada.ca/b' });
+        expect(enriched.q).toHaveLength(301); // 300 + ellipsis
+        expect(enriched.cite).toBe('https://www.canada.ca/b');
     });
 
-    it('skips rows already tagged by the per-question classifier', () => {
-        expect(rowNeedsClassification({ program: 'Canada Pension Plan', answerType: 'normal' })).toBe(false);
+    it('keeps the row as is when no details were found', () => {
+        const original = row({ q: '', cite: '' });
+        expect(withQuestionDetails(original, undefined)).toEqual(original);
+    });
+});
+
+describe('selectInsightRows', () => {
+    const at = (day) => `2026-10-${String(day).padStart(2, '0')}T00:00:00.000Z`;
+
+    it('sends non-perfect rows only, errors first, then most recent', () => {
+        const rows = [
+            row({ id: 'perfect', score: 100, category: 'correct', createdAt: at(30) }),
+            row({ id: 'ni-old', score: 90, category: 'needsImprovement', createdAt: at(1) }),
+            row({ id: 'ni-new', score: 90, category: 'needsImprovement', createdAt: at(20) }),
+            row({ id: 'err-old', score: 0, category: 'hasError', createdAt: at(2) }),
+            row({ id: 'harm', score: 0, category: 'harmful', createdAt: at(3) }),
+            row({ id: 'cite-err', score: 80, category: 'hasCitationError', createdAt: at(4) }),
+            // Weighted total under 100 with no category is still non-perfect.
+            row({ id: 'uncat', score: 96, category: null, createdAt: at(10) })
+        ];
+        const { lowScoreRows, nonPerfectTotal } = selectInsightRows(rows, 10);
+        expect(lowScoreRows.map((r) => r.id)).toEqual(['cite-err', 'harm', 'err-old', 'ni-new', 'uncat', 'ni-old']);
+        expect(nonPerfectTotal).toBe(6);
     });
 
-    it('skips non-normal answer types (no GC program to classify)', () => {
-        expect(rowNeedsClassification({ program: null, answerType: 'not-gc' })).toBe(false);
-        expect(rowNeedsClassification({ program: null, answerType: 'pt-muni' })).toBe(false);
-        expect(rowNeedsClassification({ program: null, answerType: 'clarifying-question' })).toBe(false);
+    it('caps what it sends but reports the full count', () => {
+        const rows = Array.from({ length: 5 }, (_, i) => row({ id: `r${i}`, score: 90, category: 'needsImprovement', createdAt: at(i + 1) }));
+        const { lowScoreRows, nonPerfectTotal } = selectInsightRows(rows, 3);
+        expect(lowScoreRows.map((r) => r.id)).toEqual(['r4', 'r3', 'r2']);
+        expect(nonPerfectTotal).toBe(5);
+    });
+
+    it('selects content-issue rows separately, including perfect-scored ones', () => {
+        const rows = [
+            row({ id: 'ci-perfect', score: 100, category: 'correct', contentIssue: true, createdAt: at(5) }),
+            row({ id: 'ci-low', score: 90, category: 'needsImprovement', contentIssue: true, createdAt: at(6) }),
+            row({ id: 'plain', score: 100, category: 'correct', createdAt: at(7) })
+        ];
+        const { contentIssueRows, contentIssueTotal } = selectInsightRows(rows, 10);
+        expect(contentIssueRows.map((r) => r.id)).toEqual(['ci-low', 'ci-perfect']);
+        expect(contentIssueTotal).toBe(2);
+    });
+
+    it('returns empty lists when nothing needs analysis', () => {
+        expect(selectInsightRows([row()], 10)).toEqual({
+            lowScoreRows: [], nonPerfectTotal: 0, contentIssueRows: [], contentIssueTotal: 0
+        });
     });
 });
 
@@ -227,48 +266,12 @@ describe('computeStats', () => {
     });
 });
 
-describe('combinedLabel', () => {
-    it('joins program and action, dropping an uninformative half', () => {
-        expect(combinedLabel(row({ program: 'Canada child benefit', action: 'Change my contact information' })))
+describe('combinedLabelFrom', () => {
+    it('joins program and action, keeping whichever half is present', () => {
+        expect(combinedLabelFrom('Canada child benefit', 'Change my contact information'))
             .toBe('Canada child benefit — Change my contact information');
-        expect(combinedLabel(row({ program: 'Canada child benefit', action: 'Other' }))).toBe('Canada child benefit');
-        expect(combinedLabel(row({ program: 'Other', action: 'Apply' }))).toBe('Apply');
-        expect(combinedLabel(row({ program: 'Other', action: 'Other' }))).toBe('Other');
-    });
-});
-
-describe('buildCrossTab', () => {
-    it('tabulates categories per combined program—action group, worst-first', () => {
-        const rows = [
-            row({ id: 'i1', chatId: 'c1', program: 'Pensions', action: 'Apply' }),
-            row({ id: 'i2', chatId: 'c2', program: 'Pensions', action: 'Apply' }),
-            row({ id: 'i3', chatId: 'c3', lang: 'fr', program: 'Treaties', action: 'Search' }),
-            row({ id: 'i4', chatId: 'c4', lang: 'fr', program: 'Treaties', action: 'Search', score: 0, category: 'hasError' }),
-            row({ program: null, action: null })
-        ];
-        const tab = buildCrossTab(rows);
-        expect(tab.unclassifiedCount).toBe(1);
-        expect(tab.groups[0].label).toBe('Treaties — Search');
-        expect(tab.groups[0].nonPerfectCount).toBe(1);
-        expect(tab.groups[0].pctNonPerfect).toBe(50);
-        // Example prefers a non-perfect row (the one worth opening), else the first.
-        expect(tab.groups[0].example).toEqual({ chatId: 'c4', interactionId: 'i4', lang: 'fr' });
-        const pensions = tab.groups.find((g) => g.label === 'Pensions — Apply');
-        expect(pensions.count).toBe(2);
-        expect(pensions.alwaysPerfect).toBe(true);
-        expect(pensions.example).toEqual({ chatId: 'c1', interactionId: 'i1', lang: 'en' });
-        expect(tab.skippedSingles).toEqual({ groupCount: 0, rowCount: 0 });
-    });
-
-    it('drops single-evaluation groups from the table and counts them aside', () => {
-        const rows = [
-            row({ program: 'Pensions', action: 'Apply' }),
-            row({ program: 'Pensions', action: 'Apply' }),
-            row({ program: 'Pensions', action: 'Renew', score: 0, category: 'hasError' }),
-            row({ program: 'Treaties', action: 'Search' })
-        ];
-        const tab = buildCrossTab(rows);
-        expect(tab.groups.map((g) => g.label)).toEqual(['Pensions — Apply']);
-        expect(tab.skippedSingles).toEqual({ groupCount: 2, rowCount: 2 });
+        expect(combinedLabelFrom('Canada child benefit', null)).toBe('Canada child benefit');
+        expect(combinedLabelFrom(null, 'Apply')).toBe('Apply');
+        expect(combinedLabelFrom(null, null)).toBe('Other');
     });
 });
