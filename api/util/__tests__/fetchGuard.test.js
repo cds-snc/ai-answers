@@ -1,10 +1,11 @@
 import http from 'http';
 import { X509Certificate } from 'crypto';
-import { rootCertificates } from 'tls';
+import { getCACertificates } from 'tls';
 import axios from 'axios';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   ENTRUST_OV_CA2_PEM,
+  FETCH_CA,
   guardRedirect,
   guardedLookup,
   guardedRequestOptions,
@@ -82,6 +83,19 @@ describe('guardRedirect', () => {
     expect(options.port).toBeUndefined();
   });
 
+  it('refuses an https page that redirects to its own http form, instead of looping', () => {
+    const options = { protocol: 'http:', hostname: 'www.canada.ca', path: '/en/x.html' };
+    expect(() => guardRedirect(options, {}, { url: 'https://www.canada.ca/en/x.html' }))
+      .toThrow(/its own http form/);
+  });
+
+  it('follows an upgraded hop that lands on a different URL', () => {
+    // http://veterans.gc.ca/en came from https://veterans.gc.ca/en; the upgrade
+    // goes to https://www.veterans.gc.ca/en, which is not where it started.
+    const options = { protocol: 'http:', hostname: 'www.veterans.gc.ca', path: '/en' };
+    expect(() => guardRedirect(options, {}, { url: 'https://veterans.gc.ca/en' })).not.toThrow();
+  });
+
   it('blocks a non-https, non-http hop', () => {
     expect(() => guardRedirect({ protocol: 'ftp:', hostname: 'www.canada.ca', path: '/x' })).toThrow(/non-https/);
   });
@@ -127,13 +141,28 @@ describe('guardedRequestOptions with axios', () => {
   });
 });
 
+describe('guardedRequestOptions', () => {
+  it('turns off axios proxy handling, so the guarded agents are always used', () => {
+    expect(guardedRequestOptions().proxy).toBe(false);
+  });
+
+  it('reuses the same agents across calls', () => {
+    const a = guardedRequestOptions();
+    const b = guardedRequestOptions();
+    expect(a.httpsAgent).toBe(b.httpsAgent);
+    expect(a.httpAgent).toBe(b.httpAgent);
+  });
+});
+
 describe('TLS verification', () => {
   it('verifies certificates on the https agent', () => {
     const { httpsAgent } = guardedRequestOptions();
     expect(httpsAgent.options.rejectUnauthorized).not.toBe(false);
-    expect(httpsAgent.options.ca).toContain(ENTRUST_OV_CA2_PEM);
-    // Supplying `ca` replaces Node's defaults, so the public roots must be kept.
-    expect(httpsAgent.options.ca.length).toBe(rootCertificates.length + 1);
+    expect(httpsAgent.options.secureContext).toBeDefined();
+    expect(FETCH_CA).toContain(ENTRUST_OV_CA2_PEM);
+    // Supplying a CA list replaces Node's defaults, so the default roots
+    // (including NODE_EXTRA_CA_CERTS) must be kept.
+    expect(FETCH_CA.length).toBe(getCACertificates('default').length + 1);
   });
 
   const cert = new X509Certificate(ENTRUST_OV_CA2_PEM);
@@ -146,7 +175,7 @@ describe('TLS verification', () => {
   });
 
   it('chains to a root in Node\'s trust store', () => {
-    const issuedByRoot = rootCertificates.some((pem) => cert.checkIssued(new X509Certificate(pem)));
+    const issuedByRoot = getCACertificates('bundled').some((pem) => cert.checkIssued(new X509Certificate(pem)));
     expect(issuedByRoot).toBe(true);
   });
 

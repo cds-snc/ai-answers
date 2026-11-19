@@ -17,7 +17,7 @@ import { isGovernmentUrl } from '../api/util/govHost.js';
 import { normalizeFetchUrl } from '../api/util/normalizeFetchUrl.js';
 
 const CITATION_COLS = ['citationUrl', 'answer.citation.aiCitationUrl', 'expertFeedback.expertCitationUrl'];
-const FETCH_TOOLS = new Set(['downloadWebPage', 'checkUrl', 'checkUrlStatus']);
+const FETCH_TOOLS = new Set(['downloadWebPage', 'checkUrl']);
 const MAX_EXAMPLES = 3;
 
 function usage() {

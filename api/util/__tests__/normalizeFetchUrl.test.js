@@ -43,6 +43,16 @@ describe('normalizeFetchUrl', () => {
     ).toBe('https://www.canada.ca/redirect?to=http://example.com');
   });
 
+  it('checks the port after the http upgrade', () => {
+    // :80 is http's default, but after the upgrade it would be an explicit
+    // non-default https port.
+    expect(() => normalizeFetchUrl('http://www.canada.ca:80/en.html')).toThrow(/Blocked/);
+    // :443 is not http's default, but it is https's.
+    expect(normalizeFetchUrl('http://www.canada.ca:443/en.html')).toBe(
+      'https://www.canada.ca:443/en.html'
+    );
+  });
+
   it('rejects non-http schemes', () => {
     for (const url of [
       'javascript:alert(1)',

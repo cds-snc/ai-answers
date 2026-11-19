@@ -77,22 +77,28 @@ export function normalizeFetchUrl(value, fieldName = 'url') {
     );
   }
 
+  const result = parsed.protocol === 'https:' ? trimmed : upgradeToHttps(trimmed);
+
   // AIA-010: the URL is model-chosen, so without this the server would fetch
   // whatever host a prompt-injected model asked for, from inside the VPC.
   // Redirect hops and the resolved IP are checked in fetchGuard.js.
-  if (!isAllowedFetchUrl(parsed)) {
+  //
+  // Checked on the upgraded URL, not the input: the parser blanks a scheme's
+  // default port, so "http://host:80/" would pass as default and then go out
+  // as "https://host:80/" (and "http://host:443/" would be wrongly refused).
+  if (!isAllowedFetchUrl(new URL(result))) {
     throw new Error(
-      `Blocked ${fieldName}: only Government of Canada sites can be fetched (${parsed.hostname})`
+      `Blocked ${fieldName}: only Government of Canada sites can be fetched (${trimmed})`
     );
   }
 
-  if (parsed.protocol === 'https:') {
-    return trimmed;
-  }
+  return result;
+}
 
+function upgradeToHttps(trimmed) {
   // http: — rewritten from `trimmed`, not `parsed.href`, to stay byte-identical (see
   // above) — which means this line trusts `trimmed` to actually start with
-  // "http:". It might not: `new URL()` above silently drops any ASCII tab/
+  // "http:". It might not: `new URL()` in normalizeFetchUrl silently drops any ASCII tab/
   // CR/LF from the input before reading `protocol`, so a stray control
   // character landing inside the scheme (e.g. "ht\ttp://…") is classified
   // as http: above but defeats this regex, and the un-upgraded URL is

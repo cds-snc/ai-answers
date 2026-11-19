@@ -16,7 +16,7 @@ import { Agent as HttpAgent } from 'http';
 import { Agent } from 'https';
 import { lookup as dnsLookup } from 'dns';
 import { BlockList, isIP } from 'net';
-import { rootCertificates } from 'tls';
+import { createSecureContext, getCACertificates } from 'tls';
 import { isAllowedFetchUrl } from './normalizeFetchUrl.js';
 
 // TLS certificates are verified. Several GC sites on Shared Services Canada
@@ -30,11 +30,20 @@ import { isAllowedFetchUrl } from './normalizeFetchUrl.js';
 //
 // Scoped to this agent rather than NODE_EXTRA_CA_CERTS, so no other outbound
 // connection trusts anything extra.
+//
+// Supplying `ca` replaces Node's default trust store, so the base is
+// getCACertificates('default') rather than tls.rootCertificates: it also
+// carries NODE_EXTRA_CA_CERTS / --use-system-ca roots, so an environment that
+// trusts an extra CA for every other outbound call trusts it here too.
 export const ENTRUST_OV_CA2_PEM = readFileSync(
   new URL('./certs/entrust-ov-tls-issuing-rsa-ca-2.pem', import.meta.url),
   'utf8'
 );
-const FETCH_CA = [...rootCertificates, ENTRUST_OV_CA2_PEM];
+export const FETCH_CA = [...getCACertificates('default'), ENTRUST_OV_CA2_PEM];
+
+// Built once: with a bare `ca` option, every TLS connection would re-parse the
+// whole root store into a new SecureContext.
+const FETCH_SECURE_CONTEXT = createSecureContext({ ca: FETCH_CA });
 
 // Addresses a public GC page never resolves to: loopback, private, link-local
 // (incl. the 169.254.169.254 metadata endpoint), CGN, multicast, reserved and
@@ -125,7 +134,12 @@ export function guardedLookup(hostname, options, callback) {
 // An http hop is upgraded to https, like normalizeFetchUrl does for the first
 // URL. Some GC sites redirect https -> http -> https (veterans.gc.ca, pm.gc.ca),
 // and in the VPC an http hop never connects (443-only egress).
-export function guardRedirect(options) {
+//
+// If the upgrade lands back on the URL that just redirected (an https page
+// that redirects to its own http form), following it would loop until
+// maxRedirects; that is refused with a clear error instead.
+export function guardRedirect(options, _responseDetails, requestDetails) {
+  const upgraded = options.protocol === 'http:';
   if (options.protocol === 'http:') {
     options.protocol = 'https:';
     if (String(options.port) === '80') delete options.port;
@@ -144,6 +158,17 @@ export function guardRedirect(options) {
   if (!isAllowedFetchUrl(parsed)) {
     throw new Error(`Blocked redirect to a non-Government of Canada URL: ${next}`);
   }
+  if (upgraded && requestDetails?.url && sameUrl(parsed, requestDetails.url)) {
+    throw new Error(`Blocked redirect: ${next} redirects to its own http form, which cannot be fetched`);
+  }
+}
+
+function sameUrl(parsed, other) {
+  try {
+    return parsed.href === new URL(other).href;
+  } catch {
+    return false;
+  }
 }
 
 // axios request options for a model-chosen URL: guarded agents + redirect hook.
@@ -152,10 +177,20 @@ export function guardRedirect(options) {
 // https: its header documents a shape ("ht\ttp://…") that slips past the
 // upgrade, and that request must not skip the address check.
 //
+// proxy: false — with HTTP(S)_PROXY set, axios would otherwise swap these
+// agents for a proxy tunnel, the proxy would resolve the host, and
+// guardedLookup would never see the address.
+//
+// The agents are shared across calls so connections and the TLS context are
+// reused.
+const GUARDED_HTTP_AGENT = new HttpAgent({ lookup: guardedLookup });
+const GUARDED_HTTPS_AGENT = new Agent({ secureContext: FETCH_SECURE_CONTEXT, lookup: guardedLookup });
+
 export function guardedRequestOptions() {
   return {
-    httpAgent: new HttpAgent({ lookup: guardedLookup }),
-    httpsAgent: new Agent({ ca: FETCH_CA, lookup: guardedLookup }),
+    httpAgent: GUARDED_HTTP_AGENT,
+    httpsAgent: GUARDED_HTTPS_AGENT,
+    proxy: false,
     beforeRedirect: guardRedirect,
   };
 }
