@@ -550,6 +550,11 @@ export const departments_FR = [
     "abbrKey": "CDEV"
   },
   {
+    "name": "Corporation de financement d'urgence d'entreprises du Canada",
+    "url": "https://ceefc-cfuec.ca/fr/cfuec/",
+    "abbrKey": "CEEFC-CFUEC"
+  },
+  {
     "name": "Cour canadienne de l'impôt",
     "url": "https://www.tcc-cci.ca/fr/accueil",
     "abbrKey": "TCC-CCI"

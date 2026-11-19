@@ -3,7 +3,8 @@
 // Allowed: canada.ca, gc.ca and any subdomain of either, plus the host of any
 // department/agency URL in departments_EN.js / departments_FR.js (and its
 // subdomains) — that list is where GC organisations on their own domains
-// (rcmp.ca, elections.ca, bankofcanada.ca, ...) are recorded.
+// (rcmp.ca, elections.ca, bankofcanada.ca, ...) are recorded. Plus
+// EXTRA_GC_HOSTS below.
 //
 // Matching is on the parsed hostname, by exact match or dot-boundary suffix,
 // never by substring: `canada.ca.attacker.example` and `evilcanada.ca` must
@@ -13,6 +14,14 @@ import { departments_FR } from '../../agents/prompts/scenarios/departments_FR.js
 import { parseHttpUrl } from './parseHttpUrl.js';
 
 const GC_ROOT_DOMAINS = ['canada.ca', 'gc.ca'];
+
+// GC services hosted on a third-party domain by an institution that is
+// already in the department list, so they can't be added there as their own
+// entry. Matched exactly, never by subdomain: the parent domain is shared
+// hosting that serves other organisations too.
+const EXTRA_GC_HOSTS = new Set([
+  'bac-lac.on.worldcat.org', // LAC's Aurora catalogue (bac-lac-scenarios.js)
+]);
 
 function stripWww(host) {
   return host.startsWith('www.') ? host.slice(4) : host;
@@ -41,6 +50,7 @@ export function isGovernmentHost(hostname) {
   // Lowercase and drop a trailing root dot ("www.canada.ca.").
   const host = hostname.toLowerCase().replace(/\.$/, '');
   if (GC_ROOT_DOMAINS.some((d) => matchesDomain(host, d))) return true;
+  if (EXTRA_GC_HOSTS.has(host)) return true;
   const bare = stripWww(host);
   for (const d of DEPARTMENT_HOSTS) {
     if (matchesDomain(bare, d)) return true;

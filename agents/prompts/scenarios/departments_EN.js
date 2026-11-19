@@ -120,6 +120,11 @@ export const departments_EN = [
     "abbrKey": "CEIC-CAEC"
   },
   {
+    "name": "Canada Enterprise Emergency Funding Corporation",
+    "url": "https://ceefc-cfuec.ca/home-ceefc/",
+    "abbrKey": "CEEFC-CFUEC"
+  },
+  {
     "name": "Canada Firearms Centre",
     "url": "https://rcmp.ca/en/firearms",
     "abbrKey": "CAFC"

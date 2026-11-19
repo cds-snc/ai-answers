@@ -23,7 +23,7 @@ vi.mock('../../../services/InteractionPersistenceService.js', () => ({
 }));
 vi.mock('../../../services/UrlValidationService.js', () => ({
     // checkCitationUrl passes through: this suite tests graph wiring, not the host gate.
-    UrlValidationService: { validateUrl: vi.fn(), validateUrlFormatting: vi.fn(), checkCitationUrl: vi.fn((url) => ({ isValid: true, url })) }
+    UrlValidationService: { validateUrlFormatting: vi.fn(), checkCitationUrl: vi.fn((url) => ({ isValid: true, url })) }
 }));
 
 vi.mock('../GraphEventLogger.js', () => ({
@@ -111,7 +111,6 @@ describe('DefaultWithVectorGraph Workflow', () => {
 
         InteractionPersistenceService.persistInteraction.mockResolvedValue({ success: true });
 
-        UrlValidationService.validateUrl.mockResolvedValue({ isValid: true, url: 'https://example.com', confidenceRating: 1 });
         UrlValidationService.validateUrlFormatting.mockResolvedValue({ isValid: true, url: 'https://example.com' });
     });
 

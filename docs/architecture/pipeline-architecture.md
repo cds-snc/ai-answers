@@ -424,6 +424,13 @@ short-circuit variants when a verified match was found)
 - `checkUrlStatus`: Validate URL accessibility
 - `contextAgentTool`: Re-derive context if needed
 
+Both fetch tools take a model-chosen URL, so they are restricted (AIA-010):
+`normalizeFetchUrl` allows only Government of Canada hosts (`api/util/govHost.js`, the same
+check citations get) plus `raw.githubusercontent.com/cds-snc/ai-answers/main/…` for scenario
+files, on default ports. `api/util/fetchGuard.js` refuses connections whose DNS answer
+includes a private, loopback, link-local or reserved address (checked at connect time, so it
+covers DNS rebinding and every hop) and re-checks the allowlist on each redirect, https only.
+
 **Output Parsing:**
 - `<answer>` block: Main content (1-4 sentences)
 - `<citation-url>`: AI's proposed citation
