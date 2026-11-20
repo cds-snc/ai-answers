@@ -24,9 +24,6 @@ const mockT = (key) => TRANSLATIONS[key] || key;
 vi.mock('../../../../services/FeedbackService.js', () => ({
   default: { getExpertFeedback: vi.fn(), deleteExpertFeedback: vi.fn(), setExpertNeverStale: vi.fn() },
 }));
-vi.mock('../../../../services/ClientLoggingService.js', () => ({
-  default: { info: vi.fn() },
-}));
 vi.mock('@gcds-core/components-react', () => ({
   GcdsButton: ({ children, onClick, disabled }) => (
     <button onClick={onClick} disabled={disabled}>{children}</button>

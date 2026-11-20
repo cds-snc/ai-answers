@@ -392,7 +392,6 @@ app.post('/api/experimental/experimental-instant-answer-dataset', experimentalIn
 app.delete('/api/experimental/experimental-dataset-delete/:id', experimentalDatasetDeleteHandler);
 app.post('/api/experimental/experimental-dataset-process/:id', experimentalDatasetProcessHandler);
 app.get('/api/db/db-check', dbCheckhandler);
-app.post('/api/db/db-log', dbLogHandler);
 app.get('/api/db/db-log', dbLogHandler);
 app.get('/api/db/db-chat-logs', dbChatLogsHandler);
 app.post('/api/auth/auth-signup', signupHandler);
