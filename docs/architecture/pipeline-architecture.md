@@ -430,6 +430,7 @@ check citations get) plus `raw.githubusercontent.com/cds-snc/ai-answers/main/…
 files, on default ports. `api/util/fetchGuard.js` refuses connections whose DNS answer
 includes a private, loopback, link-local or reserved address (checked at connect time, so it
 covers DNS rebinding and every hop) and re-checks the allowlist on each redirect, https only.
+TLS certificates are verified, with one bundled intermediate that some GC servers omit.
 
 **Output Parsing:**
 - `<answer>` block: Main content (1-4 sentences)
