@@ -140,6 +140,7 @@ describe('InstantAndQAGraph Workflow', () => {
             ],
             lang: 'en',
             selectedAI: 'openai',
+            serviceProfileId: 'default',
         };
 
         const resultState = await instantAndQAGraphApp.invoke(input);

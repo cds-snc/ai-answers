@@ -26,6 +26,7 @@ const GraphState = Annotation.Root({
   lang: Annotation(),
   department: Annotation(),
   referringUrl: Annotation(),
+  serviceProfileId: Annotation(),
   selectedAI: Annotation(),
   translationF: Annotation(),
   searchProvider: Annotation(),
@@ -229,6 +230,7 @@ graph.addNode('answerNode', async (state) => {
     context: state.context,
     referringUrl: state.referringUrl,
     chatId: state.chatId,
+    serviceProfileId: state.serviceProfileId,
   });
 
   const out = { answer, status: WorkflowStatus.VERIFYING_CITATION };

@@ -18,6 +18,7 @@ import {
     pickExplicitReferenceAnswer
 } from './datasetColumns.js';
 import { normalizeReferringUrl } from '../../api/util/referring-url.js';
+import { DEFAULT_SERVICE_PROFILE_ID } from '../../config/service-profiles.js';
 
 const QUEUE_NAME = 'experimental-batch-processing';
 const BATCH_CONCURRENCY = parseInt(process.env.BATCH_CONCURRENCY, 10) || 2;
@@ -712,6 +713,7 @@ class ExperimentalBatchService {
                     ),
                     // AIA-006: CSV-supplied; validate before it reaches prompts/logs/DB.
                     referringUrl: normalizeReferringUrl(item.referringUrl || batch.config.referringUrl),
+                    serviceProfileId: DEFAULT_SERVICE_PROFILE_ID,
                 };
 
                 let workflowDebugPayload = null;

@@ -330,6 +330,51 @@ describe('chatGraphRunHandler transport setting', () => {
     expect(mocks.streamInput.overrideUserId).toBeNull();
   });
 
+  it('runs every chat with the default service profile, whatever the client sends', async () => {
+    mockSettingsTransport('sse');
+    setupGraphStream();
+    const req = createRequest();
+    req.body.input.serviceProfileId = 'canadalogin';
+
+    await chatGraphRunHandler(req, createResponse());
+
+    expect(mocks.streamInput.serviceProfileId).toBe('default');
+  });
+
+  describe('turn cap', () => {
+    const turnsOfHistory = (n) => Array.from({ length: n }, (_v, i) => [
+      { sender: 'user', text: `q${i + 1}` },
+      { sender: 'ai', interaction: { answer: { content: `a${i + 1}` } } },
+    ]).flat();
+
+    it('runs the last allowed turn', async () => {
+      mockSettingsTransport('sse');
+      setupGraphStream();
+      mocks.streamInput = null;
+      const req = createRequest();
+      req.body.input.conversationHistory = turnsOfHistory(2);
+
+      await chatGraphRunHandler(req, createResponse());
+
+      expect(mocks.streamInput).not.toBeNull();
+    });
+
+    it('refuses a turn past the cap without running the graph', async () => {
+      mockSettingsTransport('sse');
+      setupGraphStream();
+      mocks.streamInput = null;
+      const req = createRequest();
+      req.body.input.conversationHistory = turnsOfHistory(3);
+      const res = createResponse();
+
+      await chatGraphRunHandler(req, res);
+
+      expect(res.statusCode).toBe(409);
+      expect(res.jsonPayload).toEqual(expect.objectContaining({ error: 'turn_limit_reached' }));
+      expect(mocks.streamInput).toBeNull();
+      });
+    });
+
   // AIA-006: referringUrl is client-supplied and reaches LLM prompts, logs and the DB.
   describe('referring URL', () => {
     it('passes a valid referring URL to the graph, without its query string', async () => {
