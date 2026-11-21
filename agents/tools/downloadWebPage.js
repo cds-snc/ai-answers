@@ -1,6 +1,6 @@
 import { tool } from "@langchain/core/tools";
 import axios from "axios";
-import { Agent } from "https";
+import { guardedRequestOptions } from "../../api/util/fetchGuard.js";
 import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
 import TurndownService from "turndown";
@@ -330,9 +330,9 @@ function htmlToLeanMarkdown(html, baseUrl) {
 }
 
 async function downloadWebPage(url) {
-  const httpsAgent = new Agent({ rejectUnauthorized: false });
   const config = {
-    httpsAgent,
+    // Resolved-IP and redirect checks (AIA-010); see api/util/fetchGuard.js.
+    ...guardedRequestOptions(),
     maxRedirects: 10,
     timeout: REQUEST_TIMEOUT_MS,
     headers: { "User-Agent": process.env.USER_AGENT || "ai-answers" },

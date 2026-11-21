@@ -23,6 +23,19 @@ describe('isGovernmentHost', () => {
     }
   });
 
+  // Exact host only: worldcat.org hosts other libraries' catalogues.
+  it("accepts LAC's Aurora catalogue host, but not the rest of worldcat.org", () => {
+    expect(isGovernmentHost('bac-lac.on.worldcat.org')).toBe(true);
+    expect(isGovernmentHost('BAC-LAC.on.worldcat.org')).toBe(true);
+    for (const host of ['worldcat.org', 'other.on.worldcat.org', 'x.bac-lac.on.worldcat.org']) {
+      expect(isGovernmentHost(host), host).toBe(false);
+    }
+  });
+
+  it('accepts the CEEFC host from the department list', () => {
+    expect(isGovernmentHost('ceefc-cfuec.ca')).toBe(true);
+  });
+
   it('rejects look-alikes matched only by substring', () => {
     for (const host of [
       'attacker.example',

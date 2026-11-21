@@ -43,6 +43,16 @@ describe('normalizeFetchUrl', () => {
     ).toBe('https://www.canada.ca/redirect?to=http://example.com');
   });
 
+  it('checks the port after the http upgrade', () => {
+    // :80 is http's default, but after the upgrade it would be an explicit
+    // non-default https port.
+    expect(() => normalizeFetchUrl('http://www.canada.ca:80/en.html')).toThrow(/Blocked/);
+    // :443 is not http's default, but it is https's.
+    expect(normalizeFetchUrl('http://www.canada.ca:443/en.html')).toBe(
+      'https://www.canada.ca:443/en.html'
+    );
+  });
+
   it('rejects non-http schemes', () => {
     for (const url of [
       'javascript:alert(1)',
@@ -67,6 +77,49 @@ describe('normalizeFetchUrl', () => {
     expect(() => normalizeFetchUrl({ url: 'https://example.com' })).toThrow(
       /expected a string/
     );
+  });
+
+  // AIA-010: the URL is model-chosen; only GC hosts may be fetched.
+  it('blocks hosts that are not Government of Canada sites', () => {
+    for (const url of [
+      'https://attacker.example/phish',
+      'https://canada.ca.attacker.example/en',
+      'https://www.canada.ca@attacker.example/en',
+      'https://127.0.0.1/',
+      'https://169.254.169.254/latest/meta-data',
+      'https://localhost/',
+      'https://[::1]/',
+      'http://internal-service/',
+    ]) {
+      expect(() => normalizeFetchUrl(url), url).toThrow(/only Government of Canada sites/);
+    }
+  });
+
+  it('blocks non-default ports, allows explicit default ones', () => {
+    expect(() => normalizeFetchUrl('https://www.canada.ca:8443/en')).toThrow(/only Government of Canada sites/);
+    expect(normalizeFetchUrl('https://www.canada.ca:443/en')).toBe('https://www.canada.ca:443/en');
+  });
+
+  it('allows department-list hosts', () => {
+    expect(normalizeFetchUrl('https://www.rcmp.ca/en')).toBe('https://www.rcmp.ca/en');
+  });
+
+  // agenticBase.js has the model load scenario files from this repo on GitHub.
+  it("allows this repo's raw GitHub files, and nothing else on that host", () => {
+    const scenario = 'https://raw.githubusercontent.com/cds-snc/ai-answers/main/agents/prompts/scenarios/x.md';
+    expect(normalizeFetchUrl(scenario)).toBe(scenario);
+    for (const url of [
+      'https://raw.githubusercontent.com/attacker/repo/main/x.md',
+      'https://raw.githubusercontent.com/cds-snc/other-repo/main/x.md',
+      'https://raw.githubusercontent.com/cds-snc/ai-answers-fork/main/x.md',
+      // PR heads and fork commits are served under the repo path but are
+      // controlled by whoever opened the PR.
+      'https://raw.githubusercontent.com/cds-snc/ai-answers/refs/pull/9999/head/evil.md',
+      'https://raw.githubusercontent.com/cds-snc/ai-answers/0123456789abcdef0123456789abcdef01234567/evil.md',
+      'https://raw.githubusercontent.com/cds-snc/ai-answers/main/../refs/pull/1/head/evil.md',
+    ]) {
+      expect(() => normalizeFetchUrl(url), url).toThrow(/only Government of Canada sites/);
+    }
   });
 
   it('names the field in the error message', () => {

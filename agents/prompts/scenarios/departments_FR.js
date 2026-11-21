@@ -396,7 +396,7 @@ export const departments_FR = [
   },
   {
     "name": "Commission de la capitale nationale",
-    "url": "https://www.ccn-ncc.gc.ca/",
+    "url": "https://ccn-ncc.gc.ca/",
     "abbrKey": "NCC-CCN"
   },
   {
@@ -548,6 +548,11 @@ export const departments_FR = [
     "name": "Corporation de développement des investissements du Canada",
     "url": "https://cdev.gc.ca/fr/",
     "abbrKey": "CDEV"
+  },
+  {
+    "name": "Corporation de financement d'urgence d'entreprises du Canada",
+    "url": "https://ceefc-cfuec.ca/fr/cfuec/",
+    "abbrKey": "CEEFC-CFUEC"
   },
   {
     "name": "Cour canadienne de l'impôt",
@@ -778,11 +783,6 @@ export const departments_FR = [
     "name": "Marine royale canadienne",
     "url": "https://www.canada.ca/fr/marine.html",
     "abbrKey": "RCN-MRC"
-  },
-  {
-    "name": "Marque Canada",
-    "url": "https://agriclient.powerappsportals.com/fr-CA/home-accueil/",
-    "abbrKey": "CB-MC"
   },
   {
     "name": "Mesures Canada",
@@ -1106,7 +1106,7 @@ export const departments_FR = [
   },
   {
     "name": "Société immobilière du Canada Limitée",
-    "url": "https://www.clc-sic.ca/francais",
+    "url": "https://www.clcl-sicl.ca/francais",
     "abbrKey": "CLC-SIC"
   },
   {
