@@ -1,11 +1,7 @@
 import http from 'http';
-import { X509Certificate } from 'crypto';
-import { getCACertificates } from 'tls';
 import axios from 'axios';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
-  ENTRUST_OV_CA2_PEM,
-  FETCH_CA,
   guardRedirect,
   guardedLookup,
   guardedRequestOptions,
@@ -152,37 +148,10 @@ describe('guardedRequestOptions', () => {
     expect(a.httpsAgent).toBe(b.httpsAgent);
     expect(a.httpAgent).toBe(b.httpAgent);
   });
-});
 
-describe('TLS verification', () => {
-  it('verifies certificates on the https agent', () => {
-    const { httpsAgent } = guardedRequestOptions();
-    expect(httpsAgent.options.rejectUnauthorized).not.toBe(false);
-    expect(httpsAgent.options.secureContext).toBeDefined();
-    expect(FETCH_CA).toContain(ENTRUST_OV_CA2_PEM);
-    // Supplying a CA list replaces Node's defaults, so the default roots
-    // (including NODE_EXTRA_CA_CERTS) must be kept.
-    expect(FETCH_CA.length).toBe(getCACertificates('default').length + 1);
-  });
-
-  const cert = new X509Certificate(ENTRUST_OV_CA2_PEM);
-
-  it('bundles the Entrust intermediate that some GC servers omit', () => {
-    expect(cert.subject).toContain('CN=Entrust OV TLS Issuing RSA CA 2');
-    expect(cert.fingerprint256).toBe(
-      '1F:92:7F:37:47:03:06:AF:C3:01:8A:B0:49:E6:BE:1D:3C:0A:3A:45:CA:20:7F:64:F5:32:51:2B:A9:69:EB:94'
-    );
-  });
-
-  it('chains to a root in Node\'s trust store', () => {
-    const issuedByRoot = getCACertificates('bundled').some((pem) => cert.checkIssued(new X509Certificate(pem)));
-    expect(issuedByRoot).toBe(true);
-  });
-
-  // Fails 90 days before expiry so the certificate can be replaced in time.
-  // Replace it from the AIA URL in the leaf certificate (crt.sectigo.com).
-  it('is not within 90 days of expiry', () => {
-    const ninetyDays = 90 * 24 * 60 * 60 * 1000;
-    expect(new Date(cert.validTo).getTime() - Date.now()).toBeGreaterThan(ninetyDays);
+  // TLS verification is a separate decision from AIA-010; this pins the
+  // tools' existing behaviour so a change to it is deliberate.
+  it('keeps the existing TLS behaviour of the fetch tools', () => {
+    expect(guardedRequestOptions().httpsAgent.options.rejectUnauthorized).toBe(false);
   });
 });
