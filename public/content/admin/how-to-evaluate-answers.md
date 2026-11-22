@@ -1,5 +1,5 @@
 ---
-title: "Evaluate answers"
+title: "Evaluate answers - Beta: AI Answers"
 description: "How to score an answer sentence by sentence, rate the citation, and act on what you find."
 ---
 

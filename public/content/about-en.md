@@ -1,5 +1,5 @@
 ---
-title: "About AI Answers"
+title: "About AI Answers - Canada.ca"
 description: "Learn about Canada.ca AI Answers, a specialized AI chat agent designed for users of Government of Canada websites"
 ogImage: "og-about-en.png"
 ---

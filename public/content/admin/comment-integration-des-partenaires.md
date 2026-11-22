@@ -1,5 +1,5 @@
 ---
-title: "Intégration des partenaires"
+title: "Intégration des partenaires - Bêta : Réponses IA"
 description: "Ce qu'une institution partenaire fait en se joignant à Réponses IA : choisir les questions, réaliser une série d'évaluations et corriger ce qu'elles révèlent."
 ---
 

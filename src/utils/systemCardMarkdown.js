@@ -7,6 +7,7 @@
 // "unavailable" text instead, and systemCardMarkdown.test.js fails on it so
 // it's caught in the pull request.
 import { SYSTEM_CARD_CONTENT_DIR, REPO_BLOB_URL, SYSTEM_CARD_BUILD_TEXT } from '../config/systemCard.js';
+import { withCanadaCaSuffix } from '../config/pageTitle.js';
 
 // Linked files the app serves itself, so they still work when GitHub is down.
 const SERVED_ASSET_PATTERN = /\.(jpe?g|png|gif|svg|webp|pdf)$/i;
@@ -29,7 +30,7 @@ const yamlString = (value) => JSON.stringify(value);
 export function buildSystemCardMarkdown(source, { lang, description, assetExists }) {
   const text = SYSTEM_CARD_BUILD_TEXT[lang];
   const titleMatch = source.match(/^# (.+)$/m);
-  const title = titleMatch ? titleMatch[1].trim() : text.title;
+  const title = withCanadaCaSuffix(titleMatch ? titleMatch[1].trim() : text.title);
 
   const assets = new Set();
   const missingAssets = new Set();

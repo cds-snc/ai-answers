@@ -1,5 +1,5 @@
 ---
-title: "Evaluation-informed answers"
+title: "Evaluation-informed answers - Beta: AI Answers"
 description: "How expert evaluations shape future answers, how to see which ones were used, and how to remove one from the pool."
 ---
 

@@ -251,7 +251,7 @@ const AppLayout = () => {
   // isChatReviewMode/skipRouteFocus derivation and the <title>/meta-tag
   // effect used to live inline here - extracted to usePageMetadata.js (see
   // its own header for why no existing library replaces it).
-  const { skipRouteFocus } = usePageMetadata(currentLang, t);
+  const { skipRouteFocus } = usePageMetadata(currentLang, t, currentUser?.role);
 
   // Moves focus to <main> on every navigate()-driven route change (see
   // useRouteChangeFocus.js for the full reasoning) - fixes ExperimentalSuitePage.js,
@@ -380,12 +380,14 @@ export default function App() {
     // only on this route - see useRouteChangeFocus's `skip` option and its
     // call site in AppLayout for why the generic route-change focus hook
     // has to stay out of its way here rather than racing it.
+    // canadaCaTitle: public pages get "- Canada.ca" on their <title> (see
+    // pageTitle.js).
     const homeRouteEntries = PUBLIC_HOME_ROUTE_PATHS.map((path) => ({
       path,
       element: path === '/fr' ? homeFr : homeEn,
-      handle: { skipRouteFocus: true },
+      handle: { skipRouteFocus: true, canadaCaTitle: true },
     }));
-    homeRouteEntries[0] = { path: '/', element: homeDefault, handle: { skipRouteFocus: true } };
+    homeRouteEntries[0] = { path: '/', element: homeDefault, handle: { skipRouteFocus: true, canadaCaTitle: true } };
 
     // TODO: most route paths here (and in config/appRoutePaths.js) are
     // hardcoded strings that duplicate ROUTE_SLUGS. Switch them all to
@@ -409,7 +411,7 @@ export default function App() {
       { path: '/fr/s-inscrire', element: <RegisterPage lang="fr" />, handle: { titleKey: 'signup.title' } },
       { path: '/en/logout', element: <LogoutPage lang="en" /> },
       { path: '/fr/deconnexion', element: <LogoutPage lang="fr" /> },
-      { path: '*', element: <NotFoundRoute />, handle: { is404: true, titleKey: 'notFound.title' } }
+      { path: '*', element: <NotFoundRoute />, handle: { is404: true, titleKey: 'notFound.title', canadaCaTitle: true } }
     ];
 
     const protectedRoutes = [
@@ -421,8 +423,8 @@ export default function App() {
       ] : []),
       { path: '/en/chat-dashboard', element: <ChatDashboardPage lang="en" />, roles: ['admin', 'partner'], handle: { titleKey: 'admin.chatDashboard.title' } },
       { path: '/fr/tableau-de-bord', element: <ChatDashboardPage lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'admin.chatDashboard.title' } },
-      { path: '/en/admin', element: <AdminPage lang="en" />, roles: ['admin', 'partner'], handle: { titleKey: 'admin.title' } },
-      { path: '/fr/admin', element: <AdminPage lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'admin.title' } },
+      { path: '/en/admin', element: <AdminPage lang="en" />, roles: ['admin', 'partner'], handle: { titleKey: 'admin.title', partnerTitleKey: 'admin.partnerTitle' } },
+      { path: '/fr/admin', element: <AdminPage lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'admin.title', partnerTitleKey: 'admin.partnerTitle' } },
       { path: '/en/batch', element: <BatchPage lang="en" />, roles: ['admin', 'partner'], handle: { titleKey: 'batch.title' } },
       { path: '/fr/lot', element: <BatchPage lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'batch.title' } },
       { path: '/en/chat-viewer', element: <ChatViewer lang="en" />, roles: ['admin', 'partner'], handle: { titleKey: 'logging.title' } },

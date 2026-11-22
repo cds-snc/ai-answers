@@ -20,7 +20,7 @@ import { announce } from '../utils/liveAnnouncer.js';
 // currentLang/t are passed in rather than re-derived here (computeAlternateLangHref/
 // useTranslations) since AppLayout already computes both for its own render -
 // no reason to duplicate that work inside this hook too.
-export const usePageMetadata = (currentLang, t) => {
+export const usePageMetadata = (currentLang, t, role) => {
   const location = useLocation();
   const matches = useMatches();
 
@@ -47,11 +47,15 @@ export const usePageMetadata = (currentLang, t) => {
   // TODO: isChatReviewMode only checks the query param, not the route -
   // any route carrying ?review=1 would get the review title. Not reachable
   // today (nothing links that way); scope to the home route if it is.
+  const titleHandle = matches.find((m) => m.handle?.titleKey)?.handle;
+  // partnerTitleKey: matches a page whose <h1> differs for partners.
   const pageTitleKey = isChatReviewMode
     ? 'homepage.chat.review.eyebrow'
-    : matches.find((m) => m.handle?.titleKey)?.handle?.titleKey;
+    : (role === 'partner' && titleHandle?.partnerTitleKey) || titleHandle?.titleKey;
   const pageTitle = pageTitleKey ? t(pageTitleKey) : null;
-  const title = buildPageTitle(pageTitle, currentLang);
+  // Review mode shares the home route but is an admin view - no suffix.
+  const canadaCaTitle = !isChatReviewMode && matches.some((m) => m.handle?.canadaCaTitle);
+  const title = buildPageTitle(pageTitle, currentLang, { canadaCa: canadaCaTitle });
 
   // A real page load reads the new <title> for free; a client-side route
   // change (navigate()/<Link>) doesn't - document.title changing is silent
@@ -178,7 +182,7 @@ export const usePageMetadata = (currentLang, t) => {
         twitterImageMeta.setAttribute('content', ogImage);
       }
     }
-  }, [currentLang, location.pathname, matches, t, isChatReviewMode]);
+  }, [currentLang, location.pathname, matches, t, isChatReviewMode, role]);
 
   return { skipRouteFocus };
 };

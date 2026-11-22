@@ -1,5 +1,5 @@
 ---
-title: "Évaluer les réponses"
+title: "Évaluer les réponses - Bêta : Réponses IA"
 description: "Comment évaluer une réponse phrase par phrase, noter la citation et agir sur ce que vous constatez."
 ---
 
