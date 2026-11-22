@@ -122,7 +122,7 @@ Three things in this flow set AI Answers apart from a general-purpose chatbot.
 7. **Context derivation** (AI - full model): Institution matching and context generation from search results; optionally loads Institution-specific scenarios.
 8. **Eval-informed answering** (embedding lookup, no language-model call): Adds up to three of the most similar expert-rated past answers from the same department to the model's instructions as examples (see Using evaluations to improve answers). In production since August 2026.
 9. **Answer generation** (AI - Configurable model): Generate response with citations using specialized tools.
-10. **Citation verification** (Programmatic): Validate citation URL formatting and generate fallback search URL if needed.
+10. **Citation verification** (Programmatic): Check that the citation link points to a Government of Canada website (canada.ca, gc.ca, or a known federal institution's own site). If it doesn't, a Canada.ca search link is shown instead. The same check applies when an earlier answer is reused.
 11. **Persistence**: Save interaction to database, create embeddings, trigger evaluation.
 12. **Auto-evaluation** (background; not every answer receives one): Evaluation worker checks whether the saved interaction already has a linked AI evaluation (e.g. from a QA match); if not, runs the AI auto-evaluation and links the result to the interaction.
 13. **Task classifier** (AI - full model, runs in the background after the answer is delivered): use question and answer to assign program and action (e.g. IRCC account - sign in) to question for reporting and analysis by institutions.
@@ -138,7 +138,7 @@ Three things in this flow set AI Answers apart from a general-purpose chatbot.
 **Mitigation strategies:**
 - **Real-time content verification**: downloadWebPage tool downloads and reads current web pages to verify information accuracy.
 - **Citation requirements**: Every answer must include a single verified government source link.
-- **URL validation**: Automatic checking of citation URLs for validity and accessibility.
+- **URL validation**: Citation links that don't point to a Government of Canada website are replaced with a Canada.ca search link, so a manipulated or invented link is never shown as an official source.
 - **Expert evaluation system**: Continuous human expert evaluation of response accuracy — a sample of 2,500 questions was evaluated across the public trials, producing an accuracy rate of 96%.
 - **Eval-informed answers**: Similar expert-rated past answers are shown to the model as examples.
 - **Content freshness monitoring**: Prioritizes freshly downloaded content over potentially outdated training data.

@@ -2,6 +2,7 @@ import axios from 'axios';
 import { Agent } from 'https';
 import ServerLoggingService from './ServerLoggingService.js';
 import { logGraphEvent } from '../agents/graphs/GraphEventLogger.js';
+import { isGovernmentUrl } from '../api/util/govHost.js';
 
 function getHttpsAgent() {
   return new Agent({ rejectUnauthorized: false });
@@ -130,24 +131,43 @@ function generateFallbackSearchUrl(lang, question, department, t) {
   };
 }
 
-// Expose a formatting-only validator as an additional method so callers can
-// opt-in without changing the default live-check behaviour.
-UrlValidationService.validateUrlFormatting = async function (url, lang = 'en', question = '', department = undefined, t = null, chatId = null) {
+// Hostname only, for logs: the full rejected URL is untrusted model output and
+// its query string can carry the user's question or personal details.
+function hostnameForLog(url) {
+  try {
+    return new URL(String(url).trim()).hostname || null;
+  } catch {
+    return null;
+  }
+}
+
+// Synchronous core of validateUrlFormatting, for callers that can't await
+// (GraphWorkflowHelper.buildShortCircuitPayload).
+function checkCitationUrl(url, lang = 'en', question = '', department = undefined, t = null, chatId = null) {
   if (!url) {
     return generateFallbackSearchUrl(lang, question, department, t);
   }
 
-  // NOTE: kept intentionally lightweight and non-networking. A missing URL is
-  // the only thing this can detect without making a request, so any URL the
-  // model supplied is passed through as-is.
-  //
-  // This previously branched on a `www.canada.ca` domain check ANDed with a
-  // hardcoded `{ isValid: true }` left behind when the live check was removed.
-  // With that constant folded in, the condition was true for every URL and the
-  // fallback below it was unreachable — it read as a domain gate while gating
-  // nothing. Adding a real domain gate here would be a behaviour change rather
-  // than a cleanup: matching only `www.canada.ca` would divert every citation
-  // on inspection.canada.ca, ised-isde.canada.ca and the like to a search page.
+  // NOTE: kept intentionally lightweight and non-networking — no live check
+  // that the page exists. The one gate is the host (AIA-007): the citation is
+  // rendered to citizens as a trusted government source, so a model steered
+  // (by prompt injection or a hostile fetched page) or hallucinating into
+  // citing another domain gets the search-page fallback instead. Allowed hosts
+  // are *.canada.ca, *.gc.ca and the department list — see api/util/govHost.js.
+  // Matching only `www.canada.ca` would wrongly divert inspection.canada.ca,
+  // ised-isde.canada.ca and the like.
+  if (!isGovernmentUrl(url)) {
+    try {
+      logGraphEvent('warn', 'Citation URL rejected: not a Government of Canada host', chatId || 'system', {
+        hostname: hostnameForLog(url),
+      });
+    } catch (_e) {
+      // logging must not affect validation
+    }
+    return generateFallbackSearchUrl(lang, question, department, t);
+  }
+
+  // An allowed URL is passed through as-is.
   //
   // "Passed through as-is" includes scheme: unlike api/util/normalizeFetchUrl.js
   // (which upgrades http:// to https:// before the outbound fetch tools request
@@ -161,4 +181,17 @@ UrlValidationService.validateUrlFormatting = async function (url, lang = 'en', q
     isValid: true,
     url: url,
   };
+}
+
+UrlValidationService.checkCitationUrl = checkCitationUrl;
+
+// Formatting-only validator (no live HTTP check). Async for its existing
+// callers; the work is synchronous.
+UrlValidationService.validateUrlFormatting = async function (url, lang = 'en', question = '', department = undefined, t = null, chatId = null) {
+  return checkCitationUrl(url, lang, question, department, t, chatId);
+};
+
+// General/department search URL on its own, for fail-closed paths.
+UrlValidationService.fallbackSearchUrl = function (lang, question, department) {
+  return generateFallbackSearchUrl(lang, question, department).fallbackUrl;
 };

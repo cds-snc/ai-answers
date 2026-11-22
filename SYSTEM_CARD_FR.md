@@ -122,7 +122,7 @@ Trois éléments de ce flux distinguent Réponses IA d'un agent conversationnel 
 7. **Dérivation de contexte** (IA - modèle complet) : Correspondance d'institution et génération de contexte à partir des résultats de recherche ; charge optionnellement les scénarios spécifiques à l'institution.
 8. **Réponses éclairées par les évaluations** (recherche par incorporation, sans appel à un modèle de langue) : Ajoute jusqu'à trois des réponses passées les plus similaires évaluées par des experts, provenant du même ministère, aux instructions du modèle à titre d'exemples (voir Utiliser les évaluations pour améliorer les réponses). En production depuis août 2026.
 9. **Génération de réponse** (IA - Modèle configurable) : Génère la réponse avec citations en utilisant des outils spécialisés.
-10. **Vérification de citation** (Programmatique) : Valide le formatage des URL de citation et génère une URL de recherche de secours si nécessaire.
+10. **Vérification de citation** (Programmatique) : Vérifie que le lien de la citation pointe vers un site Web du gouvernement du Canada (canada.ca, gc.ca ou le site propre d'une institution fédérale connue). Sinon, un lien de recherche Canada.ca est affiché à la place. La même vérification s'applique lorsqu'une réponse antérieure est réutilisée.
 11. **Persistance** : Sauvegarde l'interaction dans la base de données, crée des incorporations, déclenche l'évaluation.
 12. **Évaluation automatique** (en arrière-plan ; toutes les réponses n'en reçoivent pas une) : Le travailleur d'évaluation vérifie si l'interaction sauvegardée a déjà une évaluation IA liée (p. ex. provenant d'une correspondance AQ) ; sinon, exécute l'évaluation IA automatique et lie le résultat à l'interaction.
 13. **Classificateur de tâches** (IA - modèle complet, exécuté en arrière-plan après la livraison de la réponse) : utilise la question et la réponse pour attribuer un programme et une action (p. ex. compte IRCC - ouvrir une session) à la question à des fins de rapport et d'analyse par les institutions.
@@ -138,7 +138,7 @@ Trois éléments de ce flux distinguent Réponses IA d'un agent conversationnel 
 **Stratégies d'atténuation :**
 - **Vérification de contenu en temps réel** : L'outil downloadWebPage télécharge et lit les pages Web actuelles pour vérifier l'exactitude de l'information.
 - **Exigences de citation** : Chaque réponse doit inclure un seul lien source gouvernemental vérifié.
-- **Validation d'URL** : Vérification automatique des URL de citation pour la validité et l'accessibilité.
+- **Validation d'URL** : Les liens de citation qui ne pointent pas vers un site Web du gouvernement du Canada sont remplacés par un lien de recherche Canada.ca. Ainsi, un lien manipulé ou inventé n'est jamais présenté comme une source officielle.
 - **Système d'évaluation d'experts** : Évaluation humaine experte continue de l'exactitude des réponses — un échantillon de 2 500 questions a été évalué au cours des essais publics, produisant un taux d'exactitude de 96 %.
 - **Réponses éclairées par les évaluations** : Des réponses passées similaires évaluées par des experts sont présentées au modèle à titre d'exemples.
 - **Surveillance de la fraîcheur du contenu** : Priorise le contenu fraîchement téléchargé sur les données d'entraînement potentiellement périmées.

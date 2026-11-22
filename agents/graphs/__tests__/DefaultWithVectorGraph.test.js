@@ -22,7 +22,8 @@ vi.mock('../../../services/InteractionPersistenceService.js', () => ({
     InteractionPersistenceService: { persistInteraction: vi.fn() }
 }));
 vi.mock('../../../services/UrlValidationService.js', () => ({
-    UrlValidationService: { validateUrl: vi.fn(), validateUrlFormatting: vi.fn() }
+    // checkCitationUrl passes through: this suite tests graph wiring, not the host gate.
+    UrlValidationService: { validateUrl: vi.fn(), validateUrlFormatting: vi.fn(), checkCitationUrl: vi.fn((url) => ({ isValid: true, url })) }
 }));
 
 vi.mock('../GraphEventLogger.js', () => ({
