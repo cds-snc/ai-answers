@@ -42,6 +42,7 @@ import { useHasAnyRole } from './components/RoleBasedUI.js';
 import MetricsPage from './pages/MetricsPage.js';
 import PublicDashboardPage from './pages/PublicDashboardPage.js';
 import PartnerDashboardPage from './pages/PartnerDashboardPage.js';
+import AiAnalysisPage from './pages/AiAnalysisPage.js';
 import TechnicalMetricsPage from './pages/TechnicalMetricsPage.js';
 import SessionPage from './pages/SessionPage.js';
 import ConnectivityPage from './pages/ConnectivityPage.js';
@@ -443,6 +444,8 @@ export default function App() {
       { path: '/fr/tableau-de-bord-public', element: <PublicDashboardPage lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'publicDashboard.title' } },
       { path: '/en/partner-dashboard', element: <PartnerDashboardPage lang="en" />, roles: ['admin', 'partner'], handle: { titleKey: 'partnerDashboard.title' } },
       { path: '/fr/tableau-de-bord-partenaire', element: <PartnerDashboardPage lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'partnerDashboard.title' } },
+      { path: getPath('ai-analysis', 'en'), element: <AiAnalysisPage lang="en" />, roles: ['admin', 'partner'], handle: { titleKey: 'admin.aiAnalysis.title' } },
+      { path: getPath('ai-analysis', 'fr'), element: <AiAnalysisPage lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'admin.aiAnalysis.title' } },
       { path: '/en/technical-metrics', element: <TechnicalMetricsPage lang="en" />, roles: ['admin'], handle: { titleKey: 'technicalMetrics.title' } },
       { path: '/fr/metriques-techniques', element: <TechnicalMetricsPage lang="fr" />, roles: ['admin'], handle: { titleKey: 'technicalMetrics.title' } },
       { path: '/en/sessions', element: <SessionPage lang="en" />, roles: ['admin'], handle: { titleKey: 'admin.session.title' } },

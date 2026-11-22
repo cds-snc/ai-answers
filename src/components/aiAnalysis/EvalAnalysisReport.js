@@ -1,9 +1,9 @@
 import React from 'react';
 import { GcdsLink } from '@gcds-core/components-react';
-import { useTranslations } from '../../../hooks/useTranslations.js';
-import { formatNumber, formatPercent, formatDecimal } from '../../../utils/numberFormat.js';
-import { buildChatReviewHref } from '../../../utils/reviewLink.js';
-import StatusMessage from '../StatusMessage.js';
+import { useTranslations } from '../../hooks/useTranslations.js';
+import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
+import { buildChatReviewHref } from '../../utils/reviewLink.js';
+import StatusMessage from '../admin/StatusMessage.js';
 
 const cell = { borderBottom: '1px solid #e0e0e0', padding: '8px 8px' };
 const head = { borderBottom: '2px solid #e0e0e0', padding: '8px 8px', textAlign: 'left' };
@@ -70,10 +70,10 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
         <thead>
           <tr>
             <th scope="col" style={head}>{labelColLabel}</th>
-            <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colCount')}</th>
-            <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colNonPerfect')}</th>
-            <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colPctNonPerfect')}</th>
-            <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colExample')}</th>
+            <th scope="col" style={numHead}>{t('admin.aiAnalysis.evalAnalysis.report.colCount')}</th>
+            <th scope="col" style={numHead}>{t('admin.aiAnalysis.evalAnalysis.report.colNonPerfect')}</th>
+            <th scope="col" style={numHead}>{t('admin.aiAnalysis.evalAnalysis.report.colPctNonPerfect')}</th>
+            <th scope="col" style={head}>{t('admin.aiAnalysis.evalAnalysis.report.colExample')}</th>
           </tr>
         </thead>
         <tbody>
@@ -83,7 +83,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
                 {(lang === 'fr' && row.labelFr) ? row.labelFr : row.label}
                 {row.alwaysPerfect && (
                   <span className="font-size-text-xsm-nr text-status--positive" style={{ marginLeft: 8 }}>
-                    {t('partnerDashboard.evalAnalysis.report.allPerfect')}
+                    {t('admin.aiAnalysis.evalAnalysis.report.allPerfect')}
                   </span>
                 )}
               </th>
@@ -106,24 +106,24 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
           headings — the card border/box chrome is reserved for the stat and
           chart cards elsewhere on the dashboard. */}
       <div className="dashboard-section">
-        <h3 className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.title')}</h3>
+        <h3 className="dashboard-section-title">{t('admin.aiAnalysis.evalAnalysis.report.title')}</h3>
         <p className="font-size-text-xsm-nr">
-          {t('partnerDashboard.evalAnalysis.report.header')
+          {t('admin.aiAnalysis.evalAnalysis.report.header')
             .replace('{count}', fmtN(analysis.evalCount))
             .replace('{department}', analysis.department || '')
             .replace('{start}', fmtDate(analysis.startDate))
             .replace('{end}', fmtDate(analysis.endDate))}
           {' · '}
-          {t('partnerDashboard.evalAnalysis.report.runOn').replace('{date}', fmtDate(analysis.createdAt))}
-          {analysis.requestedBy ? ` · ${t('partnerDashboard.evalAnalysis.report.runBy').replace('{email}', analysis.requestedBy)}` : ''}
+          {t('admin.aiAnalysis.evalAnalysis.report.runOn').replace('{date}', fmtDate(analysis.createdAt))}
+          {analysis.requestedBy ? ` · ${t('admin.aiAnalysis.evalAnalysis.report.runBy').replace('{email}', analysis.requestedBy)}` : ''}
         </p>
         {(analysis.excludedCount > 0 || (crossTab && crossTab.unclassifiedCount > 0)) && (
           <p className="font-size-text-xsm-nr">
             {analysis.excludedCount > 0 &&
-              t('partnerDashboard.evalAnalysis.report.excluded').replace('{count}', fmtN(analysis.excludedCount))}
+              t('admin.aiAnalysis.evalAnalysis.report.excluded').replace('{count}', fmtN(analysis.excludedCount))}
             {analysis.excludedCount > 0 && crossTab && crossTab.unclassifiedCount > 0 && ' · '}
             {crossTab && crossTab.unclassifiedCount > 0 &&
-              t('partnerDashboard.evalAnalysis.report.unclassified').replace('{count}', fmtN(crossTab.unclassifiedCount))}
+              t('admin.aiAnalysis.evalAnalysis.report.unclassified').replace('{count}', fmtN(crossTab.unclassifiedCount))}
           </p>
         )}
         {/* When there are many, only part of each list is sent to the model
@@ -131,24 +131,24 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
             so it shows even when the model reports no themes. */}
         {basedOnNotes.map(({ key, sent, total }) => (
           <p key={key} className="font-size-text-xsm-nr">
-            {t(`partnerDashboard.evalAnalysis.report.${key}`)
+            {t(`admin.aiAnalysis.evalAnalysis.report.${key}`)
               .replace('{sent}', fmtN(sent))
               .replace('{total}', fmtN(total))}
           </p>
         ))}
         {analysis.status === 'error' && (
-          <StatusMessage variant="error" message={t('partnerDashboard.evalAnalysis.report.partial')} />
+          <StatusMessage variant="error" message={t('admin.aiAnalysis.evalAnalysis.report.partial')} />
         )}
       </div>
 
       {/* Scores by combined program — action group: v1 reports only */}
       {crossTab && Array.isArray(crossTab.groups) && (
         <div className="dashboard-section">
-          <h3 id="eval-analysis-program-actions-title" className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.programActionsTitle')}</h3>
-          {crossTabTable(crossTab.groups, t('partnerDashboard.evalAnalysis.report.colProgramAction'), 'eval-analysis-program-actions-title')}
+          <h3 id="eval-analysis-program-actions-title" className="dashboard-section-title">{t('admin.aiAnalysis.evalAnalysis.report.programActionsTitle')}</h3>
+          {crossTabTable(crossTab.groups, t('admin.aiAnalysis.evalAnalysis.report.colProgramAction'), 'eval-analysis-program-actions-title')}
           {crossTab.skippedSingles?.groupCount > 0 && (
             <p className="font-size-text-xsm-nr" style={{ marginTop: 8 }}>
-              {t('partnerDashboard.evalAnalysis.report.singlesSkipped')
+              {t('admin.aiAnalysis.evalAnalysis.report.singlesSkipped')
                 .replace('{groups}', fmtN(crossTab.skippedSingles.groupCount))
                 .replace('{count}', fmtN(crossTab.skippedSingles.rowCount))}
             </p>
@@ -159,14 +159,14 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
       {/* Explanation themes */}
       {insights && Array.isArray(insights.explanationThemes) && insights.explanationThemes.length > 0 && (
         <div className="dashboard-section">
-          <h3 className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.themesTitle')}</h3>
+          <h3 className="dashboard-section-title">{t('admin.aiAnalysis.evalAnalysis.report.themesTitle')}</h3>
           {insights.explanationThemes.map((theme, i) => (
             <div key={i} style={{ marginBottom: 16 }}>
               <p style={{ marginBottom: 4 }}>
                 <strong>{theme.theme}</strong>
                 {typeof theme.count === 'number' && (
                   <span className="font-size-text-xsm-nr" style={{ marginLeft: 8 }}>
-                    {t('partnerDashboard.evalAnalysis.report.themeCount').replace('{count}', fmtN(theme.count))}
+                    {t('admin.aiAnalysis.evalAnalysis.report.themeCount').replace('{count}', fmtN(theme.count))}
                   </span>
                 )}
               </p>
@@ -186,9 +186,9 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
       {/* Content issues — only when some were flagged; no card for a zero count */}
       {stats && stats.contentIssueCount > 0 && (
         <div className="dashboard-section">
-          <h3 className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.contentIssuesTitle')}</h3>
+          <h3 className="dashboard-section-title">{t('admin.aiAnalysis.evalAnalysis.report.contentIssuesTitle')}</h3>
           <p className="font-size-text-xsm-nr">
-            {t('partnerDashboard.evalAnalysis.report.contentIssuesCount').replace('{count}', fmtN(stats.contentIssueCount))}
+            {t('admin.aiAnalysis.evalAnalysis.report.contentIssuesCount').replace('{count}', fmtN(stats.contentIssueCount))}
           </p>
           {insights && narrative(insights.contentIssues)}
         </div>
@@ -197,15 +197,15 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
       {/* EN vs FR */}
       {stats && (
         <div className="dashboard-section">
-          <h3 id="eval-analysis-language-title" className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.languageTitle')}</h3>
+          <h3 id="eval-analysis-language-title" className="dashboard-section-title">{t('admin.aiAnalysis.evalAnalysis.report.languageTitle')}</h3>
           <div style={{ overflowX: 'auto' }}>
             <table className="display" aria-labelledby="eval-analysis-language-title" style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colLanguage')}</th>
-                  <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colCount')}</th>
-                  <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colMeanScore')}</th>
-                  <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colPctPerfect')}</th>
+                  <th scope="col" style={head}>{t('admin.aiAnalysis.evalAnalysis.report.colLanguage')}</th>
+                  <th scope="col" style={numHead}>{t('admin.aiAnalysis.evalAnalysis.report.colCount')}</th>
+                  <th scope="col" style={numHead}>{t('admin.aiAnalysis.evalAnalysis.report.colMeanScore')}</th>
+                  <th scope="col" style={numHead}>{t('admin.aiAnalysis.evalAnalysis.report.colPctPerfect')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -214,7 +214,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
                   if (!row) return null;
                   return (
                     <tr key={key}>
-                      <td style={cell}>{t(`partnerDashboard.evalAnalysis.report.lang.${key}`)}</td>
+                      <td style={cell}>{t(`admin.aiAnalysis.evalAnalysis.report.lang.${key}`)}</td>
                       <td style={numCell}>{fmtN(row.count)}</td>
                       <td style={numCell}>{fmtScore(row.meanScore)}</td>
                       <td style={numCell}>{pctOrDash(row.pctPerfect)}</td>
@@ -233,15 +233,15 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
           (which uses the same delta internally) stays. */}
       {stats && Array.isArray(stats.evaluators) && stats.evaluators.length > 0 && (
         <div className="dashboard-section">
-          <h3 id="eval-analysis-evaluators-title" className="dashboard-section-title">{t('partnerDashboard.evalAnalysis.report.evaluatorsTitle')}</h3>
+          <h3 id="eval-analysis-evaluators-title" className="dashboard-section-title">{t('admin.aiAnalysis.evalAnalysis.report.evaluatorsTitle')}</h3>
           <div style={{ overflowX: 'auto' }}>
             <table className="display" aria-labelledby="eval-analysis-evaluators-title" style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  <th scope="col" style={head}>{t('partnerDashboard.evalAnalysis.report.colEvaluator')}</th>
-                  <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colCount')}</th>
-                  <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colMeanScore')}</th>
-                  <th scope="col" style={numHead}>{t('partnerDashboard.evalAnalysis.report.colPctPerfect')}</th>
+                  <th scope="col" style={head}>{t('admin.aiAnalysis.evalAnalysis.report.colEvaluator')}</th>
+                  <th scope="col" style={numHead}>{t('admin.aiAnalysis.evalAnalysis.report.colCount')}</th>
+                  <th scope="col" style={numHead}>{t('admin.aiAnalysis.evalAnalysis.report.colMeanScore')}</th>
+                  <th scope="col" style={numHead}>{t('admin.aiAnalysis.evalAnalysis.report.colPctPerfect')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -251,7 +251,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
                       {ev.email}
                       {ev.flagged && (
                         <span className="font-size-text-xsm-nr" style={{ marginLeft: 8, color: '#b10e1e' }}>
-                          {t('partnerDashboard.evalAnalysis.report.flagged')}
+                          {t('admin.aiAnalysis.evalAnalysis.report.flagged')}
                         </span>
                       )}
                     </td>

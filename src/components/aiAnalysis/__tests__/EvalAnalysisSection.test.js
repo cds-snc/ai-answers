@@ -5,17 +5,21 @@ import React from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { waitForAnnouncement } from '../../../../test/liveAnnouncer.js';
+import { getAnnouncedText, resetLiveAnnouncer } from '../../../utils/liveAnnouncer.js';
 
 // EvalAnalysisReport's example-chatId link renders via <GcdsLink> (real
 // custom element, shadow DOM) — jsdom doesn't expose its shadow-DOM anchor
 // to getByRole('link'), so stub just that export as a plain <a>, same as
-// ChatDashboardPage.test.js / UsedChatsPanel.test.js. Everything else
-// (GcdsButton, etc.) still renders for real.
+// ChatDashboardPage.test.js / UsedChatsPanel.test.js. GcdsButton becomes a
+// plain <button> so `disabled` can be read, as in DeleteChatSection.test.js.
 vi.mock('@gcds-core/components-react', async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...actual,
-    GcdsLink: ({ children, href, target }) => <a href={href} target={target}>{children}</a>
+    GcdsLink: ({ children, href, target }) => <a href={href} target={target}>{children}</a>,
+    GcdsButton: ({ children, onClick, disabled }) => (
+      <button type="button" onClick={onClick} disabled={disabled}>{children}</button>
+    )
   };
 });
 
@@ -39,37 +43,86 @@ const defaultHookResult = {
   runError: null,
   runAnalysis: vi.fn(),
   pastRuns: [],
-  refreshList: vi.fn(),
+  pastRunsDepartment: '',
+  refreshList: vi.fn().mockResolvedValue(null),
   loadAnalysis: vi.fn(),
   clearAnalysis: vi.fn(),
-  loadingAnalysisId: null
+  loadingAnalysisId: null,
+  loadCount: 0
 };
 const mockUseEvalAnalysis = vi.fn(() => defaultHookResult);
-vi.mock('../../../hooks/admin/useEvalAnalysis.js', () => ({
+vi.mock('../../../hooks/aiAnalysis/useEvalAnalysis.js', () => ({
   useEvalAnalysis: (...args) => mockUseEvalAnalysis(...args)
 }));
 
-import EvalAnalysisSection from '../dashboard/EvalAnalysisSection.js';
-import EvalAnalysisReport from '../dashboard/EvalAnalysisReport.js';
+import EvalAnalysisSection from '../EvalAnalysisSection.js';
+import EvalAnalysisReport from '../EvalAnalysisReport.js';
 
 afterEach(() => {
   cleanup();
 });
 
 describe('EvalAnalysisSection', () => {
-  it('renders the select-institution note and a disabled Run button without a department', () => {
+  // GcdsButton can't carry aria-describedby into its shadow DOM, so the
+  // reason Run is disabled or busy must come right before it in reading order.
+  const precedes = (a, b) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+
+  it('says why Run is disabled right before the button, without a department', () => {
     render(<EvalAnalysisSection lang="en" appliedDepartment="" appliedFilters={null} />);
-    expect(screen.getByText('Select an institution in the filters above to enable analysis.')).toBeTruthy();
-    const button = document.querySelector('gcds-button, button');
-    expect(button).toBeTruthy();
+    const note = screen.getByText('Select an institution in the filters to run an analysis.');
+    const button = screen.getByRole('button', { name: 'Run eval analysis' });
+    expect(button.disabled).toBe(true);
+    expect(precedes(note, button)).toBe(true);
   });
 
-  it('describes the Run button with the running message while a run is in progress', () => {
+  it('puts the running message right before the Run button while a run is in progress', () => {
     mockUseEvalAnalysis.mockReturnValueOnce({ ...defaultHookResult, running: true });
     render(<EvalAnalysisSection lang="en" appliedDepartment="TBS-SCT" appliedFilters={{ department: 'TBS-SCT' }} />);
     const message = screen.getByText('Analyzing the evaluations. This can take a minute.');
-    const button = document.querySelector('gcds-button, button');
-    expect(button.getAttribute('aria-describedby')).toBe(message.closest('[id]').id);
+    expect(precedes(message, screen.getByRole('button', { name: 'Run eval analysis' }))).toBe(true);
+  });
+
+  it('announces "Results loaded." when applying filters loads past runs', async () => {
+    const refreshList = vi.fn().mockResolvedValue([{ _id: 'r1', status: 'complete' }]);
+    mockUseEvalAnalysis.mockReturnValue({ ...defaultHookResult, refreshList });
+    render(<EvalAnalysisSection lang="en" appliedDepartment="TBS-SCT" appliedFilters={{ department: 'TBS-SCT' }} />);
+    expect(refreshList).toHaveBeenCalledWith('TBS-SCT');
+    await waitForAnnouncement('Results loaded.', 'assertive');
+    mockUseEvalAnalysis.mockImplementation(() => defaultHookResult);
+  });
+
+  it('says so, visibly and announced, when the institution has no past runs', async () => {
+    mockUseEvalAnalysis.mockReturnValue({ ...defaultHookResult, pastRunsDepartment: 'TBS-SCT', pastRuns: [] });
+    render(<EvalAnalysisSection lang="en" appliedDepartment="TBS-SCT" appliedFilters={{ department: 'TBS-SCT' }} />);
+    expect(screen.getByText('No past analyses for this institution.')).toBeTruthy();
+    await waitForAnnouncement('No past analyses for this institution.');
+    mockUseEvalAnalysis.mockImplementation(() => defaultHookResult);
+  });
+
+  it('names the past-runs table and scopes its headers', () => {
+    mockUseEvalAnalysis.mockReturnValueOnce({
+      ...defaultHookResult,
+      pastRunsDepartment: 'TBS-SCT',
+      pastRuns: [{ _id: 'r1', status: 'complete', evalCount: 10, createdAt: '2026-11-01T00:00:00Z' }]
+    });
+    render(<EvalAnalysisSection lang="en" appliedDepartment="TBS-SCT" appliedFilters={{ department: 'TBS-SCT' }} />);
+    const table = screen.getByRole('table', { name: 'Past analyses' });
+    table.querySelectorAll('th').forEach((th) => expect(th.getAttribute('scope')).toBe('col'));
+  });
+
+  it('re-announces a still-running past run each time it is viewed', async () => {
+    const props = { lang: 'en', appliedDepartment: 'TBS-SCT', appliedFilters: {} };
+    const runningRun = { _id: 'a1', status: 'running', createdAt: new Date(Date.now() - 60 * 1000).toISOString() };
+    const text = 'This analysis is still running. Check back in a few minutes.';
+    mockUseEvalAnalysis.mockReturnValue({ ...defaultHookResult, analysis: runningRun, loadCount: 1 });
+    const { rerender } = render(<EvalAnalysisSection {...props} />);
+    await waitForAnnouncement(text);
+    resetLiveAnnouncer();
+    // Same run, same text: only the load count changed.
+    mockUseEvalAnalysis.mockReturnValue({ ...defaultHookResult, analysis: { ...runningRun }, loadCount: 2 });
+    rerender(<EvalAnalysisSection {...props} />);
+    await waitForAnnouncement(text);
+    mockUseEvalAnalysis.mockImplementation(() => defaultHookResult);
   });
 
   it('labels past runs that never finished, including v1 statuses, and recent ones as in progress', () => {
@@ -102,6 +155,29 @@ describe('EvalAnalysisSection', () => {
     mockUseEvalAnalysis.mockImplementation(() => defaultHookResult);
   });
 
+  it('does not say "Results loaded." when the run failed with partial results', async () => {
+    const props = { lang: 'en', appliedDepartment: 'TBS-SCT', appliedFilters: { department: 'TBS-SCT' } };
+    mockUseEvalAnalysis.mockReturnValue({ ...defaultHookResult, running: true });
+    const { rerender } = render(<EvalAnalysisSection {...props} />);
+    mockUseEvalAnalysis.mockReturnValue({
+      ...defaultHookResult,
+      analysis: { _id: 'a1', status: 'error', stats: null, insights: null, evalCount: 3 }
+    });
+    rerender(<EvalAnalysisSection {...props} />);
+    await waitForAnnouncement('This analysis did not finish', 'assertive');
+    // Queued announcements are spoken 400 ms apart: wait past that gap so a
+    // contradicting "Results loaded." would have landed.
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    expect(getAnnouncedText('assertive')).not.toContain('Results loaded.');
+    mockUseEvalAnalysis.mockImplementation(() => defaultHookResult);
+  });
+
+  it('disables Run while a past report loads, so a late load cannot land mid-run', () => {
+    mockUseEvalAnalysis.mockReturnValueOnce({ ...defaultHookResult, loadingAnalysisId: 'r1' });
+    render(<EvalAnalysisSection lang="en" appliedDepartment="TBS-SCT" appliedFilters={{ department: 'TBS-SCT' }} />);
+    expect(screen.getByRole('button', { name: 'Run eval analysis' }).disabled).toBe(true);
+  });
+
   it('keeps the View button focusable while its report loads', () => {
     const loadAnalysis = vi.fn();
     mockUseEvalAnalysis.mockReturnValue({
@@ -120,13 +196,25 @@ describe('EvalAnalysisSection', () => {
     mockUseEvalAnalysis.mockImplementation(() => defaultHookResult);
   });
 
+  it('says a recently started past run is still running, not interrupted', () => {
+    mockUseEvalAnalysis.mockReturnValueOnce({
+      ...defaultHookResult,
+      analysis: { _id: 'a1', status: 'running', createdAt: new Date(Date.now() - 60 * 1000).toISOString() }
+    });
+    render(<EvalAnalysisSection lang="en" appliedDepartment="TBS-SCT" appliedFilters={{}} />);
+
+    const message = screen.getByText('This analysis is still running. Check back in a few minutes.');
+    expect(message.closest('.status-message--info-box')).toBeTruthy();
+    expect(screen.queryByText(/interrupted before it finished/)).toBeNull();
+  });
+
   it('shows the interrupted-run message as a warning, not info', () => {
     // A past run loaded in a non-terminal status (neither 'complete' nor
     // 'error') — the tab was closed mid-run, nothing left to display but
     // the fact that it needs re-running. That's warning-shaped (a broken
     // state with one way forward), not neutral info, even though role/
     // aria-live don't change between the two variants.
-    mockUseEvalAnalysis.mockReturnValueOnce({ ...defaultHookResult, analysis: { _id: 'a1', status: 'running' } });
+    mockUseEvalAnalysis.mockReturnValueOnce({ ...defaultHookResult, analysis: { _id: 'a1', status: 'running', createdAt: '2026-09-01T00:00:00Z' } });
     render(<EvalAnalysisSection lang="en" appliedDepartment="TBS-SCT" appliedFilters={{}} />);
 
     const message = screen.getByText('This analysis was interrupted before it finished and has no report to display. Run a new analysis.');

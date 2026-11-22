@@ -95,7 +95,7 @@ End dates run through today (23:59:59); the picker allows today. There is **no**
 
 **Public section order**: KPI row (accuracy donut + questions asked, then expert-evaluated → content issues) → top institutions → conversation length + median response time → blocked queries. Expert-evaluated precedes content issues because the issues are identified by those evaluators.
 
-**Partner-only sections**: operations metrics (with tokens), top referral pages, top citation pages + answer types, question volume by program, satisfaction, content-issue, harmful and eval-informed chat lists (`ContentIssueChatsCard`; content-issue and harmful are linked from their `StatCard`s, eval-informed sits beside its card), and "Run eval analysis" (`EvalAnalysisSection`, enabled only with an institution filter).
+**Partner-only sections**: operations metrics (with tokens), top referral pages, top citation pages + answer types, question volume by program, satisfaction, content-issue, harmful and eval-informed chat lists (`ContentIssueChatsCard`; content-issue and harmful are linked from their `StatCard`s, eval-informed sits beside its card). "Run eval analysis" is no longer here: it's on the AI-assisted analysis page (`src/pages/AiAnalysisPage.js`), see below.
 
 ## Metric bundle shape
 
@@ -170,7 +170,7 @@ const chartA11y = {
 | `ContentIssueChatsCard.js` | Collapsible list of chats matching an expert-feedback flag, each linking to review mode in a new tab; optional per-row `status` pill. Partner only. |
 | `EvalCoverageCard.js` | Evaluation coverage by service table (classes `.dashboard-data-table`, `.dashboard-table-scroll` in admin.css — no inline styles). Partner only. |
 | `MostUsedEvalsCard.js` | Collapsible table of the evaluations injected into the most answers, each linking to review mode. Same table classes as `EvalCoverageCard`. Partner only. |
-| `EvalAnalysisSection.js` / `EvalAnalysisReport.js` | "Run eval analysis" at the bottom of partner (see `useEvalAnalysis`). One request (`eval-analysis-run`): stats over every human eval in scope, no volume limit, then one insights call sent at most `MAX_INSIGHT_ROWS` (150) non-perfect rows and as many content-issue rows, errors (harmful, answer and citation errors) first then most recent (`selectInsightRows` in `services/evalAnalysisStats.js`); the report header says when either list was cut. Evaluations count by interaction date; chats are pre-filtered from one day before the start. Past runs still `running` show "In progress" for 10 minutes, then "Did not finish". The report still renders a v1 doc's scores-by-service table; new runs have none. |
+| `src/components/aiAnalysis/EvalAnalysisSection.js` / `EvalAnalysisReport.js` | "Run eval analysis" on the AI-assisted analysis page (`AiAnalysisPage.js`, own `FilterPanel`, enabled only with an institution filter; see `useEvalAnalysis`). One request (`eval-analysis-run`): stats over every human eval in scope, no volume limit, then one insights call sent at most `MAX_INSIGHT_ROWS` (150) non-perfect rows and as many content-issue rows, errors (harmful, answer and citation errors) first then most recent (`selectInsightRows` in `services/evalAnalysisStats.js`); the report header says when either list was cut. Evaluations count by interaction date; chats are pre-filtered from one day before the start. Past runs still `running` show "In progress" for 10 minutes, then "Did not finish". The report still renders a v1 doc's scores-by-service table; new runs have none. |
 
 ## Pure data helpers (`src/utils/dashboard/feedbackBreakdown.js`)
 

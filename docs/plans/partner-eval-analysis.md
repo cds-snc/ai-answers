@@ -2,7 +2,9 @@
 
 **Status:** v2 redesign in progress. PR 1 (coverage table, `analysis-update`)
 and PR 2 (most-used evaluations, `eval-reuse-lists`) are merged. PR 3 (Part B
-simplification) is on `eval-analysis-v2`. For the v1 design it replaces, see
+simplification) is on `eval-analysis-v2`, which also moves Part B off the
+partner dashboard to its own page (see [Where Part B lives](#where-part-b-lives)).
+For the v1 design it replaces, see
 [What v1 did](#what-v1-did).
 **Owner:** Lisa Fast
 **Written:** 2026-07-10 (v1) · **Rewritten:** 2026-11-15 (v2)
@@ -51,8 +53,8 @@ only looks at evaluated rows and knows nothing about reuse.
 
 ## What v2 looks like
 
-Two parts at the bottom of `src/components/admin/PartnerDashboard.js`, below
-the existing eval-informed card.
+Part A is at the bottom of `src/components/admin/PartnerDashboard.js`, below
+the existing eval-informed card. Part B is on its own page (below).
 
 ### Part A — "Evaluation coverage and use" (live, no LLM)
 
@@ -121,6 +123,20 @@ samples are small and the choice of which chats get evaluated skews them, so
 the result would be misleading. Revisit only if volume grows.
 
 ### Part B — "What the explanations say" (on demand, one LLM call)
+
+#### Where Part B lives
+
+Moved off the partner dashboard (decided 2026-11-22) to the **AI-assisted
+analysis** page (`src/pages/AiAnalysisPage.js`, route `ai-analysis`, admin and
+partner roles, linked from the Partner menu as "Run AI-assisted analysis").
+A planned question analysis will sit beside it, so on-demand AI runs get one
+page rather than a button at the bottom of a dashboard. The page has its own
+`FilterPanel` (same configuration as the partner dashboard) and states up
+front that an institution must be selected; each section's Run button points
+at that note with `aria-describedby` while disabled. Question analysis is a
+heading and a "coming soon" line until it's built — no disabled button.
+Components are in `src/components/aiAnalysis/`; locale keys moved from
+`partnerDashboard.evalAnalysis.*` to `admin.aiAnalysis.evalAnalysis.*`.
 
 - An institution filter is required. The button has a plain label: the
   planned count would have needed the precheck request, which was removed.
@@ -194,7 +210,9 @@ the result would be misleading. Revisit only if volume grows.
 - Always `$match` on `Chat.createdAt` before the interactions lookup (done in
   PR 3). The chat match starts one day before the range so a chat that began
   just before it still counts; the exact range applies to
-  `interactions.createdAt`.
+  `interactions.createdAt`. An evaluation from a chat that began more than a
+  day before the range is left out, so counts can differ slightly from the
+  eval dashboard's. This trade-off is intended (confirmed 2026-11-22).
 - Validate the new `buildPipeline` with `explain("executionStats")` on a
   large department and range.
 - Validate the `qaMatches` unwind with `explain("executionStats")` on a
@@ -206,9 +224,9 @@ the result would be misleading. Revisit only if volume grows.
   (`includeEvalCoverage`, via `MetricsService.getEvalCoverageMetrics`), like the
   other partner-only cards — same filters, loading and abort handling, no new
   hook. `useEvalAnalysis.js` drops the precheck and drive loop (PR 3, built).
-- Components in `src/components/admin/dashboard/`: `EvalCoverageCard.js` for
-  Part A (PR 1). `EvalAnalysisSection.js` /
-  `EvalAnalysisReport.js` shrink to Part B (PR 3, built). The report drops the
+- Components: `EvalCoverageCard.js` in `src/components/admin/dashboard/` for
+  Part A (PR 1). `EvalAnalysisSection.js` / `EvalAnalysisReport.js` shrink to
+  Part B (PR 3, built) and move to `src/components/aiAnalysis/`. The report drops the
   cross-tab and the row-data table for new runs.
 - Locales: new keys under `partnerDashboard.evalCoverage.*`, EN and FR
   together. Remove the dead `tooFew`/`tooMany`/progress keys. Program and
@@ -241,6 +259,13 @@ section (EN + FR).
 
 - Is the 60-day "expiring soon" window right, or should it match an evaluation
   cadence the team already works to?
+- **Worst-case run time (not yet measured):** a run is one request with no
+  limit on evaluations in scope, then one insights call with up to 150 + 150
+  rows. Time a run on prod for a large institution with a wide date range
+  against the 300-second request limit and the agent's `timeoutMs`. If it's
+  close, add a guard (range or row cap) rather than bring back the v1 step
+  loop. Until then, a request that times out shows "The analysis failed" even
+  if the server finishes; the run then appears in the past-runs list.
 
 ## What v1 did
 
