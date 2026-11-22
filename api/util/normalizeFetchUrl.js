@@ -1,4 +1,4 @@
-import { isGovernmentHost } from './govHost.js';
+import { hasEncodedPathSeparator, isGovernmentLocation } from './govHost.js';
 
 // Normalize a model-provided URL before making an outbound request to it.
 //
@@ -36,8 +36,9 @@ import { isGovernmentHost } from './govHost.js';
 // raw.githubusercontent.com, which agenticBase.js has the model load as
 // scenario instruction files. Pinned to the main branch: GitHub also serves
 // PR heads (refs/pull/N/head) and fork commits (bare SHAs) under the repo
-// path, and anyone who opens a PR controls those. The model treats these files
-// as instructions.
+// path, and anyone who opens a PR controls those. Encoded '/', '\' or '.' is
+// refused so a path can't climb out of main/ if GitHub decodes it after the
+// prefix check. The model treats these files as instructions.
 //
 // Default ports only: no GC page is served on another port, and an open port
 // choice lets a model probe services on an allowed host.
@@ -47,10 +48,11 @@ const SCENARIO_FILE_PATH = '/cds-snc/ai-answers/main/';
 export function isAllowedFetchUrl(parsed) {
   // The URL parser blanks a scheme's default port (https://x:443 → '').
   if (parsed.port !== '') return false;
-  if (isGovernmentHost(parsed.hostname)) return true;
+  if (isGovernmentLocation(parsed)) return true;
   return (
     parsed.hostname.toLowerCase() === SCENARIO_FILE_HOST &&
-    parsed.pathname.startsWith(SCENARIO_FILE_PATH)
+    parsed.pathname.startsWith(SCENARIO_FILE_PATH) &&
+    !hasEncodedPathSeparator(parsed.pathname)
   );
 }
 
@@ -77,15 +79,16 @@ export function normalizeFetchUrl(value, fieldName = 'url') {
     );
   }
 
-  const result = parsed.protocol === 'https:' ? trimmed : upgradeToHttps(trimmed);
+  const result =
+    parsed.protocol === 'https:' ? trimmed : dropHttpDefaultPort(upgradeToHttps(trimmed));
 
   // AIA-010: the URL is model-chosen, so without this the server would fetch
   // whatever host a prompt-injected model asked for, from inside the VPC.
   // Redirect hops and the resolved IP are checked in fetchGuard.js.
   //
   // Checked on the upgraded URL, not the input: the parser blanks a scheme's
-  // default port, so "http://host:80/" would pass as default and then go out
-  // as "https://host:80/" (and "http://host:443/" would be wrongly refused).
+  // default port, so "http://host:8443/" style checks must see the https URL
+  // that actually goes out (and "http://host:443/" must not be refused).
   if (!isAllowedFetchUrl(new URL(result))) {
     throw new Error(
       `Blocked ${fieldName}: only Government of Canada sites can be fetched (${trimmed})`
@@ -93,6 +96,15 @@ export function normalizeFetchUrl(value, fieldName = 'url') {
   }
 
   return result;
+}
+
+// An explicit ":80" was http's default port. Left in place after the upgrade
+// it would be a non-default https port and the URL would be refused, while
+// the same URL reached as a redirect hop is allowed (guardRedirect in
+// fetchGuard.js deletes port 80). Drop it so both paths agree. Only the
+// authority's port is touched; the rest stays byte-identical.
+function dropHttpDefaultPort(httpsUrl) {
+  return httpsUrl.replace(/^(https:\/\/[^/?#]*?):80(?=[/?#]|$)/i, '$1');
 }
 
 function upgradeToHttps(trimmed) {
