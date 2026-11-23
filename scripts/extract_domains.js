@@ -2,41 +2,25 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { departments_EN } from '../agents/prompts/scenarios/departments_EN.js';
+import { departments_FR } from '../agents/prompts/scenarios/departments_FR.js';
+import { NON_GC_DEPARTMENT_HOSTS } from '../api/util/govHost.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Files to scan (relative to repo root)
-// Updated to use server-side copies under agents/prompts/scenarios
-const files = [
-  path.join(__dirname, '..', 'agents', 'prompts', 'scenarios', 'departments_EN.js'),
-  path.join(__dirname, '..', 'agents', 'prompts', 'scenarios', 'departments_FR.js'),
-];
-
-function extractDomains(text) {
+// Hosts come from the department lists' `url` fields, parsed with URL so that
+// page names like `home.page` or `mn-eng.cfm` are never mistaken for hosts.
+// Same source govHost.js (the fetch/citation allowlist) builds from.
+function extractDomains(departments) {
   const domains = new Set();
-
-  // Match hostnames in URLs or bare hostnames. Capture host only (no path or file)
-  // Examples matched: example.com, sub.example.co.uk, www.example.ca
-  const urlHostRegex = /(?:https?:\/\/)?(?:www\.)?([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+)(?=[\/:"'\s,]|$)/g;
-
-  let m;
-  while ((m = urlHostRegex.exec(text)) !== null) {
-    let d = m[1].toLowerCase();
-
-    // strip trailing dots
-    d = d.replace(/\.+$/, '');
-
-    // skip IPs
-    if (/^\d+\.\d+\.\d+\.\d+$/.test(d)) continue;
-
-    // filter out tokens that look like filenames (contain a dot after a slash or no TLD-like structure)
-    // We allow typical hostnames containing letters/numbers and hyphens and at least one dot
-    if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(d)) continue;
-
-    domains.add(d);
+  for (const dept of departments) {
+    try {
+      domains.add(new URL(dept.url).hostname.toLowerCase().replace(/^www\./, ''));
+    } catch {
+      console.error(`Skipping malformed url for ${dept.name}: ${dept.url}`);
+    }
   }
-
   return Array.from(domains);
 }
 
@@ -101,19 +85,23 @@ function filterAndFormat(domains) {
 }
 
 async function main() {
-  const allDomains = new Set();
+  const domains = extractDomains([...departments_EN, ...departments_FR]);
 
-  for (const file of files) {
-    try {
-      const text = fs.readFileSync(file, 'utf8');
-      const domains = extractDomains(text);
-      domains.forEach(d => allDomains.add(d));
-    } catch (err) {
-      console.error(`Failed to read ${file}: ${err.message}`);
+  // Hosts the GC doesn't control get no *.domain wildcard, matching the
+  // fetch/citation allowlist in govHost.js: 'host' entries cover that host
+  // with or without www, 'pinned' entries only their listed paths.
+  const restricted = [];
+  for (const [host, rule] of NON_GC_DEPARTMENT_HOSTS) {
+    if (!domains.includes(host)) continue;
+    if (rule.match === 'pinned') {
+      rule.paths.forEach(p => restricted.push(`${host}${p}*`));
+    } else {
+      restricted.push(`${host}/*`, `www.${host}/*`);
     }
   }
+  const open = domains.filter(d => !NON_GC_DEPARTMENT_HOSTS.has(d));
 
-  const csv = filterAndFormat(Array.from(allDomains));
+  const csv = [filterAndFormat(open), ...restricted].join('\n');
 
   const outPath = path.join(__dirname, 'domains_for_programmable_search.csv');
   fs.writeFileSync(outPath, csv, 'utf8');

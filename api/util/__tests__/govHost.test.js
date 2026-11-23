@@ -51,6 +51,10 @@ describe('isGovernmentHost', () => {
     }
   });
 
+  it('accepts the CEEFC host from the department list', () => {
+    expect(isGovernmentHost('ceefc-cfuec.ca')).toBe(true);
+  });
+
   it('rejects look-alikes matched only by substring', () => {
     for (const host of [
       'attacker.example',
