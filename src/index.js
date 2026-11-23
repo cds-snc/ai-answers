@@ -9,7 +9,6 @@ import { library } from '@fortawesome/fontawesome-svg-core';
 import '@fortawesome/fontawesome-svg-core/styles.css';
 import { fas } from '@fortawesome/free-solid-svg-icons';
 import { far } from '@fortawesome/free-regular-svg-icons';
-import DataStoreService from './services/DataStoreService.js';
 
 
 // Add the icon packs
@@ -76,21 +75,7 @@ const renderApp = async () => {
   root.render(<App />);
 };
 
-// ---- Environment Logic ----
-if (import.meta.env.PROD) {
-  DataStoreService.checkDatabaseConnection()
-    .then((isConnected) => {
-      console.log(isConnected ? 'Database is connected' : 'Database is NOT connected');
-      renderApp();
-    })
-    .catch((error) => {
-      console.error('Error checking database connection:', error);
-      renderApp();
-    });
-} else {
-  console.log('Running in development mode. Skipping DB check.');
-  renderApp();
-}
+renderApp();
 
 reportWebVitals();
 

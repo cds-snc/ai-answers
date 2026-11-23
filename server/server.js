@@ -393,7 +393,8 @@ app.get('/api/experimental/experimental-instant-answer-dataset', experimentalIns
 app.post('/api/experimental/experimental-instant-answer-dataset', experimentalInstantAnswerDatasetHandler);
 app.delete('/api/experimental/experimental-dataset-delete/:id', experimentalDatasetDeleteHandler);
 app.post('/api/experimental/experimental-dataset-process/:id', experimentalDatasetProcessHandler);
-app.get('/api/db/db-check', dbCheckhandler);
+// Registered for every method. db-check.js returns 405 for anything other than GET.
+app.all('/api/db/db-check', dbCheckhandler);
 // Registered for every method. db-log.js returns 405 for anything other than GET.
 app.all('/api/db/db-log', dbLogHandler);
 app.get('/api/db/db-chat-logs', dbChatLogsHandler);
