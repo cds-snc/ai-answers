@@ -7,7 +7,6 @@
 
 import { deriveExpertFeedbackCategory } from '../api/util/chat-filters.js';
 import { OTHER_LABEL } from '../api/data/programActionSeeds.js';
-import { NON_CLASSIFIABLE_ANSWER_TYPES } from '../api/util/answerTypes.js';
 
 const SENTENCE_NUMBERS = [1, 2, 3, 4];
 
@@ -19,17 +18,10 @@ const reusableValue = (value) => {
     return str && str.toLowerCase() !== 'unknown' ? str : null;
 };
 
-// A row reaches the fallback classifier only when it has no reusable program
-// from the per-question classifier AND its answer type is a real GC answer
-// attempt. Non-normal turns (not-gc / pt-muni / clarifying-question) carry no
-// program, so they stay unclassified instead of being force-fit into a group.
-export const rowNeedsClassification = (row = {}) =>
-    !row.program && !NON_CLASSIFIABLE_ANSWER_TYPES.has(row.answerType || '');
-
 // An evaluator's perfect-rate must differ from the rest of the group by more
 // than this many percentage points (with at least MIN_EVALS_FOR_FLAG evals)
-// to be flagged as an anomaly. Deliberately plain — with 20-200 evals,
-// heavier statistics would overpromise.
+// to be flagged as an anomaly. Deliberately plain — evaluation samples per
+// institution are small, and heavier statistics would overpromise.
 export const ANOMALY_THRESHOLD_PCT_POINTS = 20;
 export const MIN_EVALS_FOR_FLAG = 10;
 
@@ -52,9 +44,10 @@ function joinExplanations(ef) {
         .join('; ');
 }
 
-// Compact snapshot row stored on the EvalAnalysis doc. Text fields are
-// truncated so 200 rows stay comfortably small; the ids allow drilling back
-// to the full interaction later if needed.
+// Compact row for the stats and the insights call. Built from the light
+// query, which has no question or citation text: only rows sent to the
+// insights call get those, through withQuestionDetails. Text fields are
+// truncated to keep the insights request small.
 export function toCompactRow(aggRow) {
     const ef = aggRow.expertFeedback || {};
     const score = typeof ef.totalScore === 'number' ? ef.totalScore : null;
@@ -74,13 +67,51 @@ export function toCompactRow(aggRow) {
         improve: truncate(ef.answerImprovement, 400),
         evaluator: ef.expertEmail || '',
         createdAt: aggRow.createdAt ? new Date(aggRow.createdAt).toISOString() : null,
-        // Answer type drives the classification gate (rowNeedsClassification).
-        answerType: typeof aggRow.answerType === 'string' ? aggRow.answerType : '',
-        // Reuse the per-question classifier's stored program/action so the
-        // report groups the same way the partner dashboard does; the fallback
-        // classifier fills only the rows still left null here.
+        // The per-question classifier's stored program/action, so the
+        // analysis groups the same way the partner dashboard does. Rows
+        // without one stay unclassified (no LLM classification here).
         program: reusableValue(aggRow.program),
         action: reusableValue(aggRow.action)
+    };
+}
+
+// Adds the question and citation text fetched for the rows that go to the
+// insights call. `details` is { question, citationUrl }, or undefined when
+// the interaction wasn't found (the row is returned as is).
+export function withQuestionDetails(row, details) {
+    if (!details) return row;
+    return {
+        ...row,
+        q: truncate(details.question, 300),
+        cite: truncate(details.citationUrl, 200)
+    };
+}
+
+// Most rows the insights call is sent per list. A limit on the model's
+// input, not on the population: the stats always cover every evaluation.
+export const MAX_INSIGHT_ROWS = 150;
+
+export const isNonPerfect = (r) =>
+    (r.score !== null && r.score < 100) || Boolean(r.category && r.category !== 'correct');
+
+// Errors are what the team repairs first, so they're sent first.
+const ERROR_CATEGORIES = new Set(['harmful', 'hasError', 'hasCitationError']);
+const byPriorityThenRecent = (a, b) =>
+    (ERROR_CATEGORIES.has(b.category) - ERROR_CATEGORIES.has(a.category)) ||
+    (b.createdAt || '').localeCompare(a.createdAt || '');
+
+// Picks the rows for the insights call: non-perfect and content-issue rows
+// (a content issue can be flagged on a perfect score), each list errors
+// first, then most recent, capped at `max`. The totals let the report say
+// "based on N of M".
+export function selectInsightRows(rows, max = MAX_INSIGHT_ROWS) {
+    const nonPerfect = rows.filter(isNonPerfect);
+    const contentIssue = rows.filter((r) => r.contentIssue);
+    return {
+        lowScoreRows: [...nonPerfect].sort(byPriorityThenRecent).slice(0, max),
+        nonPerfectTotal: nonPerfect.length,
+        contentIssueRows: [...contentIssue].sort(byPriorityThenRecent).slice(0, max),
+        contentIssueTotal: contentIssue.length
     };
 }
 
@@ -166,83 +197,11 @@ export function computeStats(rows) {
     };
 }
 
-// A group needs at least this many evaluations to appear in the cross-tab:
-// one evaluation is an anecdote, not a pattern. Smaller groups are dropped
-// from the table and reported in aggregate (skippedSingles).
-export const MIN_GROUP_COUNT = 2;
-
-// The informative halves of a row's program/action — "Other"/missing collapse
-// to null so they're left off the combined label rather than shown as "— Other".
-export function labelParts(row) {
-    return {
-        program: row.program && row.program !== OTHER_LABEL ? row.program : null,
-        action: row.action && row.action !== OTHER_LABEL ? row.action : null
-    };
-}
-
-// Combined "program — action" group label from explicit parts, e.g.
-// "Canada child benefit — Change my contact information". Reused for the French
-// label (pass the translated parts) so the join/omit logic lives in one place.
+// Combined "program — action" label from explicit parts, e.g.
+// "Canada child benefit — Change my contact information". Only used to build
+// the French label for a stored v1 report's scores-by-service table (pass the
+// translated parts); new runs have no such table.
 export function combinedLabelFrom(program, action) {
     if (program && action) return `${program} — ${action}`;
     return program || action || OTHER_LABEL;
-}
-
-export function combinedLabel(row) {
-    const { program, action } = labelParts(row);
-    return combinedLabelFrom(program, action);
-}
-
-// Tier 2 cross-tab: score categories per combined program—action group, built
-// after classification has tagged the rows. Groups sorted by non-perfect
-// rate (descending), always-perfect groups flagged.
-export function buildCrossTab(rows) {
-    const byLabel = new Map();
-    rows.forEach((r) => {
-        if (!r.program) return; // unclassified rows are counted separately
-        const key = combinedLabel(r);
-        if (!byLabel.has(key)) byLabel.set(key, []);
-        byLabel.get(key).push(r);
-    });
-
-    const all = Array.from(byLabel.entries()).map(([label, groupRows]) => {
-        const summary = summarizeGroup(groupRows);
-        // One clickable example per group so evaluators can open a real
-        // conversation from the report: prefer a non-perfect row (that's the
-        // one worth inspecting), else the group's first row.
-        const exampleRow =
-            groupRows.find((r) => (r.score !== null && r.score < 100) || (r.category && r.category !== 'correct')) ||
-            groupRows[0];
-        // The cleaned English parts are constant within a group (the label is
-        // derived from them). Kept so the display boundary can build a French
-        // label without re-parsing the combined string.
-        const { program, action } = labelParts(groupRows[0]);
-        return {
-            label,
-            program,
-            action,
-            example: { chatId: exampleRow.chatId, interactionId: exampleRow.id, lang: exampleRow.lang },
-            count: summary.count,
-            scoredCount: summary.scoredCount,
-            nonPerfectCount: summary.scoredCount - summary.perfectCount,
-            pctNonPerfect: summary.pctPerfect !== null ? 100 - summary.pctPerfect : null,
-            categories: summary.categories,
-            contentIssueCount: summary.contentIssueCount,
-            alwaysPerfect: summary.scoredCount > 0 && summary.pctPerfect === 100
-        };
-    });
-
-    const groups = all
-        .filter((g) => g.count >= MIN_GROUP_COUNT)
-        .sort((a, b) => (b.pctNonPerfect ?? -1) - (a.pctNonPerfect ?? -1) || b.count - a.count);
-    const skipped = all.filter((g) => g.count < MIN_GROUP_COUNT);
-
-    return {
-        groups,
-        skippedSingles: {
-            groupCount: skipped.length,
-            rowCount: skipped.reduce((sum, g) => sum + g.count, 0)
-        },
-        unclassifiedCount: rows.filter((r) => !r.program).length
-    };
 }

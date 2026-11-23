@@ -21,6 +21,7 @@ export const ROUTE_SLUGS = {
   metrics:                 { en: 'metrics',                      fr: 'metriques' },
   'public-dashboard':      { en: 'public-dashboard',             fr: 'tableau-de-bord-public' },
   'partner-dashboard':     { en: 'partner-dashboard',            fr: 'tableau-de-bord-partenaire' },
+  'ai-analysis':           { en: 'ai-analysis',                  fr: 'analyse-assistee-par-ia' },
   'technical-metrics':     { en: 'technical-metrics',            fr: 'metriques-techniques' },
   sessions:                { en: 'sessions',                     fr: 'sessions' },
   'scenario-overrides':    { en: 'scenario-overrides',           fr: 'derogation-scenarios' },

@@ -28,7 +28,6 @@ vi.mock('../dashboard/CitationPagesCard.js', () => ({ default: () => null }));
 vi.mock('../dashboard/AnswerTypesCard.js', () => ({ default: () => null }));
 vi.mock('../dashboard/ContentIssueChatsCard.js', () => ({ default: () => null }));
 vi.mock('../dashboard/CollapsibleCard.js', () => ({ default: ({ children }) => <div>{children}</div> }));
-vi.mock('../dashboard/EvalAnalysisSection.js', () => ({ default: () => null }));
 vi.mock('../dashboard/NoDataCard.js', () => ({ default: () => null }));
 
 describe('PartnerDashboard StatusMessage role', () => {

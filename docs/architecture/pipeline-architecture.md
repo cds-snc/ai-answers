@@ -424,6 +424,13 @@ short-circuit variants when a verified match was found)
 - `checkUrlStatus`: Validate URL accessibility
 - `contextAgentTool`: Re-derive context if needed
 
+Both fetch tools take a model-chosen URL, so they are restricted (AIA-010):
+`normalizeFetchUrl` allows only Government of Canada hosts (`api/util/govHost.js`, the same
+check citations get) plus `raw.githubusercontent.com/cds-snc/ai-answers/main/…` for scenario
+files (no encoded `/`, `\` or `.` in the path), on default ports. `api/util/fetchGuard.js` refuses connections whose DNS answer
+includes a private, loopback, link-local or reserved address (checked at connect time, so it
+covers DNS rebinding and every hop) and re-checks the allowlist on each redirect, https only.
+
 **Output Parsing:**
 - `<answer>` block: Main content (1-4 sentences)
 - `<citation-url>`: AI's proposed citation
@@ -452,7 +459,9 @@ no network request — the page is not fetched):
 2. URL must be absolute `http(s)`, carry no credentials, and have a Government of Canada
    host: `canada.ca`/`gc.ca` or a subdomain, or a host from `departments_EN.js` /
    `departments_FR.js` (`api/util/govHost.js`). Matching is exact or dot-boundary suffix,
-   never substring. Anything else → fallback, and a `warn` graph event is logged with the
+   never substring. Department hosts the GC doesn't control (`NON_GC_DEPARTMENT_HOSTS`)
+   match without subdomains, and `canada.multites.net` (shared vendor hosting) only under
+   the thesaurus paths. Anything else → fallback, and a `warn` graph event is logged with the
    hostname only (AIA-007).
 3. Allowed URL is passed through unchanged (no http→https upgrade).
 4. If the validator throws → general/department search fallback (fails closed).

@@ -1,102 +1,9 @@
-import axios from 'axios';
-import { Agent } from 'https';
-import ServerLoggingService from './ServerLoggingService.js';
+// Citation URL validation (AIA-007): formatting and host only, no network
+// request. Outbound fetches of model-chosen URLs live in agents/tools and are
+// guarded by api/util/normalizeFetchUrl.js + fetchGuard.js (AIA-010).
 import { logGraphEvent } from '../agents/graphs/GraphEventLogger.js';
 import { isGovernmentUrl } from '../api/util/govHost.js';
 
-function getHttpsAgent() {
-  return new Agent({ rejectUnauthorized: false });
-}
-
-function isKnown404(finalUrl) {
-  return finalUrl.includes('404.html');
-}
-
-function getFinalUrl(response, url) {
-  const final = response?.request?.res?.responseUrl || url;
-  // Remove trailing slash for consistency
-  return final.endsWith('/') && final.length > 1 ? final.slice(0, -1) : final;
-}
-
-function logCheck(url, response, method, chatId) {
-  // Fire-and-forget log forwarding; do not await so callers remain sync
-  try {
-    logGraphEvent('info', `Checked URL: ${url} => ${response.status} (${getFinalUrl(response, url)}) [${method.toUpperCase()}]`, chatId || 'system', {
-      url,
-      status: response.status,
-      finalUrl: getFinalUrl(response, url),
-      method: method.toUpperCase(),
-    });
-  } catch (_e) {
-    // swallow to avoid affecting URL checks
-  }
-}
-// Same rejectUnauthorized:false axios GET/HEAD pattern as the outbound fetch
-// tools (agents/tools/downloadWebPage.js, checkURL.js), but this one never got
-// api/util/normalizeFetchUrl.js's http->https upgrade applied — an http:// url
-// here would hit the same silent-VPC-hang bug that file exists to prevent.
-// Currently harmless: validateUrl (below), the only caller of this function,
-// has no production caller of its own today (test files only). If validateUrl
-// is ever wired back up, or this pattern gets copied for a new tool, apply
-// normalizeFetchUrl(url) here first.
-async function checkUrlWithMethod(url, method = 'head', chatId) {
-  const httpsAgent = getHttpsAgent();
-  let result = {
-    isValid: false,
-    status: null,
-    finalUrl: url,
-    error: null
-  };
-  try {
-    const response = await axios({
-      method,
-      url,
-      httpsAgent,
-      maxRedirects: 10,
-      timeout: 10000,
-      headers: {
-        'User-Agent': process.env.USER_AGENT || 'ai-answers',
-      },
-      validateStatus: () => true,
-    });
-    result.status = response.status;
-    result.finalUrl = getFinalUrl(response, url);
-    result.isValid = response.status === 200 && !isKnown404(result.finalUrl);
-    logCheck(url, response, method, chatId);
-    return result;
-  } catch (error) {
-    result.status = error.response?.status || 500;
-    result.finalUrl = url;
-    result.isValid = false;
-    result.error = error.message || 'Unknown error';
-    logCheck(url, error.response || { status: result.status }, method, chatId);
-    return result;
-  }
-}
-
-export const UrlValidationService = {
-  async validateUrl(url, chatId) {
-    let headResult = await checkUrlWithMethod(url, 'head', chatId);
-    let result = headResult;
-
-    if (!headResult.isValid) {
-      let getResult = await checkUrlWithMethod(url, 'get', chatId);
-      result = getResult;
-    }
-
-    return {
-      isValid: result.isValid,
-      url: result.finalUrl,
-      status: result.status,
-      error: result.error || undefined
-    };
-  },
-
-  // Expose internals for testing if needed
-  __private__: { checkUrlWithMethod, isKnown404, getFinalUrl }
-};
-
-// --- Lightweight formatting-only validation (bottom of file for visibility) ---
 function generateFallbackSearchUrl(lang, question, department, t) {
   const encodedQuestion = encodeURIComponent(question || '');
   let searchUrl;
@@ -183,15 +90,16 @@ function checkCitationUrl(url, lang = 'en', question = '', department = undefine
   };
 }
 
-UrlValidationService.checkCitationUrl = checkCitationUrl;
+export const UrlValidationService = {
+  checkCitationUrl,
 
-// Formatting-only validator (no live HTTP check). Async for its existing
-// callers; the work is synchronous.
-UrlValidationService.validateUrlFormatting = async function (url, lang = 'en', question = '', department = undefined, t = null, chatId = null) {
-  return checkCitationUrl(url, lang, question, department, t, chatId);
-};
+  // Async for its existing callers; the work is synchronous.
+  async validateUrlFormatting(url, lang = 'en', question = '', department = undefined, t = null, chatId = null) {
+    return checkCitationUrl(url, lang, question, department, t, chatId);
+  },
 
-// General/department search URL on its own, for fail-closed paths.
-UrlValidationService.fallbackSearchUrl = function (lang, question, department) {
-  return generateFallbackSearchUrl(lang, question, department).fallbackUrl;
+  // General/department search URL on its own, for fail-closed paths.
+  fallbackSearchUrl(lang, question, department) {
+    return generateFallbackSearchUrl(lang, question, department).fallbackUrl;
+  },
 };
