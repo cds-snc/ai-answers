@@ -1,74 +1,74 @@
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 
+const DEFAULT_LOG_LIMIT = 1000;
+const MAX_LOG_LIMIT = 1000;
+const MAX_LOG_SKIP = 100000;
+
+function readNonNegativeInt(value, { fallback, max, min = 0 }) {
+    if (value === undefined) {
+        return fallback;
+    }
+    if (typeof value !== 'string' || !/^\d+$/.test(value)) {
+        return null;
+    }
+    const parsed = Number(value);
+    if (!Number.isSafeInteger(parsed) || parsed < min || parsed > max) {
+        return null;
+    }
+    return parsed;
+}
+
 async function logHandler(req, res) {
-    if (req.method === 'POST') {
-        try {
-            const { chatId, logLevel, message, metadata } = req.body;
+    try {
+        const { chatId, level, skip, limit } = req.query;
 
-            // Validate logLevel
-            const allowedLevels = ['info', 'debug', 'warn', 'error'];
-            if (!allowedLevels.includes(logLevel)) {
-                return res.status(400).json({ error: 'Invalid logLevel' });
-            }
-
-            // Sanitize chatId
-            let safeChatId = 'system';
-            if (chatId) {
-                safeChatId = typeof chatId === 'string' ? chatId : String(chatId);
-            }
-
-            ServerLoggingService.log(logLevel, message, safeChatId, metadata);
-            return res.status(200).json({ success: true });
-        } catch (error) {
-            console.error('Error saving log:', error);
-            return res.status(500).json({ error: 'Failed to save log' });
+        // One chat per request. A missing id used to match every chat in the
+        // legacy collection. Arrays are rejected here too, so a repeated
+        // chatId cannot arrive as a query operator.
+        if (typeof chatId !== 'string' || chatId.trim() === '') {
+            return res.status(400).json({ error: 'Invalid chatId' });
         }
-    } else if (req.method === 'GET') {
-        try {
-            const { chatId, level, skip = 0, limit = 1000 } = req.query;
+        const safeChatId = chatId.trim();
 
-            // Sanitize and validate query parameters to avoid NoSQL injection
-            let safeChatId = null;
-            if (chatId !== undefined) {
-                // Reject objects/arrays to prevent operator injection
-                if (typeof chatId === 'object' && chatId !== null) {
-                    return res.status(400).json({ error: 'Invalid chatId' });
-                }
-                safeChatId = typeof chatId === 'string' ? chatId : String(chatId);
+        let safeLevel = null;
+        if (level !== undefined) {
+            const allowedLevels = ['info', 'debug', 'warn', 'error', 'all'];
+            const normalizedLevel = String(level).toLowerCase();
+            if (!allowedLevels.includes(normalizedLevel)) {
+                return res.status(400).json({ error: 'Invalid level' });
             }
-
-            let safeLevel = null;
-            if (level !== undefined) {
-                const allowedLevels = ['info', 'debug', 'warn', 'error', 'all'];
-                const normalizedLevel = String(level).toLowerCase();
-                if (!allowedLevels.includes(normalizedLevel)) {
-                    return res.status(400).json({ error: 'Invalid level' });
-                }
-                safeLevel = normalizedLevel;
-            }
-
-            const logs = await ServerLoggingService.getLogs({
-                chatId: safeChatId,
-                level: safeLevel,
-                skip: parseInt(skip),
-                limit: parseInt(limit)
-            });
-            return res.status(200).json(logs);
-        } catch (error) {
-            console.error('Error fetching logs:', error);
-            return res.status(500).json({ error: 'Failed to fetch logs' });
+            safeLevel = normalizedLevel;
         }
-    } else {
-        res.setHeader('Allow', ['GET', 'POST']);
-        return res.status(405).end(`Method ${req.method} Not Allowed`);
+
+        const safeSkip = readNonNegativeInt(skip, { fallback: 0, max: MAX_LOG_SKIP });
+        if (safeSkip === null) {
+            return res.status(400).json({ error: 'Invalid skip' });
+        }
+        const safeLimit = readNonNegativeInt(limit, { fallback: DEFAULT_LOG_LIMIT, max: MAX_LOG_LIMIT, min: 1 });
+        if (safeLimit === null) {
+            return res.status(400).json({ error: 'Invalid limit' });
+        }
+
+        const logs = await ServerLoggingService.getLogs({
+            chatId: safeChatId,
+            level: safeLevel,
+            skip: safeSkip,
+            limit: safeLimit
+        });
+        return res.status(200).json(logs);
+    } catch (error) {
+        console.error('Error fetching logs:', error);
+        return res.status(500).json({ error: 'Failed to fetch logs' });
     }
 }
 
-// Only require auth and admin for GET requests
+// Logs for one chat, loaded by ChatViewer (DataStoreService.getLogs).
+// Partner or admin only.
 export default function handler(req, res) {
-    if (req.method === 'GET') {
-        return withProtection(logHandler, authMiddleware, partnerOrAdminMiddleware)(req, res);
+    if (req.method !== 'GET') {
+        res.setHeader('Allow', 'GET');
+        return res.status(405).end(`Method ${req.method} Not Allowed`);
     }
-    return logHandler(req, res);
+    return withProtection(logHandler, authMiddleware, partnerOrAdminMiddleware)(req, res);
 }
