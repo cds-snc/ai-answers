@@ -90,6 +90,32 @@ describe('db-check', () => {
     expect(JSON.stringify(res.payload)).not.toContain('db-connect.js');
   });
 
+  it('handles an authentication throw without an unhandled rejection', async () => {
+    const unhandled = [];
+    const onUnhandled = (reason) => unhandled.push(reason);
+    process.on('unhandledRejection', onUnhandled);
+    try {
+      const res = createRes();
+      // The server mounts this handler without awaiting it; let the wrapper finish.
+      handler({
+        method: 'GET',
+        path: '/api/db/db-check',
+        isAuthenticated: () => {
+          throw new Error('session store exploded');
+        },
+      }, res);
+      await new Promise((resolve) => setImmediate(resolve));
+
+      expect(unhandled).toEqual([]);
+      expect(res.statusCode).toBe(500);
+      expect(res.payload).toEqual({ message: 'Failed to complete database check' });
+      expect(JSON.stringify(res.payload)).not.toContain('session store');
+      expect(dbConnect).not.toHaveBeenCalled();
+    } finally {
+      process.off('unhandledRejection', onUnhandled);
+    }
+  });
+
   it('rejects a non-GET method before authentication', async () => {
     const res = createRes();
     await handler({ method: 'POST', path: '/api/db/db-check' }, res);
