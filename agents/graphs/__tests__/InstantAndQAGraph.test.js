@@ -22,7 +22,7 @@ vi.mock('../../../services/InteractionPersistenceService.js', () => ({
     InteractionPersistenceService: { persistInteraction: vi.fn() }
 }));
 vi.mock('../../../services/UrlValidationService.js', () => ({
-    UrlValidationService: { validateUrl: vi.fn(), validateUrlFormatting: vi.fn() }
+    UrlValidationService: { validateUrlFormatting: vi.fn() }
 }));
 
 vi.mock('../GraphEventLogger.js', () => ({
@@ -110,7 +110,6 @@ describe('InstantAndQAGraph Workflow', () => {
 
         InteractionPersistenceService.persistInteraction.mockResolvedValue({ success: true });
 
-        UrlValidationService.validateUrl.mockResolvedValue({ isValid: true, url: 'https://example.com', confidenceRating: 1 });
         UrlValidationService.validateUrlFormatting.mockResolvedValue({ isValid: true, url: 'https://example.com' });
     });
 

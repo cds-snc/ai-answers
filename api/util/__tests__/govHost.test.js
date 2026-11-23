@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { isGovernmentHost, isGovernmentUrl } from '../govHost.js';
+import { departments_EN } from '../../../agents/prompts/scenarios/departments_EN.js';
+import { departments_FR } from '../../../agents/prompts/scenarios/departments_FR.js';
 
 describe('isGovernmentHost', () => {
   it('accepts canada.ca, gc.ca and their subdomains', () => {
@@ -20,6 +22,32 @@ describe('isGovernmentHost', () => {
     // rcmp.ca is listed without www; elections.ca and bankofcanada.ca with it.
     for (const host of ['rcmp.ca', 'www.rcmp.ca', 'www.elections.ca', 'elections.ca', 'www.bankofcanada.ca']) {
       expect(isGovernmentHost(host), host).toBe(true);
+    }
+  });
+
+  // Exact host only: worldcat.org hosts other libraries' catalogues.
+  it("accepts LAC's Aurora catalogue host, but not the rest of worldcat.org", () => {
+    expect(isGovernmentHost('bac-lac.on.worldcat.org')).toBe(true);
+    expect(isGovernmentHost('BAC-LAC.on.worldcat.org')).toBe(true);
+    for (const host of ['worldcat.org', 'other.on.worldcat.org', 'x.bac-lac.on.worldcat.org']) {
+      expect(isGovernmentHost(host), host).toBe(false);
+    }
+  });
+
+  // Department hosts the GC doesn't control get no subdomain wildcard.
+  it('accepts woudc.org and noradsanta.org, but none of their subdomains', () => {
+    for (const host of ['woudc.org', 'www.woudc.org', 'noradsanta.org', 'www.noradsanta.org']) {
+      expect(isGovernmentHost(host), host).toBe(true);
+    }
+    for (const host of ['x.woudc.org', 'evil.noradsanta.org', 'x.www.noradsanta.org']) {
+      expect(isGovernmentHost(host), host).toBe(false);
+    }
+  });
+
+  // canada.multites.net is shared vendor hosting: the host alone isn't enough.
+  it('rejects the path-pinned multites host and its subdomains on host alone', () => {
+    for (const host of ['canada.multites.net', 'x.canada.multites.net', 'multites.net']) {
+      expect(isGovernmentHost(host), host).toBe(false);
     }
   });
 
@@ -63,6 +91,36 @@ describe('isGovernmentUrl', () => {
       undefined,
     ]) {
       expect(isGovernmentUrl(url), String(url)).toBe(false);
+    }
+  });
+
+  it('accepts every URL in the department list', () => {
+    for (const dept of [...departments_EN, ...departments_FR]) {
+      expect(isGovernmentUrl(dept.url), dept.url).toBe(true);
+    }
+  });
+
+  it('accepts canada.multites.net only under the thesaurus paths', () => {
+    for (const url of [
+      'https://canada.multites.net/cst/index.htm',
+      'https://canada.multites.net/tsb/index.htm',
+      'https://CANADA.multites.net/cst/EN/page.htm',
+    ]) {
+      expect(isGovernmentUrl(url), url).toBe(true);
+    }
+    for (const url of [
+      'https://canada.multites.net/',
+      'https://canada.multites.net/other-tenant/index.htm',
+      'https://canada.multites.net/cstx/index.htm',
+      'https://canada.multites.net/cst', // no trailing slash: not under /cst/
+      'https://canada.multites.net/cst/../other/index.htm', // parser resolves ..
+      'https://canada.multites.net/cst/..%2Fother/index.htm',
+      'https://canada.multites.net/cst/%2e%2e/other/index.htm',
+      'https://canada.multites.net/cst/..%5Cother/index.htm',
+      'https://x.canada.multites.net/cst/index.htm',
+      'https://www.canada.multites.net/cst/index.htm',
+    ]) {
+      expect(isGovernmentUrl(url), url).toBe(false);
     }
   });
 
