@@ -58,7 +58,7 @@ const AiAnalysisPage = ({ lang = 'en' }) => {
         appliedFilters={appliedFilters}
       />
 
-      <h2 className="dashboard-section-title">{t('admin.aiAnalysis.questionAnalysis.title')}</h2>
+      <h2>{t('admin.aiAnalysis.questionAnalysis.title')}</h2>
       <div className="dashboard-section">
         <p className="font-size-text-xsm-nr">{t('admin.aiAnalysis.questionAnalysis.comingSoon')}</p>
       </div>

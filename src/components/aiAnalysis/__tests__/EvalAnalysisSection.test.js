@@ -99,6 +99,23 @@ describe('EvalAnalysisSection', () => {
     mockUseEvalAnalysis.mockImplementation(() => defaultHookResult);
   });
 
+  it('shows the report right after Run, before the past runs, with its parts one level below it', () => {
+    mockUseEvalAnalysis.mockReturnValueOnce({
+      ...defaultHookResult,
+      pastRunsDepartment: 'TBS-SCT',
+      pastRuns: [{ _id: 'r1', status: 'complete', evalCount: 10, createdAt: '2026-11-01T00:00:00Z' }],
+      analysis: {
+        _id: 'a1', status: 'complete', evalCount: 3, stats: null,
+        insights: { explanationThemes: [{ theme: 'Theme', count: 2 }] }
+      }
+    });
+    render(<EvalAnalysisSection lang="en" appliedDepartment="TBS-SCT" appliedFilters={{ department: 'TBS-SCT' }} />);
+    const report = screen.getByRole('heading', { level: 3, name: 'Analysis report' });
+    expect(precedes(screen.getByRole('button', { name: 'Run eval analysis' }), report)).toBe(true);
+    expect(precedes(report, screen.getByText('Past analyses', { selector: 'summary' }))).toBe(true);
+    expect(screen.getByRole('heading', { level: 4, name: 'What the explanations say' })).toBeTruthy();
+  });
+
   it('names the past-runs table and scopes its headers', () => {
     mockUseEvalAnalysis.mockReturnValueOnce({
       ...defaultHookResult,

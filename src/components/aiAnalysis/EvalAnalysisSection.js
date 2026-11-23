@@ -93,7 +93,7 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
 
   return (
     <div>
-      <h2 className="dashboard-section-title">{t('admin.aiAnalysis.evalAnalysis.title')}</h2>
+      <h2>{t('admin.aiAnalysis.evalAnalysis.title')}</h2>
       <div className="dashboard-section">
         <p className="font-size-text-xsm-nr">{t('admin.aiAnalysis.evalAnalysis.description')}</p>
 
@@ -126,6 +126,29 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
         )}
       </div>
 
+      {/* Report (completed run, or partial results after an error), right
+          after Run so it's the next thing read after "Results loaded."; past
+          runs come after it. */}
+      {reportShown && (
+        <div className="dashboard-section">
+          <EvalAnalysisReport analysis={analysis} lang={lang} />
+        </div>
+      )}
+
+      {/* A past run loaded in a non-terminal state has no report to show;
+          say why instead of rendering nothing. One still running (same
+          check as its "In progress" label) is info: wait and check back.
+          One that never finished is a warning: a broken run with one way
+          forward, re-running it. */}
+      {analysis && !running && analysis.status !== 'complete' && analysis.status !== 'error' && (
+        <div className="dashboard-section">
+          {isInProgress(analysis) ? (
+            <StatusMessage variant="info" nonce={loadCount} message={t('admin.aiAnalysis.evalAnalysis.report.inProgress')} />
+          ) : (
+            <StatusMessage variant="warning" nonce={loadCount} message={t('admin.aiAnalysis.evalAnalysis.report.incomplete')} />
+          )}
+        </div>
+      )}
       {appliedDepartment && pastRunsDepartment === appliedDepartment && pastRuns.length === 0 && (
         <div className="dashboard-section">
           <StatusMessage variant="info" message={t('admin.aiAnalysis.evalAnalysis.pastRuns.none')} />
@@ -189,27 +212,6 @@ const EvalAnalysisSection = ({ lang = 'en', appliedDepartment = '', appliedFilte
         </div>
       )}
 
-      {/* Report (completed run, or partial results after an error) */}
-      {reportShown && (
-        <div className="dashboard-section">
-          <EvalAnalysisReport analysis={analysis} lang={lang} />
-        </div>
-      )}
-
-      {/* A past run loaded in a non-terminal state has no report to show;
-          say why instead of rendering nothing. One still running (same
-          check as its "In progress" label) is info: wait and check back.
-          One that never finished is a warning: a broken run with one way
-          forward, re-running it. */}
-      {analysis && !running && analysis.status !== 'complete' && analysis.status !== 'error' && (
-        <div className="dashboard-section">
-          {isInProgress(analysis) ? (
-            <StatusMessage variant="info" nonce={loadCount} message={t('admin.aiAnalysis.evalAnalysis.report.inProgress')} />
-          ) : (
-            <StatusMessage variant="warning" nonce={loadCount} message={t('admin.aiAnalysis.evalAnalysis.report.incomplete')} />
-          )}
-        </div>
-      )}
     </div>
   );
 };

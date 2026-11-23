@@ -106,7 +106,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
           headings — the card border/box chrome is reserved for the stat and
           chart cards elsewhere on the dashboard. */}
       <div className="dashboard-section">
-        <h3 className="dashboard-section-title">{t('admin.aiAnalysis.evalAnalysis.report.title')}</h3>
+        <h3>{t('admin.aiAnalysis.evalAnalysis.report.title')}</h3>
         <p className="font-size-text-xsm-nr">
           {t('admin.aiAnalysis.evalAnalysis.report.header')
             .replace('{count}', fmtN(analysis.evalCount))
@@ -144,7 +144,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
       {/* Scores by combined program — action group: v1 reports only */}
       {crossTab && Array.isArray(crossTab.groups) && (
         <div className="dashboard-section">
-          <h3 id="eval-analysis-program-actions-title" className="dashboard-section-title">{t('admin.aiAnalysis.evalAnalysis.report.programActionsTitle')}</h3>
+          <h4 id="eval-analysis-program-actions-title">{t('admin.aiAnalysis.evalAnalysis.report.programActionsTitle')}</h4>
           {crossTabTable(crossTab.groups, t('admin.aiAnalysis.evalAnalysis.report.colProgramAction'), 'eval-analysis-program-actions-title')}
           {crossTab.skippedSingles?.groupCount > 0 && (
             <p className="font-size-text-xsm-nr" style={{ marginTop: 8 }}>
@@ -159,7 +159,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
       {/* Explanation themes */}
       {insights && Array.isArray(insights.explanationThemes) && insights.explanationThemes.length > 0 && (
         <div className="dashboard-section">
-          <h3 className="dashboard-section-title">{t('admin.aiAnalysis.evalAnalysis.report.themesTitle')}</h3>
+          <h4>{t('admin.aiAnalysis.evalAnalysis.report.themesTitle')}</h4>
           {insights.explanationThemes.map((theme, i) => (
             <div key={i} style={{ marginBottom: 16 }}>
               <p style={{ marginBottom: 4 }}>
@@ -186,7 +186,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
       {/* Content issues — only when some were flagged; no card for a zero count */}
       {stats && stats.contentIssueCount > 0 && (
         <div className="dashboard-section">
-          <h3 className="dashboard-section-title">{t('admin.aiAnalysis.evalAnalysis.report.contentIssuesTitle')}</h3>
+          <h4>{t('admin.aiAnalysis.evalAnalysis.report.contentIssuesTitle')}</h4>
           <p className="font-size-text-xsm-nr">
             {t('admin.aiAnalysis.evalAnalysis.report.contentIssuesCount').replace('{count}', fmtN(stats.contentIssueCount))}
           </p>
@@ -197,7 +197,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
       {/* EN vs FR */}
       {stats && (
         <div className="dashboard-section">
-          <h3 id="eval-analysis-language-title" className="dashboard-section-title">{t('admin.aiAnalysis.evalAnalysis.report.languageTitle')}</h3>
+          <h4 id="eval-analysis-language-title">{t('admin.aiAnalysis.evalAnalysis.report.languageTitle')}</h4>
           <div style={{ overflowX: 'auto' }}>
             <table className="display" aria-labelledby="eval-analysis-language-title" style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
@@ -233,7 +233,7 @@ const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
           (which uses the same delta internally) stays. */}
       {stats && Array.isArray(stats.evaluators) && stats.evaluators.length > 0 && (
         <div className="dashboard-section">
-          <h3 id="eval-analysis-evaluators-title" className="dashboard-section-title">{t('admin.aiAnalysis.evalAnalysis.report.evaluatorsTitle')}</h3>
+          <h4 id="eval-analysis-evaluators-title">{t('admin.aiAnalysis.evalAnalysis.report.evaluatorsTitle')}</h4>
           <div style={{ overflowX: 'auto' }}>
             <table className="display" aria-labelledby="eval-analysis-evaluators-title" style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
