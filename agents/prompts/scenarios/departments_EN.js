@@ -2,6 +2,13 @@
 // List of Government of Canada departments and agencies with their URLs and abbreviations
 // Generated 2024-12-05T20:45:37.478Z
 // Updated with abbrKey for cross-language matching
+//
+// When you add, remove, or change a `url` here (or in departments_FR.js),
+// run `node scripts/extract_domains.js` and commit the regenerated
+// scripts/domains_for_programmable_search.csv, then sync the Google
+// Programmable Search Engine site list from it. The same urls also feed the
+// fetch/citation allowlist in api/util/govHost.js. See "Updating the search
+// engine site list" in docs/how-to/how-to-add-dept-partner.md.
 
 export const departments_EN = [
   {
@@ -85,11 +92,6 @@ export const departments_EN = [
     "abbrKey": "CBSA-ASFC"
   },
   {
-    "name": "Canada Brand",
-    "url": "https://agriclient.powerappsportals.com/en-CA/home-accueil/",
-    "abbrKey": "CB-MC"
-  },
-  {
     "name": "Canada.ca Experience Office",
     "url": "https://design.canada.ca/index.html",
     "abbrKey": "CEO-BEC"
@@ -120,6 +122,11 @@ export const departments_EN = [
     "abbrKey": "CEIC-CAEC"
   },
   {
+    "name": "Canada Enterprise Emergency Funding Corporation",
+    "url": "https://ceefc-cfuec.ca/home-ceefc/",
+    "abbrKey": "CEEFC-CFUEC"
+  },
+  {
     "name": "Canada Firearms Centre",
     "url": "https://rcmp.ca/en/firearms",
     "abbrKey": "CAFC"
@@ -141,7 +148,7 @@ export const departments_EN = [
   },
   {
     "name": "Canada Lands Company Limited",
-    "url": "https://www.clc-sic.ca/",
+    "url": "https://www.clcl-sicl.ca/",
     "abbrKey": "CLC-SIC"
   },
   {
@@ -836,7 +843,7 @@ export const departments_EN = [
   },
   {
     "name": "National Capital Commission",
-    "url": "https://www.ncc-ccn.gc.ca/",
+    "url": "https://ncc-ccn.gc.ca/",
     "abbrKey": "NCC-CCN"
   },
   {
