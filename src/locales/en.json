@@ -440,6 +440,7 @@
       "metrics": "View performance metrics",
       "publicDashboard": "Public dashboard",
       "partnerDashboard": "Partner dashboard",
+      "aiAnalysis": "Run AI-assisted analysis",
       "technicalMetrics": "View technical metrics",
       "sessions": "Active sessions",
       "chatDashboard": "View chats",
@@ -861,6 +862,75 @@
       "avgLatency": "Avg latency (ms)",
       "rpm": "Requests / minute",
       "errorLoading": "Failed to load sessions: {error}"
+    },
+    "aiAnalysis": {
+      "title": "AI-assisted analysis",
+      "intro": "Use AI to find patterns in the evaluations and questions for one institution.",
+      "selectInstitution": "Select an institution in the filters to run an analysis.",
+      "evalAnalysis": {
+        "title": "Eval analysis",
+        "description": "Analyze the expert evaluations matching the current filters to surface patterns: what the explanations indicate, content issues, English vs French differences, and per-evaluator scores.",
+        "runButton": "Run eval analysis",
+        "error": "The analysis failed. Try again.",
+        "running": "Analyzing the evaluations. This can take a minute.",
+        "status": {
+          "inProgress": "In progress",
+          "incomplete": "Did not finish",
+          "complete": "Complete",
+          "error": "Failed"
+        },
+        "pastRuns": {
+          "title": "Past analyses",
+          "colDate": "Run date",
+          "colRange": "Date range",
+          "colCount": "Evaluations",
+          "colStatus": "Status",
+          "colBy": "Run by",
+          "colActions": "Actions",
+          "view": "View",
+          "none": "No past analyses for this institution."
+        },
+        "report": {
+          "title": "Analysis report",
+          "header": "{count} expert evaluations · {department} · {start} – {end}",
+          "runOn": "Run on {date}",
+          "runBy": "by {email}",
+          "excluded": "{count} without a score excluded from score statistics",
+          "unclassified": "{count} could not be classified by service",
+          "partial": "This analysis did not finish — the results below are partial.",
+          "incomplete": "This analysis was interrupted before it finished and has no report to display. Run a new analysis.",
+          "inProgress": "This analysis is still running. Check back in a few minutes.",
+          "programActionsTitle": "Scores by service and action",
+          "colProgramAction": "Service — action",
+          "singlesSkipped": "{groups} groups with only one evaluation are not shown ({count} evaluations).",
+          "colCount": "Evaluations",
+          "colNonPerfect": "Non-perfect",
+          "colPctNonPerfect": "% non-perfect",
+          "colExample": "Example",
+          "allPerfect": "All perfect",
+          "themesTitle": "What the explanations say",
+          "themeCount": "{count} evaluations",
+          "basedOn": "The findings use {sent} of {total} evaluations scored below perfect: errors first, then the most recent.",
+          "basedOnContentIssues": "The content issue findings use {sent} of {total} flagged evaluations: errors first, then the most recent.",
+          "contentIssuesTitle": "Content issues",
+          "contentIssuesCount": "{count} evaluations flagged a content issue.",
+          "languageTitle": "English vs French",
+          "colLanguage": "Language",
+          "colMeanScore": "Mean score",
+          "colPctPerfect": "% perfect",
+          "lang": {
+            "en": "English",
+            "fr": "French"
+          },
+          "evaluatorsTitle": "Evaluators",
+          "colEvaluator": "Evaluator",
+          "flagged": "Review"
+        }
+      },
+      "questionAnalysis": {
+        "title": "Question analysis",
+        "comingSoon": "Question analysis is coming soon."
+      }
     },
     "common": {
       "searchLabel": "Search:",
@@ -1829,83 +1899,6 @@
       "subtitle": "Shows up to the {n} most recent",
       "trigger": "Recent eval-informed chats by ID",
       "noData": "No eval-informed answers in this period."
-    },
-    "evalAnalysis": {
-      "title": "Eval analysis",
-      "description": "Analyze the expert evaluations matching the current filters to surface patterns: score differences by service, what the explanations indicate, content issues, English vs French differences, and per-evaluator scores.",
-      "selectInstitution": "Select an institution in the filters above to enable analysis.",
-      "checkingEligibility": "Checking eligibility…",
-      "precheckCount": "{count} expert evaluations match the current filters.",
-      "tooFew": "Not enough evaluations to analyze — at least {min} are needed ({count} match the current filters).",
-      "tooMany": "Too many evaluations for one analysis — narrow the date range until {max} or fewer match ({count} currently match).",
-      "runButton": "Run eval analysis",
-      "viewRunning": "View current results",
-      "exportRunning": "Export current results",
-      "error": "The analysis failed. Partial results may be shown below.",
-      "running": {
-        "preparing": "Preparing analysis…",
-        "classifying": "Classifying services… {done} of {total}",
-        "synthesizing": "Writing findings…"
-      },
-      "status": {
-        "running": "Preparing",
-        "classifying": "Classifying",
-        "synthesizing": "Synthesizing",
-        "complete": "Complete",
-        "error": "Failed"
-      },
-      "pastRuns": {
-        "title": "Past analyses",
-        "colDate": "Run date",
-        "colRange": "Date range",
-        "colCount": "Evaluations",
-        "colStatus": "Status",
-        "colBy": "Run by",
-        "colActions": "Actions",
-        "view": "View"
-      },
-      "report": {
-        "title": "Analysis report",
-        "header": "{count} expert evaluations · {department} · {start} – {end}",
-        "runOn": "Run on {date}",
-        "runBy": "by {email}",
-        "excluded": "{count} without a score excluded from score statistics",
-        "unclassified": "{count} could not be classified by service",
-        "partial": "This analysis did not finish — the results below are partial.",
-        "running": "This analysis is still running ({status}). The results below are partial.",
-        "incomplete": "This analysis was interrupted before it finished and has no report to display. Run a new analysis.",
-        "rowsTitle": "Evaluation details",
-        "viewRowData": "View all row data",
-        "noValue": "Not available",
-        "programActionsTitle": "Scores by service and action",
-        "colProgramAction": "Service — action",
-        "singlesSkipped": "{groups} groups with only one evaluation are not shown ({count} evaluations).",
-        "colCount": "Evaluations",
-        "colNonPerfect": "Non-perfect",
-        "colPctNonPerfect": "% non-perfect",
-        "colExample": "Example",
-        "allPerfect": "All perfect",
-        "themesTitle": "What the explanations say",
-        "themeCount": "{count} evaluations",
-        "contentIssuesTitle": "Content issues",
-        "contentIssuesCount": "{count} evaluations flagged a content issue.",
-        "languageTitle": "English vs French",
-        "colLanguage": "Language",
-        "colMeanScore": "Mean score",
-        "colPctPerfect": "% perfect",
-        "lang": {
-          "en": "English",
-          "fr": "French"
-        },
-        "evaluatorsTitle": "Evaluators",
-        "colEvaluator": "Evaluator",
-        "colQuestion": "Question",
-        "colScore": "Score",
-        "colProgram": "Service",
-        "colAction": "Action",
-        "colDetails": "Details",
-        "flagged": "Review"
-      }
     }
   },
   "metrics": {

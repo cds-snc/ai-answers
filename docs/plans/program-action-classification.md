@@ -121,7 +121,7 @@ persistNode → InteractionPersistenceService.persistInteraction()
 |------|--------|
 | `models/context.js` | Add `program`, `action` fields |
 | `api/data/programActionSeeds.js` | Add account actions (Recover account, Use MFA) |
-| `agents/strategies/programActionClassifyStrategy.js` | **New** — prompt + parse, modeled on `evalAnalysisClassifyStrategy.js` |
+| `agents/strategies/programActionClassifyStrategy.js` | **New** — prompt + parse, modeled on `evalAnalysisClassifyStrategy.js` (since deleted, see §5) |
 | `agents/AgentFactory.js` | **New** `createProgramActionAgent` (mini model, mirrors `createQueryRewriteAgent`) |
 | `services/ProgramActionClassificationService.js` | **New** — orchestrates the call, updates the Context doc |
 | `services/InteractionPersistenceService.js` | Fire-and-forget hook after save |
@@ -296,7 +296,8 @@ mitigation from the section above, applied before the fact.
   stored `context.program`/`context.action`, gates the LLM fallback on
   `rowNeedsClassification` (unclassified **and** `normal` answer type), and
   classifies the fallback against the curated seed list plus in-run names. The
-  pre-existing answer-type gate bug is fixed.
+  pre-existing answer-type gate bug is fixed. *(Superseded in November 2026:
+  eval analysis v2 removed Tier-2 entirely, see §5.)*
 - **Export logs** now include `context.program` and `context.action` columns.
 
 ### 1. Rollout target — done
@@ -387,6 +388,14 @@ fallback for a folder that has neither a `.md` nor harvested programs (the loade
 returns `[]` in that case).
 
 ### 5. Rationalize with the eval-analysis Tier-2 (shipped July 2026)
+
+> **Superseded in November 2026 (eval analysis v2).** The scores by service and
+> action table was dropped from the report, so Tier-2 was removed: the fallback
+> classifier (`evalAnalysisClassifyStrategy.js`), `rowNeedsClassification` and
+> the per-run cross-tab are gone. Eval analysis no longer classifies anything;
+> `programActionClassifyStrategy.js` is now the only consumer of
+> `programClassificationGuidance.js`. Old v1 reports still display their stored
+> table. The section below is kept as the record of the July decision.
 
 `partner-eval-analysis.md` predated this classifier, so its Tier-2 ran its own
 two-pass emergent program/action grouping — which double-classified every recent

@@ -1,14 +1,10 @@
-// Shared building blocks for the two program/action classification prompts:
-//   - programActionClassifyStrategy.js — per-question tagging on persist
-//   - evalAnalysisClassifyStrategy.js  — partner eval-analysis (propose + assign)
-//
-// Both describe the same program-naming, URL-evidence and account rules; keeping
-// one copy here stops the wordings from drifting apart. The strategy-specific
-// framing (single row vs. propose-a-set vs. assign-to-a-list, output shape)
-// stays in each strategy file.
+// Shared building blocks for the program/action classification prompt
+// (programActionClassifyStrategy.js, per-question tagging on persist). The
+// partner eval analysis used to have a second classifier that shared them;
+// it was removed in the v2 redesign, so this file now has one consumer.
 //
 // NOTE FOR PROMPT MAINTAINERS (Lisa Fast / Ryan Hyma): editing the prose below
-// changes both classifiers at once — validate with an eval batch before shipping.
+// changes the per-question classifier — validate with an eval batch before shipping.
 
 // Name programs consistently — the single biggest driver of naming drift.
 export const PROGRAM_NAMING_RULE = `Name programs the way the Government of Canada names them, not the way canada.ca organizes pages. Good: "Canada child benefit", "Business Number (BN)", "Disability tax credit". Bad: "Individual income tax and payments", "Payroll benefits and allowances" — a web page or section title is a navigation label, not a program.`;
