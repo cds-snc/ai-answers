@@ -56,31 +56,92 @@ const _getSetting = (keys) => {
 };
 
 // Expose limiters logic/state for monitoring
-export const rateLimiters = { public: null, authenticated: null };
+export const rateLimiters = { public: null, authenticated: null, ip: null };
+
+// Anonymous chat runs also draw from a per-address budget this many times the
+// public quota. req.ip is often a shared proxy address (trust proxy is 1, with
+// Akamai and the load balancer in front). Charging it on every API call would
+// put strangers on that address in one small pool. It is spent only on the
+// chat run, and a new session cookie does not move it.
+export const ANONYMOUS_IP_BACKSTOP_MULTIPLIER = 20;
+
+function positivePoints(value, fallback) {
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+// Passport stores the account id on req.user only after deserializeUser
+// accepts an active account. A passport blob left on the session is not
+// enough: counting it would grant the authenticated quota.
+function accountId(user) {
+  const id = user?.userId;
+  if (typeof id !== 'string') return null;
+  const trimmed = id.trim();
+  if (!trimmed || trimmed.length > 128) return null;
+  return trimmed;
+}
+
+function browserLimit(req) {
+  const visitorId = req?.session?.visitorId;
+  if (typeof visitorId === 'string' && visitorId.trim()) {
+    return { key: `visitor:${visitorId.trim()}`, keyType: 'visitor', bucket: 'public' };
+  }
+  if (typeof req?.sessionID === 'string' && req.sessionID) {
+    return { key: `session:${req.sessionID}`, keyType: 'session', bucket: 'public' };
+  }
+  return null;
+}
+
+// req.ip is the address Express already trusted. A caller-supplied
+// X-Forwarded-For is ignored: the load balancer is open to the internet, so
+// trusting another hop would let the caller pick a new budget. An IPv4
+// address written as ::ffff:a.b.c.d is the same address.
+function networkAddress(ip) {
+  if (typeof ip !== 'string') return '';
+  const value = ip.trim();
+  const mapped = value.toLowerCase().startsWith('::ffff:') ? value.slice('::ffff:'.length) : '';
+  if (mapped.includes('.')) return mapped;
+  return value;
+}
+
+function networkLimit(req) {
+  const ip = networkAddress(req?.ip);
+  if (ip) return { key: `ip:${ip}`, keyType: 'ip', bucket: 'ipBackstop' };
+  return { key: 'unknown', keyType: 'unknown', bucket: 'public' };
+}
 
 // Internal promise identifying if the middleware is ready
 let middlewarePromise = null;
 const activeAnonymousChatRuns = new Set();
 
-export function buildRateLimiterIdentity(req, isAuthenticated) {
-  if (isAuthenticated && req && req.sessionID) {
-    return { key: `auth:${req.sessionID}`, keyType: 'auth' };
+/**
+ * Quota keys for one request.
+ * Signed-in: the account id. A new session for the same account stays in
+ * that bucket. Anonymous: the browser fingerprint or session id. An anonymous
+ * chat run also spends the trusted address budget, which a discarded cookie
+ * cannot change.
+ */
+export function buildRateLimiterIdentity(req) {
+  const userId = accountId(req?.user);
+  if (userId) {
+    const key = `user:${userId}`;
+    return {
+      authenticated: true,
+      chatRunKey: key,
+      limits: [{ key, keyType: 'auth', bucket: 'authenticated' }],
+    };
   }
 
-  const visitorId = req?.session?.visitorId;
-  if (visitorId) {
-    return { key: `visitor:${visitorId}`, keyType: 'visitor' };
-  }
+  const browser = browserLimit(req);
+  const limits = [];
+  if (isChatGraphRun(req)) limits.push(networkLimit(req));
+  if (browser) limits.push(browser);
+  if (limits.length === 0) limits.push(networkLimit(req));
 
-  if (req && req.sessionID) {
-    return { key: `session:${req.sessionID}`, keyType: 'session' };
-  }
-
-  if (req && req.ip) {
-    return { key: `ip:${req.ip}`, keyType: 'ip' };
-  }
-
-  return { key: 'unknown', keyType: 'unknown' };
+  return {
+    authenticated: false,
+    chatRunKey: browser?.key || limits[0].key,
+    limits,
+  };
 }
 
 function isChatGraphRun(req) {
@@ -126,6 +187,7 @@ async function buildMiddlewareInternal() {
 
   let publicLimiter;
   let authenticatedLimiter;
+  let ipLimiter;
   let redisClient;
 
   // Track current configuration so we can hot-swap when settings change
@@ -150,9 +212,13 @@ async function buildMiddlewareInternal() {
     let newRedisClient = redisClient;
     let newPublicLimiter;
     let newAuthenticatedLimiter;
+    let newIpLimiter;
 
     const publicDuration = calculateDuration(currentConfig.publicCapacity, currentConfig.publicRefill);
     const authenticatedDuration = calculateDuration(currentConfig.authenticatedCapacity, currentConfig.authenticatedRefill);
+    const publicPoints = positivePoints(currentConfig.publicCapacity, 60);
+    const authenticatedPoints = positivePoints(currentConfig.authenticatedCapacity, 300);
+    const ipPoints = Math.max(publicPoints * ANONYMOUS_IP_BACKSTOP_MULTIPLIER, authenticatedPoints);
 
     if (currentConfig.persistence === 'redis') {
       const redisUrl = _getSetting(['redis.url', 'REDIS_URL']) || process.env.REDIS_URL || 'redis://127.0.0.1:6379';
@@ -165,37 +231,50 @@ async function buildMiddlewareInternal() {
 
       newPublicLimiter = new RateLimiterRedis({
         storeClient: newRedisClient,
-        points: Number.isFinite(currentConfig.publicCapacity) && currentConfig.publicCapacity > 0 ? currentConfig.publicCapacity : 60,
+        points: publicPoints,
         duration: publicDuration,
         keyPrefix: 'aianswers:rl:public',
         useRedisPackage: true,
       });
       newAuthenticatedLimiter = new RateLimiterRedis({
         storeClient: newRedisClient,
-        points: Number.isFinite(currentConfig.authenticatedCapacity) && currentConfig.authenticatedCapacity > 0 ? currentConfig.authenticatedCapacity : 300,
+        points: authenticatedPoints,
         duration: authenticatedDuration,
         keyPrefix: 'aianswers:rl:authenticated',
         useRedisPackage: true,
       });
+      newIpLimiter = new RateLimiterRedis({
+        storeClient: newRedisClient,
+        points: ipPoints,
+        duration: publicDuration,
+        keyPrefix: 'aianswers:rl:ip',
+        useRedisPackage: true,
+      });
     } else {
       newPublicLimiter = new RateLimiterMemory({
-        points: Number.isFinite(currentConfig.publicCapacity) && currentConfig.publicCapacity > 0 ? currentConfig.publicCapacity : 60,
+        points: publicPoints,
         duration: publicDuration
       });
       newAuthenticatedLimiter = new RateLimiterMemory({
-        points: Number.isFinite(currentConfig.authenticatedCapacity) && currentConfig.authenticatedCapacity > 0 ? currentConfig.authenticatedCapacity : 300,
+        points: authenticatedPoints,
         duration: authenticatedDuration
+      });
+      newIpLimiter = new RateLimiterMemory({
+        points: ipPoints,
+        duration: publicDuration
       });
     }
 
     // Atomically swap in new limiters and client reference
     publicLimiter = newPublicLimiter;
     authenticatedLimiter = newAuthenticatedLimiter;
+    ipLimiter = newIpLimiter;
     redisClient = newRedisClient;
 
     // Expose for monitoring
     rateLimiters.public = publicLimiter;
     rateLimiters.authenticated = authenticatedLimiter;
+    rateLimiters.ip = ipLimiter;
   };
 
   // Assign internal reset hook so other modules can trigger rebuilds
@@ -243,22 +322,14 @@ async function buildMiddlewareInternal() {
   // Actual middleware function logic
   return async function rateLimit(req, res, next) {
     await ensureLimitersUpToDate();
-    const isAuthenticated = !!(
-      req.user ||
-      (req.session && (
-        (req.session.passport && req.session.passport.user) ||
-        req.session.user
-      ))
-    );
-    const { key, keyType } = buildRateLimiterIdentity(req, isAuthenticated);
-    const limiter = isAuthenticated ? authenticatedLimiter : publicLimiter;
+    const identity = buildRateLimiterIdentity(req);
 
     let releaseChatRun = () => {};
     try {
-      if (!isAuthenticated && currentConfig.singleAnonymousChatRunEnabled) {
+      if (!identity.authenticated && currentConfig.singleAnonymousChatRunEnabled) {
         const acquired = await acquireAnonymousChatRun({
           req,
-          key,
+          key: identity.chatRunKey,
           persistence: currentConfig.persistence,
           redisClient,
         });
@@ -271,19 +342,34 @@ async function buildMiddlewareInternal() {
         releaseChatRun = acquired;
       }
 
-      // consume 1 point per request
-      const reward = await limiter.consume(key);
-      const points = typeof limiter.points === 'number' ? limiter.points : null;
-      const duration = typeof limiter.duration === 'number' ? limiter.duration : null;
+      // Every key has to have a point left. On a chat run the address key is
+      // first, so a client that rotates session cookies still spends it.
+      // The snapshot reports the browser or account bucket. The address pool
+      // is a different size, so its remainder is not this browser's credits.
+      const limitersByBucket = {
+        authenticated: authenticatedLimiter,
+        ipBackstop: ipLimiter,
+        public: publicLimiter,
+      };
+      let shown = null;
+      for (const limit of identity.limits) {
+        const limiter = limitersByBucket[limit.bucket] || publicLimiter;
+        const reward = await limiter.consume(limit.key);
+        if (limit.bucket !== 'ipBackstop' || !shown) {
+          shown = { limit, reward, limiter };
+        }
+      }
+      const points = typeof shown.limiter.points === 'number' ? shown.limiter.points : null;
+      const duration = typeof shown.limiter.duration === 'number' ? shown.limiter.duration : null;
       const rateLimiterSnapshot = {
-        remainingPoints: reward.remainingPoints,
-        consumedPoints: reward.consumedPoints,
+        remainingPoints: shown.reward.remainingPoints,
+        consumedPoints: shown.reward.consumedPoints,
         points,
         duration,
-        msBeforeNext: reward.msBeforeNext,
+        msBeforeNext: shown.reward.msBeforeNext,
         lastUpdated: new Date().toISOString(),
-        authenticated: isAuthenticated,
-        keyType
+        authenticated: identity.authenticated,
+        keyType: shown.limit.keyType
       };
       // Attach to request for potential handler use
       req.rateLimiterSnapshot = rateLimiterSnapshot;
