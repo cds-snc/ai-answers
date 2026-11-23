@@ -28,7 +28,7 @@ destination is checked, and if it's broken or redirects again the URL is
 reported. URLs that just carry a `lang=` parameter are checked like any other.
 
 URLs matching a pattern in `.urlcheck-ignore` (repo root, one pattern per line,
-`#` for comments, `*` as a wildcard, otherwise a substring match) are skipped
+`#` for comments, `*` as a wildcard; every pattern matches anywhere in the URL) are skipped
 by the script and counted as "Ignored" in the report.
 
 Optional flags: `--concurrency <n>` (default 8), `--timeout <ms>` (default 20000),

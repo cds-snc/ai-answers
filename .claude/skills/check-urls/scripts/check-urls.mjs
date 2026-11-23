@@ -2,10 +2,19 @@
 // Check every URL found in a folder and report broken links and redirects.
 // Usage: node check-urls.mjs <folder> [--output report.md] [--ignore .urlcheck-ignore]
 //        [--concurrency 8] [--timeout 20000]
-// Exit code: 1 if any URL is broken or redirects, 0 otherwise.
+// Exit code: 1 if any URL is broken or redirects, 0 otherwise, 2 on a script error.
 
 import fs from 'node:fs';
 import path from 'node:path';
+
+// Node exits 1 on an uncaught error, which CI would read as "URLs failed".
+// Exit 2 instead so a crash fails the run rather than posting a report.
+const crash = (err) => {
+  console.error(err);
+  process.exit(2);
+};
+process.on('uncaughtException', crash);
+process.on('unhandledRejection', crash);
 
 const args = process.argv.slice(2);
 const opt = (name, fallback) => {
@@ -23,23 +32,38 @@ if (!fs.existsSync(folder) || !fs.statSync(folder).isDirectory()) {
 }
 const output = opt('--output', null);
 const ignoreFile = opt('--ignore', '.urlcheck-ignore');
-const concurrency = Number(opt('--concurrency', 8));
-const timeoutMs = Number(opt('--timeout', 20000));
+const positiveInt = (name, fallback) => {
+  const n = Number(opt(name, fallback));
+  if (!Number.isInteger(n) || n < 1) {
+    console.error(`${name} must be a positive integer`);
+    process.exit(2);
+  }
+  return n;
+};
+const concurrency = positiveInt('--concurrency', 8);
+const timeoutMs = positiveInt('--timeout', 20000);
 
-// --- ignore patterns: one per line, '#' comments, '*' wildcard, otherwise substring match
+// --- ignore patterns: one per line, '#' comments, '*' wildcard. Every pattern
+// matches anywhere in the URL, so the scheme can be left out.
 const ignorePatterns = fs.existsSync(ignoreFile)
   ? fs.readFileSync(ignoreFile, 'utf8').split(/\r?\n/).map((l) => l.trim()).filter((l) => l && !l.startsWith('#'))
   : [];
-const ignoreRegexes = ignorePatterns.map((p) =>
-  p.includes('*')
-    ? new RegExp('^' + p.split('*').map((s) => s.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$')
-    : { test: (u) => u.includes(p) }
+const ignoreRegexes = ignorePatterns.map(
+  (p) => new RegExp(p.split('*').map((s) => s.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*'))
 );
 const isIgnored = (u) => ignoreRegexes.some((r) => r.test(u));
 
 // --- collect URLs with file:line locations
-const URL_RE = /https?:\/\/[^\s"'`<>()\[\]{}\\]+/g;
+// Parentheses are allowed inside a URL (e.g. /wiki/Foo_(bar)); an unbalanced
+// trailing ')' is the end of a markdown link or a sentence, so it's trimmed.
+const URL_RE = /https?:\/\/[^\s"'`<>\[\]{}\\]+/g;
 const TRAILING = /[.,;:!?*]+$/;
+const count = (s, c) => s.split(c).length - 1;
+function trimUrl(raw) {
+  let url = raw.replace(TRAILING, '');
+  while (url.endsWith(')') && count(url, ')') > count(url, '(')) url = url.slice(0, -1).replace(TRAILING, '');
+  return url;
+}
 const found = new Map(); // url -> [{file, line}]
 
 function walk(dir) {
@@ -53,7 +77,7 @@ function scanFile(file) {
   const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
   lines.forEach((text, idx) => {
     for (const m of text.matchAll(URL_RE)) {
-      const url = m[0].replace(TRAILING, '');
+      const url = trimUrl(m[0]);
       if (url.includes('${')) continue; // template literal, not a real URL
       const loc = { file: path.relative(process.cwd(), file).replace(/\\/g, '/'), line: idx + 1 };
       if (!found.has(url)) found.set(url, []);
@@ -103,9 +127,10 @@ function isLanguageSwitch(url, target) {
 
 async function checkOnce(url, followLanguageSwitch = true, cookie = undefined) {
   try {
-    let res = await request(url, 'HEAD', cookie);
-    // Some servers reject or mishandle HEAD; confirm with GET before calling it broken.
-    if (res.status >= 400) res = await request(url, 'GET', cookie);
+    // Some servers reject, mishandle or never answer HEAD; confirm with GET
+    // before calling it broken.
+    let res = await request(url, 'HEAD', cookie).catch(() => null);
+    if (!res || res.status >= 400) res = await request(url, 'GET', cookie);
     if (res.status >= 300 && res.status < 400) {
       const loc = res.headers.get('location');
       if (!loc) return { url, kind: 'redirect', status: res.status, target: '(no Location header)' };
