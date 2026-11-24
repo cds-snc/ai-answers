@@ -77,7 +77,9 @@ export function parseBatchCsv(csvText) {
     throw error;
   }
 
-  const headers = rows[0].map((header) => String(header ?? '').trim().toUpperCase());
+  const headers = rows[0].map((header) =>
+    restoreSpreadsheetText(String(header ?? '').trim()).toUpperCase()
+  );
   const problemDetailsIndex = headers.findIndex((header) => QUESTION_HEADERS.includes(header));
 
   if (problemDetailsIndex === -1) {
@@ -98,7 +100,7 @@ export function parseBatchCsv(csvText) {
           header === 'QUESTION'
             ? 'REDACTEDQUESTION'
             : header;
-        entry[key] = String(row[index] ?? '').trim();
+        entry[key] = restoreSpreadsheetText(String(row[index] ?? '').trim());
       });
       return entry;
     })
@@ -106,15 +108,36 @@ export function parseBatchCsv(csvText) {
 }
 
 // Spreadsheet apps treat a leading =, +, -, @, tab, or carriage return as a
-// formula. A leading apostrophe forces the cell to text; Excel hides that
-// apostrophe when the file is opened, so the stored value still reads normally.
+// formula. One leading apostrophe stores the cell as text. Apps do not agree
+// on whether that apostrophe is hidden, so CSV import drops one when the next
+// character is a formula starter.
+// Null bytes are removed first: fast-csv deletes every \0 while writing, so
+// "\0=..." would otherwise become a formula after this check. Arrays and other
+// objects are checked as the joined text the writer emits.
+// A leading + or - is left alone only when the cell is a plain number, so
+// those columns still sort and sum. Other text, such as a phone number, is
+// still prefixed.
 const SPREADSHEET_FORMULA_START = /^[=+\-@\t\r]/;
+const PLAIN_NUMBER = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/;
+const SPREADSHEET_TEXT_PREFIX = /^'(?=[=+\-@\t\r])/;
 
 export function neutralizeSpreadsheetFormula(value) {
-  if (typeof value !== 'string' || !SPREADSHEET_FORMULA_START.test(value)) {
+  if (value == null || typeof value === 'number' || typeof value === 'boolean') {
     return value;
   }
-  return `'${value}`;
+
+  const text = String(value).replace(/\0/g, '');
+  if (!SPREADSHEET_FORMULA_START.test(text) || PLAIN_NUMBER.test(text)) {
+    return text === value ? value : text;
+  }
+  return `'${text}`;
+}
+
+export function restoreSpreadsheetText(value) {
+  if (typeof value !== 'string') {
+    return value;
+  }
+  return value.replace(SPREADSHEET_TEXT_PREFIX, '');
 }
 
 export function escapeCsvValue(value) {

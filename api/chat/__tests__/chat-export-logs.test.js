@@ -321,4 +321,49 @@ describe('chat-export-logs API', () => {
         expect(csv).toContain(',-42,');
         expect(csv).not.toContain("'-42");
     });
+
+    it('neutralizes a formula hidden by a null byte or by the first item of an array', async () => {
+        const formula = '\u0000=HYPERLINK("http://evil.example")';
+        Chat.find.mockReturnValue({
+            populate: vi.fn().mockReturnValue({
+                lean: vi.fn().mockResolvedValue([
+                    {
+                        chatId: 'test-chat',
+                        interactions: [
+                            {
+                                interactionId: 'i1',
+                                context: { searchQuery: 'query' },
+                                answer: { content: 'A normal answer' },
+                                question: { question: formula },
+                                expertFeedback: { totalScore: 1 },
+                                publicFeedback: { feedback: '' },
+                                autoEval: { expertFeedback: { totalScore: 1 } },
+                                labels: ['=CMD()', 'kept'],
+                            },
+                        ],
+                    },
+                ]),
+            }),
+        });
+
+        req.query.view = 'auto-eval-debug';
+        req.query.format = 'json';
+        await handler(req, res);
+        const jsonRow = res.json.mock.calls[0][0][0];
+        expect(jsonRow['question.question']).toBe(formula);
+        expect(jsonRow.labels).toEqual(['=CMD()', 'kept']);
+
+        req.query.format = 'csv';
+        const csvResponse = captureCsvResponse();
+        const csvDone = handler(req, csvResponse.res);
+        await csvResponse.finished;
+        await csvDone;
+        const csv = csvResponse.text();
+
+        expect(csv).toContain(`"'=HYPERLINK(""http://evil.example"")"`);
+        expect(csv).toContain(`"'=CMD(),kept"`);
+        expect(csv).not.toContain('\u0000');
+        expect(csv).not.toContain(',=CMD()');
+        expect(csv).not.toContain(',=HYPERLINK');
+    });
 });

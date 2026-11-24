@@ -9,7 +9,7 @@ import { Interaction } from '../../models/interaction.js';
 import { ExpertFeedback } from '../../models/expertFeedback.js';
 import { Chat } from '../../models/chat.js';
 import { normalizeObjectId } from '../../api/util/db-query.js';
-import { serializeCsvRows } from '../../src/utils/spreadsheets/csv.js';
+import { restoreSpreadsheetText, serializeCsvRows } from '../../src/utils/spreadsheets/csv.js';
 import {
     EXPLICIT_REFERENCE_ANSWER_ALIASES,
     REFERRING_URL_ALIASES,
@@ -595,7 +595,7 @@ class ExperimentalDatasetService {
                 .on('error', reject)
                 .on('data', (row) => {
                     if (!headers) {
-                        headers = row.map(header => this._sanitizeImportedKey(header));
+                        headers = row.map(header => this._sanitizeImportedKey(restoreSpreadsheetText(header)));
                         return;
                     }
 
@@ -606,7 +606,7 @@ class ExperimentalDatasetService {
                             continue;
                         }
 
-                        rawRow[header] = this._normalizeCellValue(row[i]);
+                        rawRow[header] = restoreSpreadsheetText(this._normalizeCellValue(row[i]));
                     }
                     rawRows.push(rawRow);
                 })

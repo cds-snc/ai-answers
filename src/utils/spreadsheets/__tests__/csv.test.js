@@ -34,6 +34,20 @@ describe('spreadsheet csv helpers', () => {
     expect(csv).toBe('Name,Value\r\n"Alpha, Inc.","He said ""yes"""');
   });
 
+  it('restores the formula prefix when a batch CSV is parsed again', () => {
+    const question = '- Apply online';
+    const csv = serializeCsvRows([
+      ['Problem Details', 'URL'],
+      [question, '=1+1'],
+      ["'hello", '+1 613-555-0100'],
+    ]);
+
+    expect(parseBatchCsv(csv)).toEqual([
+      { REDACTEDQUESTION: question, URL: '=1+1' },
+      { REDACTEDQUESTION: "'hello", URL: '+1 613-555-0100' },
+    ]);
+  });
+
   it('prefixes formula-leading text and still quotes special characters', () => {
     const csv = serializeCsvRows([
       ['question', 'score', 'note'],
@@ -58,5 +72,22 @@ describe('spreadsheet csv helpers', () => {
         "'- bullet,,'=already-text",
       ].join('\r\n')
     );
+  });
+
+  it('checks text after null bytes are removed and after arrays are joined', () => {
+    const csv = serializeCsvRows([
+      ['question', 'labels', 'score', 'phone'],
+      ['\u0000=HYPERLINK("http://evil.example")', ['\u0000=CMD()', 'kept'], -5, '+1 613-555-0100'],
+      ['-5', '+42', 0, 'ok = fine'],
+    ]);
+
+    expect(csv).toBe(
+      [
+        'question,labels,score,phone',
+        `"'=HYPERLINK(""http://evil.example"")","'=CMD(),kept",-5,'+1 613-555-0100`,
+        '-5,+42,0,ok = fine',
+      ].join('\r\n')
+    );
+    expect(csv).not.toContain('\u0000');
   });
 });
