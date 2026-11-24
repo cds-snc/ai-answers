@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.214.1](https://github.com/cds-snc/ai-answers/compare/v1.214.0...v1.214.1) (2026-11-24)
+
+
+### Bug Fixes
+
+* catch db-check auth errors instead of unhandled rejections ([3c4a88c](https://github.com/cds-snc/ai-answers/commit/3c4a88c050c7f02bf28bbf9af1ab158ef55c3e5c))
+* clarify rate-limit settings and document current limits ([0803d3e](https://github.com/cds-snc/ai-answers/commit/0803d3e814a469473f6627739444ea725f542952))
+* log TLS verification failures from the fetch tools ([255165b](https://github.com/cds-snc/ai-answers/commit/255165b592a26d19359902155335a102ace1b3ac))
+* neutralize formula-leading cells in CSV exports (AIA-020) ([4a4e9c0](https://github.com/cds-snc/ai-answers/commit/4a4e9c06144ab3691635f84cd4f6f5afaba3fbd0))
+* neutralize formula-leading text in CSV exports ([f2c4215](https://github.com/cds-snc/ai-answers/commit/f2c42157d85aafcc2a142d3f60bf9c0744566f06))
+* neutralize formula-like CSV cells that already start with an apostrophe ([7523db9](https://github.com/cds-snc/ai-answers/commit/7523db94f4400266055ab05dc842d400d7eece4f))
+* restrict db-check to admins and remove client startup probe ([e9d791a](https://github.com/cds-snc/ai-answers/commit/e9d791ac484163dc9e104932f261157513bc614a))
+* restrict db-check to admins and remove client startup probe (AIA-012) ([407684c](https://github.com/cds-snc/ai-answers/commit/407684cc7e2f3c71b6c78651063c9a2d35224483))
+* strip formula prefixes when CSV exports are imported again ([cea21d8](https://github.com/cds-snc/ai-answers/commit/cea21d89f7cfbf9a9af5723c0200e1713fd8c46b))
+* treat a leading line feed as a CSV formula ([cb36923](https://github.com/cds-snc/ai-answers/commit/cb36923e94517f6d147c74ad3c5628637179d9ca))
+* verify TLS certificates on model-chosen fetches ([f90c9e5](https://github.com/cds-snc/ai-answers/commit/f90c9e5ca7d826dbe7c592deefc9f89a0b5314a8))
+
+
+### Documentation
+
+* clarify rate-limit settings and document current limits ([f60ac49](https://github.com/cds-snc/ai-answers/commit/f60ac49514edcad2ff40431f6ebaaea22b328a07))
+* note certificate checks in system card; log more TLS error codes ([1f0d766](https://github.com/cds-snc/ai-answers/commit/1f0d766d5e384039926945f96c9e764a75b35853))
+
 ## [1.214.0](https://github.com/cds-snc/ai-answers/compare/v1.213.10...v1.214.0) (2026-11-23)
 
 
