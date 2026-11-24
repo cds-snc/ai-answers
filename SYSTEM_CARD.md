@@ -94,7 +94,7 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 
 ### Agentic capabilities
 - **Tool usage**: During answer generation, the AI can autonomously choose to use specialized tools:
-  - **downloadWebPage**: Critical for accuracy — downloads and reads web pages to verify current information, especially new or updated pages, time-sensitive content (tax year changes, program updates), and specific details like numbers, codes, dates, and dollar amounts. It can only read Government of Canada websites, plus this project's own published instruction files on GitHub, and it cannot reach internal network addresses, even if a redirect points there.
+  - **downloadWebPage**: Critical for accuracy — downloads and reads web pages to verify current information, especially new or updated pages, time-sensitive content (tax year changes, program updates), and specific details like numbers, codes, dates, and dollar amounts. It can only read Government of Canada websites, plus this project's own published instruction files on GitHub, and it cannot reach internal network addresses, even if a redirect points there. It also checks each site's security certificate, so it only reads pages that really come from that site.
   - **OpenGov API**: Finds open datasets for data-oriented questions
 - **Context generation**: Derives fresh context for **every question**, including follow-on questions, to ensure accurate institution identification and relevant content
 
