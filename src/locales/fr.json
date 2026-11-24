@@ -1496,14 +1496,15 @@
     "rateLimiting": {
       "title": "Limitation du débit",
       "saveLabel": "Enregistrer la limitation du débit",
+      "description": "Chaque visiteur peut faire un nombre fixe de requêtes par période. La durée de la période est la limite de requêtes divisée par le taux de recharge. Par exemple, une limite de 20 avec un taux de recharge de 10 par minute permet 20 requêtes toutes les 2 minutes. Chaque appel à l'API compte, pas seulement les questions. Une question peut donc utiliser plus d'une requête.",
       "persistence": {
         "label": "Persistance du limiteur de débit (mémoire | Redis)"
       },
       "singleAnonymousChatRunEnabled": "Limiter les utilisateurs anonymes à une seule réponse active à la fois",
-      "rateLimitCapacity": "Capacité du quota (requêtes)",
-      "rateLimitRefill": "Recharge du quota (requêtes/min)",
-      "authenticatedRateLimitCapacity": "Capacité du quota des utilisateurs authentifiés (requêtes)",
-      "authenticatedRateLimitRefill": "Recharge du quota des utilisateurs authentifiés (requêtes/min)"
+      "rateLimitCapacity": "Limite de requêtes par période (utilisateurs anonymes)",
+      "rateLimitRefill": "Taux de recharge en requêtes par minute (utilisateurs anonymes)",
+      "authenticatedRateLimitCapacity": "Limite de requêtes par période (utilisateurs connectés)",
+      "authenticatedRateLimitRefill": "Taux de recharge en requêtes par minute (utilisateurs connectés)"
     },
     "redaction": {
       "title": "Paramètres de rédaction",

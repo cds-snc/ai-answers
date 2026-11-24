@@ -154,8 +154,26 @@ both have sessions; signed-in users get `session.authenticatedTTLMinutes` (falls
 would otherwise keep the anonymous length. Admins can view/manage sessions on the Sessions page
 (`session.managementEnabled`).
 
-Rate limiting (`middleware/rate-limiter.js`) is applied to all `/api` routes, with a larger
-bucket for signed-in users (default 300) than public (default 60).
+Rate limiting (`middleware/rate-limiter.js`) is applied to all `/api` routes (only
+`/api/chat/chat-session-availability` is registered ahead of it). Every API call uses one point,
+not just questions. Signed-in users and anonymous visitors have separate limits. Anonymous
+visitors are keyed by `visitorId`, then session id, then IP.
+
+The settings are named like a token bucket, but the limiter (`rate-limiter-flexible`) uses a
+**fixed window**: `points = capacity`, `duration = ceil(capacity / refill × 60)` seconds
+(`calculateDuration`). With capacity 20 and refill 10/min, that is 20 requests per 120-second
+window. All 20 come back at once when the window resets, not one every 6 seconds. A
+rejected request gets a 429 with a `Retry-After` header. The refill keys are named
+`*RefillPerSec` but hold **per-minute** values. `session.singleAnonymousChatRunEnabled`
+separately limits each anonymous visitor to one answer in progress at a time.
+
+Code defaults are 60/60 (anonymous) and 300/300 (signed in). The live values are whatever the
+Settings page shows. Signed-in limits are set high so batch runs aren't throttled.
+
+The only system-wide cap is `session.maxActiveSessions` (empty = unlimited): when that many
+anonymous sessions have a chat and were seen within the session TTL, new anonymous chats get a
+503 (`middleware/chat-session.js`). There is no global requests-per-minute limit; the Azure
+deployment quota is the effective ceiling.
 
 ## Settings
 
