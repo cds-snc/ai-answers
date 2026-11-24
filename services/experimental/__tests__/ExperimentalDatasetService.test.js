@@ -625,6 +625,32 @@ describe('ExperimentalDatasetService', () => {
             expect(result.csvText).toContain('chat-2,Second question?,');
         });
 
+        it('should store the original text when an exported dataset CSV is uploaded again', async () => {
+            const question = '=HYPERLINK("http://evil.example")';
+            const answer = '- Apply online';
+            const ds = await ExperimentalDataset.create({ name: 'Round Trip Dataset', type: 'qa-pair' });
+            await ExperimentalDatasetRow.create({
+                experimentalDataset: ds._id,
+                rowIndex: 1,
+                data: { chatId: 'chat-1', question, answer }
+            });
+
+            const exported = await ExperimentalDatasetService.exportDataset(ds._id);
+            const result = await ExperimentalDatasetService.createFromUpload(
+                Buffer.from(exported.csvText, 'utf8'),
+                'text/csv',
+                { name: 'Reimported Dataset', type: 'qa-pair' },
+                userId,
+                'reimported.csv'
+            );
+
+            const rows = await ExperimentalDatasetRow.find({ experimentalDataset: result.dataset._id });
+            expect(rows).toHaveLength(1);
+            expect(rows[0].data.question).toBe(question);
+            expect(rows[0].data.answer).toBe(answer);
+            expect(rows[0].data.chatId).toBe('chat-1');
+        });
+
         it('should return null for a missing dataset', async () => {
             const missingId = new mongoose.Types.ObjectId();
             const result = await ExperimentalDatasetService.exportDataset(missingId);
