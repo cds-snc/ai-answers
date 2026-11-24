@@ -2,7 +2,7 @@ import http from 'http';
 import { X509Certificate } from 'crypto';
 import { getCACertificates } from 'tls';
 import axios from 'axios';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
   ENTRUST_OV_CA2_PEM,
   FETCH_CA,
@@ -10,6 +10,8 @@ import {
   guardedLookup,
   guardedRequestOptions,
   isBlockedAddress,
+  logTlsVerificationFailure,
+  tlsVerificationErrorCode,
 } from '../fetchGuard.js';
 
 describe('isBlockedAddress', () => {
@@ -184,5 +186,40 @@ describe('TLS verification', () => {
   it('is not within 90 days of expiry', () => {
     const ninetyDays = 90 * 24 * 60 * 60 * 1000;
     expect(new Date(cert.validTo).getTime() - Date.now()).toBeGreaterThan(ninetyDays);
+  });
+});
+
+describe('logTlsVerificationFailure', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('logs one searchable line for a certificate failure', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const error = Object.assign(new Error('unable to verify the first certificate'), {
+      code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+    });
+
+    expect(logTlsVerificationFailure(error, 'https://www.clo-ocol.gc.ca/en/page', 'downloadWebPage')).toBe(true);
+    expect(warn).toHaveBeenCalledWith(
+      'TLS verification failed: www.clo-ocol.gc.ca UNABLE_TO_VERIFY_LEAF_SIGNATURE downloadWebPage https://www.clo-ocol.gc.ca/en/page'
+    );
+  });
+
+  it('finds a code nested in the cause chain', () => {
+    const error = new Error('fetch failed', {
+      cause: Object.assign(new Error('certificate has expired'), { code: 'CERT_HAS_EXPIRED' }),
+    });
+    expect(tlsVerificationErrorCode(error)).toBe('CERT_HAS_EXPIRED');
+  });
+
+  it('stays quiet for failures that are not about the certificate', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    for (const error of [
+      Object.assign(new Error('read ECONNRESET'), { code: 'ECONNRESET' }),
+      { response: { status: 404 } },
+      new Error('no code'),
+    ]) {
+      expect(logTlsVerificationFailure(error, 'https://www.canada.ca/en', 'checkUrl')).toBe(false);
+    }
+    expect(warn).not.toHaveBeenCalled();
   });
 });

@@ -18,6 +18,7 @@ import { lookup as dnsLookup } from 'dns';
 import { BlockList, isIP } from 'net';
 import { createSecureContext, getCACertificates } from 'tls';
 import { isAllowedFetchUrl } from './normalizeFetchUrl.js';
+import { errorCodeChain } from './transient-retry.js';
 
 // TLS certificates are verified. Several GC sites on Shared Services Canada
 // certificates (e.g. clo-ocol.gc.ca, housing-infrastructure.canada.ca) don't
@@ -193,4 +194,48 @@ export function guardedRequestOptions() {
     proxy: false,
     beforeRedirect: guardRedirect,
   };
+}
+
+// The codes OpenSSL/Node give a certificate that fails verification. Before
+// verification was turned on, none of these could happen.
+const TLS_VERIFICATION_ERROR_CODES = new Set([
+  'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+  'UNABLE_TO_GET_ISSUER_CERT',
+  'UNABLE_TO_GET_ISSUER_CERT_LOCALLY',
+  'SELF_SIGNED_CERT_IN_CHAIN',
+  'DEPTH_ZERO_SELF_SIGNED_CERT',
+  'CERT_HAS_EXPIRED',
+  'CERT_NOT_YET_VALID',
+  'CERT_UNTRUSTED',
+  'CERT_REJECTED',
+  'CERT_REVOKED',
+  'CERT_SIGNATURE_FAILURE',
+  'CERT_CHAIN_TOO_LONG',
+  'INVALID_CA',
+  'INVALID_PURPOSE',
+  'PATH_LENGTH_EXCEEDED',
+  'HOSTNAME_MISMATCH',
+  'ERR_TLS_CERT_ALTNAME_INVALID',
+]);
+
+export function tlsVerificationErrorCode(error) {
+  return errorCodeChain(error).find((code) => TLS_VERIFICATION_ERROR_CODES.has(code));
+}
+
+// A GC site that starts sending a broken chain degrades answers for that site
+// without any outage, so give it one fixed, searchable line in the logs:
+// "TLS verification failed: <host> <code> <tool> <url>". Fix it by bundling
+// the missing intermediate (see ENTRUST_OV_CA2_PEM), never by turning
+// verification off. Returns whether it logged.
+export function logTlsVerificationFailure(error, url, tool) {
+  const code = tlsVerificationErrorCode(error);
+  if (!code) return false;
+  let host = 'unknown-host';
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    // Keep the line even when the URL doesn't parse.
+  }
+  console.warn(`TLS verification failed: ${host} ${code} ${tool} ${url}`);
+  return true;
 }

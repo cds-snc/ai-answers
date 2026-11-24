@@ -1,6 +1,6 @@
 import { tool } from "@langchain/core/tools";
 import axios from 'axios';
-import { guardedRequestOptions } from '../../api/util/fetchGuard.js';
+import { guardedRequestOptions, logTlsVerificationFailure } from '../../api/util/fetchGuard.js';
 import { normalizeFetchUrl } from '../../api/util/normalizeFetchUrl.js';
 
 const checkUrlStatus = async (url, chatId = 'system') => {
@@ -26,6 +26,7 @@ const checkUrlStatus = async (url, chatId = 'system') => {
         }
         return `URL is live (${url})`;
     } catch (error) {
+        logTlsVerificationFailure(error, url, 'checkUrl');
         if (error.code === 'ECONNREFUSED') {
             throw new Error(`Connection refused: ${url}`);
         } else if (error.response?.status === 403) {
