@@ -11,11 +11,40 @@
 //   connection, including each redirect hop.
 // - Where a redirect goes. Every hop is re-checked against the same allowlist
 //   and must stay on https (beforeRedirect).
+import { readFileSync } from 'fs';
 import { Agent as HttpAgent } from 'http';
 import { Agent } from 'https';
 import { lookup as dnsLookup } from 'dns';
 import { BlockList, isIP } from 'net';
+import { createSecureContext, getCACertificates } from 'tls';
 import { isAllowedFetchUrl } from './normalizeFetchUrl.js';
+import { errorCodeChain } from './transient-retry.js';
+
+// TLS certificates are verified. Several GC sites on Shared Services Canada
+// certificates (e.g. clo-ocol.gc.ca, housing-infrastructure.canada.ca) don't
+// send their intermediate, "Entrust OV TLS Issuing RSA CA 2". Browsers fetch a
+// missing intermediate themselves; Node doesn't, so without it those pages
+// fail to verify. It is public (from the certificate's AIA URL,
+// crt.sectigo.com) and chains to Sectigo Public Server Authentication Root R46
+// in Node's root store. Expires 2027-12-10: fetchGuard.test.js fails 90 days
+// ahead, so it can be replaced before fetches start failing.
+//
+// Scoped to this agent rather than NODE_EXTRA_CA_CERTS, so no other outbound
+// connection trusts anything extra.
+//
+// Supplying `ca` replaces Node's default trust store, so the base is
+// getCACertificates('default') rather than tls.rootCertificates: it also
+// carries NODE_EXTRA_CA_CERTS / --use-system-ca roots, so an environment that
+// trusts an extra CA for every other outbound call trusts it here too.
+export const ENTRUST_OV_CA2_PEM = readFileSync(
+  new URL('./certs/entrust-ov-tls-issuing-rsa-ca-2.pem', import.meta.url),
+  'utf8'
+);
+export const FETCH_CA = [...getCACertificates('default'), ENTRUST_OV_CA2_PEM];
+
+// Built once: with a bare `ca` option, every TLS connection would re-parse the
+// whole root store into a new SecureContext.
+const FETCH_SECURE_CONTEXT = createSecureContext({ ca: FETCH_CA });
 
 // Addresses a public GC page never resolves to: loopback, private, link-local
 // (incl. the 169.254.169.254 metadata endpoint), CGN, multicast, reserved and
@@ -153,13 +182,10 @@ function sameUrl(parsed, other) {
 // agents for a proxy tunnel, the proxy would resolve the host, and
 // guardedLookup would never see the address.
 //
-// rejectUnauthorized:false is carried over unchanged from the tools. Turning
-// on TLS verification is a separate decision, not part of AIA-010: the
-// guards here work on the address actually connected to, with or without it.
-//
-// The agents are shared across calls so connections are reused.
+// The agents are shared across calls so connections and the TLS context are
+// reused.
 const GUARDED_HTTP_AGENT = new HttpAgent({ lookup: guardedLookup });
-const GUARDED_HTTPS_AGENT = new Agent({ rejectUnauthorized: false, lookup: guardedLookup });
+const GUARDED_HTTPS_AGENT = new Agent({ secureContext: FETCH_SECURE_CONTEXT, lookup: guardedLookup });
 
 export function guardedRequestOptions() {
   return {
@@ -168,4 +194,51 @@ export function guardedRequestOptions() {
     proxy: false,
     beforeRedirect: guardRedirect,
   };
+}
+
+// The codes OpenSSL/Node give a certificate that fails verification. Before
+// verification was turned on, none of these could happen.
+const TLS_VERIFICATION_ERROR_CODES = new Set([
+  'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+  'UNABLE_TO_GET_ISSUER_CERT',
+  'UNABLE_TO_GET_ISSUER_CERT_LOCALLY',
+  'SELF_SIGNED_CERT_IN_CHAIN',
+  'DEPTH_ZERO_SELF_SIGNED_CERT',
+  'CERT_HAS_EXPIRED',
+  'CERT_NOT_YET_VALID',
+  'CERT_UNTRUSTED',
+  'CERT_REJECTED',
+  'CERT_REVOKED',
+  'CERT_SIGNATURE_FAILURE',
+  'UNABLE_TO_DECRYPT_CERT_SIGNATURE',
+  'UNABLE_TO_DECODE_ISSUER_PUBLIC_KEY',
+  'CERT_CHAIN_TOO_LONG',
+  'INVALID_CA',
+  'INVALID_PURPOSE',
+  'PATH_LENGTH_EXCEEDED',
+  'HOSTNAME_MISMATCH',
+  'ERR_TLS_CERT_ALTNAME_INVALID',
+  'ERR_TLS_CERT_ALTNAME_FORMAT',
+]);
+
+export function tlsVerificationErrorCode(error) {
+  return errorCodeChain(error).find((code) => TLS_VERIFICATION_ERROR_CODES.has(code));
+}
+
+// A GC site that starts sending a broken chain degrades answers for that site
+// without any outage, so give it one fixed, searchable line in the logs:
+// "TLS verification failed: <host> <code> <tool> <url>". Fix it by bundling
+// the missing intermediate (see ENTRUST_OV_CA2_PEM), never by turning
+// verification off. Returns whether it logged.
+export function logTlsVerificationFailure(error, url, tool) {
+  const code = tlsVerificationErrorCode(error);
+  if (!code) return false;
+  let host = 'unknown-host';
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    // Keep the line even when the URL doesn't parse.
+  }
+  console.warn(`TLS verification failed: ${host} ${code} ${tool} ${url}`);
+  return true;
 }

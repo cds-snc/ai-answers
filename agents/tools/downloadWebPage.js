@@ -1,6 +1,6 @@
 import { tool } from "@langchain/core/tools";
 import axios from "axios";
-import { guardedRequestOptions } from "../../api/util/fetchGuard.js";
+import { guardedRequestOptions, logTlsVerificationFailure } from "../../api/util/fetchGuard.js";
 import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
 import TurndownService from "turndown";
@@ -441,6 +441,7 @@ const downloadWebPageTool = tool(
         status: error.response?.status,
         data: error.response?.data
       });
+      logTlsVerificationFailure(error, url, "downloadWebPage");
 
       if (error.code === "ECONNREFUSED") throw new Error(`Connection refused: ${url}`);
       if (error.response?.status === 403) throw new Error(`Access forbidden (403): ${url}`);
