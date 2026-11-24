@@ -61,6 +61,20 @@ describe('spreadsheet csv helpers', () => {
     ]);
   });
 
+  it('prefixes a leading line feed and restores it on import', () => {
+    const question = '\n=1+1';
+    const alreadyMarked = "'\n=hello";
+    const csv = serializeCsvRows([
+      ['Problem Details', 'URL'],
+      [question, alreadyMarked],
+    ]);
+
+    expect(csv).toBe(['Problem Details,URL', `"'\n=1+1","''\n=hello"`].join('\r\n'));
+    expect(parseBatchCsv(csv)).toEqual([
+      { REDACTEDQUESTION: question, URL: alreadyMarked },
+    ]);
+  });
+
   it('prefixes formula-leading text and still quotes special characters', () => {
     const csv = serializeCsvRows([
       ['question', 'score', 'note'],

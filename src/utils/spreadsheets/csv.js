@@ -107,10 +107,12 @@ export function parseBatchCsv(csvText) {
     .filter((entry) => entry.REDACTEDQUESTION);
 }
 
-// Spreadsheet apps treat a leading =, +, -, @, tab, or carriage return as a
-// formula. One leading apostrophe stores the cell as text. Apps do not agree
-// on whether that apostrophe is hidden, so CSV import drops one when a formula
-// starter follows, including after more apostrophes.
+// Spreadsheet apps treat a leading =, +, -, @, tab, carriage return, or line
+// feed as a formula. A question typed in the browser uses a line feed, and
+// some apps skip that character and then read the formula. One leading
+// apostrophe stores the cell as text. Apps do not agree on whether that
+// apostrophe is hidden, so CSV import drops one when a formula starter
+// follows, including after more apostrophes.
 // Text that already starts with that marker, such as '=hello, gets one more
 // apostrophe. Import then drops only the added one and the original stays.
 // Without the extra apostrophe, '=hello would come back as =hello, and a
@@ -121,9 +123,9 @@ export function parseBatchCsv(csvText) {
 // A leading + or - is left alone only when the cell is a plain number, so
 // those columns still sort and sum. Other text, such as a phone number, is
 // still prefixed.
-const NEEDS_SPREADSHEET_TEXT_PREFIX = /^'*[=+\-@\t\r]/;
+const NEEDS_SPREADSHEET_TEXT_PREFIX = /^'*[=+\-@\t\r\n]/;
 const PLAIN_NUMBER = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/;
-const SPREADSHEET_TEXT_PREFIX = /^'(?='*[=+\-@\t\r])/;
+const SPREADSHEET_TEXT_PREFIX = /^'(?='*[=+\-@\t\r\n])/;
 
 export function neutralizeSpreadsheetFormula(value) {
   if (value == null || typeof value === 'number' || typeof value === 'boolean') {
