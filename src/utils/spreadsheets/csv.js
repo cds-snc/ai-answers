@@ -109,17 +109,21 @@ export function parseBatchCsv(csvText) {
 
 // Spreadsheet apps treat a leading =, +, -, @, tab, or carriage return as a
 // formula. One leading apostrophe stores the cell as text. Apps do not agree
-// on whether that apostrophe is hidden, so CSV import drops one when the next
-// character is a formula starter.
+// on whether that apostrophe is hidden, so CSV import drops one when a formula
+// starter follows, including after more apostrophes.
+// Text that already starts with that marker, such as '=hello, gets one more
+// apostrophe. Import then drops only the added one and the original stays.
+// Without the extra apostrophe, '=hello would come back as =hello, and a
+// header such as '=DETAILS would no longer match the name it was stored under.
 // Null bytes are removed first: fast-csv deletes every \0 while writing, so
 // "\0=..." would otherwise become a formula after this check. Arrays and other
 // objects are checked as the joined text the writer emits.
 // A leading + or - is left alone only when the cell is a plain number, so
 // those columns still sort and sum. Other text, such as a phone number, is
 // still prefixed.
-const SPREADSHEET_FORMULA_START = /^[=+\-@\t\r]/;
+const NEEDS_SPREADSHEET_TEXT_PREFIX = /^'*[=+\-@\t\r]/;
 const PLAIN_NUMBER = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/;
-const SPREADSHEET_TEXT_PREFIX = /^'(?=[=+\-@\t\r])/;
+const SPREADSHEET_TEXT_PREFIX = /^'(?='*[=+\-@\t\r])/;
 
 export function neutralizeSpreadsheetFormula(value) {
   if (value == null || typeof value === 'number' || typeof value === 'boolean') {
@@ -127,7 +131,7 @@ export function neutralizeSpreadsheetFormula(value) {
   }
 
   const text = String(value).replace(/\0/g, '');
-  if (!SPREADSHEET_FORMULA_START.test(text) || PLAIN_NUMBER.test(text)) {
+  if (PLAIN_NUMBER.test(text) || !NEEDS_SPREADSHEET_TEXT_PREFIX.test(text)) {
     return text === value ? value : text;
   }
   return `'${text}`;

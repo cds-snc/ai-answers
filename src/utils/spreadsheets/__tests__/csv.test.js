@@ -48,6 +48,19 @@ describe('spreadsheet csv helpers', () => {
     ]);
   });
 
+  it('keeps an apostrophe that was already in front of a formula character', () => {
+    const question = "'=hello";
+    const note = "'-note";
+    const csv = serializeCsvRows([
+      ['Problem Details', "'=DETAILS"],
+      [question, note],
+    ]);
+
+    expect(parseBatchCsv(csv)).toEqual([
+      { REDACTEDQUESTION: question, "'=DETAILS": note },
+    ]);
+  });
+
   it('prefixes formula-leading text and still quotes special characters', () => {
     const csv = serializeCsvRows([
       ['question', 'score', 'note'],
@@ -69,7 +82,7 @@ describe('spreadsheet csv helpers', () => {
         `'@SUM(A1),,already '=safe`,
         "'\t=1+1,,",
         `"'\r=1+1",,`,
-        "'- bullet,,'=already-text",
+        "'- bullet,,''=already-text",
       ].join('\r\n')
     );
   });
