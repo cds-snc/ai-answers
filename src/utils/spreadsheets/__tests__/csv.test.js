@@ -33,4 +33,30 @@ describe('spreadsheet csv helpers', () => {
 
     expect(csv).toBe('Name,Value\r\n"Alpha, Inc.","He said ""yes"""');
   });
+
+  it('prefixes formula-leading text and still quotes special characters', () => {
+    const csv = serializeCsvRows([
+      ['question', 'score', 'note'],
+      ['=HYPERLINK("http://evil.example")', -4, 'ok = fine'],
+      ['+1+2', 0, ''],
+      ['-2+3', false, null],
+      ['@SUM(A1)', '', "already '=safe"],
+      ['\t=1+1', '', ''],
+      ['\r=1+1', '', ''],
+      ['- bullet', '', "'=already-text"],
+    ]);
+
+    expect(csv).toBe(
+      [
+        'question,score,note',
+        `"'=HYPERLINK(""http://evil.example"")",-4,ok = fine`,
+        "'+1+2,0,",
+        "'-2+3,false,",
+        `'@SUM(A1),,already '=safe`,
+        "'\t=1+1,,",
+        `"'\r=1+1",,`,
+        "'- bullet,,'=already-text",
+      ].join('\r\n')
+    );
+  });
 });

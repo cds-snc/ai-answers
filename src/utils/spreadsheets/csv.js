@@ -105,8 +105,20 @@ export function parseBatchCsv(csvText) {
     .filter((entry) => entry.REDACTEDQUESTION);
 }
 
+// Spreadsheet apps treat a leading =, +, -, @, tab, or carriage return as a
+// formula. A leading apostrophe forces the cell to text; Excel hides that
+// apostrophe when the file is opened, so the stored value still reads normally.
+const SPREADSHEET_FORMULA_START = /^[=+\-@\t\r]/;
+
+export function neutralizeSpreadsheetFormula(value) {
+  if (typeof value !== 'string' || !SPREADSHEET_FORMULA_START.test(value)) {
+    return value;
+  }
+  return `'${value}`;
+}
+
 export function escapeCsvValue(value) {
-  const text = String(value ?? '');
+  const text = String(neutralizeSpreadsheetFormula(value) ?? '');
   if (/[",\r\n]/.test(text)) {
     return `"${text.replace(/"/g, '""')}"`;
   }

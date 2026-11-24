@@ -15,6 +15,7 @@ import { requireObjectIdString, requireString } from '../util/db-query.js';
 import ExcelJS from 'exceljs';
 import { format as csvFormat } from 'fast-csv';
 import { flatten } from 'flat';
+import { neutralizeSpreadsheetFormula } from '../../src/utils/spreadsheets/csv.js';
 
 const DATE_TIME_REGEX = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?)?$/;
 
@@ -797,7 +798,16 @@ export async function chatExportHandler(req, res) {
             res.setHeader('Content-Disposition', `attachment; filename="${filename}.csv"`);
             const stream = csvFormat({ headers: finalHeaders });
             stream.pipe(res);
-            flatRows.forEach(row => stream.write(row));
+            // Same formula guard as the client CSV serializer. JSON and XLSX
+            // stay verbatim: JSON is not opened as a spreadsheet, and the
+            // XLSX writer stores these cells as strings.
+            flatRows.forEach((row) => {
+                const safeRow = {};
+                for (const key of Object.keys(row)) {
+                    safeRow[key] = neutralizeSpreadsheetFormula(row[key]);
+                }
+                stream.write(safeRow);
+            });
             stream.end();
             return;
         }
