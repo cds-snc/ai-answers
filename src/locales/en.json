@@ -33,6 +33,7 @@
       "expertFeedbackDeletedAnnouncement": "Expert feedback deleted. You can evaluate this answer again."
     },
     "publicFeedback": {
+      "saveFailed": "We could not confirm your feedback was saved. Please try again.",
       "send": "Send feedback",
       "question": "Was this helpful?",
       "selectionRequired": "Please select a reason.",

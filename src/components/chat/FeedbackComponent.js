@@ -185,12 +185,7 @@ const FeedbackComponent = ({
     };
   }, [pendingExpertFeedback, onExpertFeedbackChange]);
 
-  const handlePublicFeedback = (publicFeedback) => {
-    FeedbackService.persistPublicFeedback({
-      chatId,
-      interactionId: userMessageId,
-      publicFeedback,
-    });
+  const handlePublicFeedback = () => {
     setFeedbackGiven(true);
     setShowPublicRating(false);
   };

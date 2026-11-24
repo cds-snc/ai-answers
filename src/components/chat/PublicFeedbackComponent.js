@@ -19,6 +19,9 @@ const PublicFeedbackComponent = ({
   const [selected, setSelected] = useState('');
   const { hasError, errorCount, errorRef, triggerError, clearError } = useInlineFormError();
 
+  const [saving, setSaving] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
+
   const options = (isPositive ? FEEDBACK_OPTIONS.YES : FEEDBACK_OPTIONS.NO).map(opt => ({
     ...opt,
     label: isPositive
@@ -32,6 +35,7 @@ const PublicFeedbackComponent = ({
   };
 
   const handleSend = async () => {
+    if (saving) return;
     if (!selected) {
       triggerError();
       return;
@@ -44,13 +48,17 @@ const PublicFeedbackComponent = ({
       publicFeedbackReason: option.label,   // Use the option's label
       publicFeedbackScore: option.score,    // Use the option's score
     };
+    setSaving(true);
+    setSaveFailed(false);
     try {
       await FeedbackService.persistPublicFeedback({ chatId, interactionId: userMessageId, publicFeedback: feedbackPayload });
     } catch (err) {
       console.error('Failed to persist public feedback', err);
-      // parent still shows its own thank-you message even if logging fails
+      setSaving(false);
+      setSaveFailed(true);
+      return;
     }
-    onSubmit(feedbackPayload);
+    onSubmit();
   };
 
   return (
@@ -77,6 +85,7 @@ const PublicFeedbackComponent = ({
         <fieldset
           className={`gc-chckbxrdio feedback-reason-fieldset${hasError ? ' has-error' : ''}`}
           aria-labelledby="public-feedback-title public-feedback-legend public-feedback-hint"
+          disabled={saving}
           ref={titleRef}
           tabIndex={-1}
         >
@@ -111,6 +120,9 @@ const PublicFeedbackComponent = ({
               </li>
             ))}
           </ul>
+          {saveFailed && (
+            <p role="alert" className="form-error-message">{t('homepage.publicFeedback.saveFailed')}</p>
+          )}
           <button type="submit" className="btn-primary mt-150">
             {t('homepage.publicFeedback.send')}
           </button>

@@ -33,6 +33,7 @@
       "expertFeedbackDeletedAnnouncement": "Rétroaction d'expert supprimée. Vous pouvez évaluer cette réponse à nouveau."
     },
     "publicFeedback": {
+      "saveFailed": "Impossible de confirmer l’enregistrement de votre avis. Veuillez réessayer.",
       "send": "Envoyer la rétroaction",
       "question": "C'était utile ?",
       "selectionRequired": "Veuillez sélectionner une raison.",

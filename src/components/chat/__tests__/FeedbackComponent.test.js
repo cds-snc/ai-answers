@@ -24,6 +24,7 @@ vi.mock('../../../services/FeedbackService.js', () => ({
   },
 }));
 
+import FeedbackService from '../../../services/FeedbackService.js';
 import FeedbackComponent from '../FeedbackComponent.js';
 
 afterEach(() => {
@@ -42,6 +43,25 @@ const renderComponent = (props = {}) => {
     />
   );
 };
+
+it('keeps a failed public rating for retry and saves once per submission', async () => {
+  mockUseHasAnyRole.mockReturnValue(false);
+  const save = FeedbackService.persistPublicFeedback.mockReset();
+  save.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({});
+  renderComponent();
+  fireEvent.click(screen.getByText('common.yes'));
+  const reason = screen.getAllByRole('radio')[0];
+  fireEvent.click(reason);
+  const send = screen.getByText('homepage.publicFeedback.send');
+  fireEvent.click(send);
+  expect(await screen.findByRole('alert')).toBeTruthy();
+  expect(reason.checked).toBe(true);
+  expect(save).toHaveBeenCalledTimes(1);
+  expect(screen.queryByText('homepage.feedback.thankYou')).toBeNull();
+  fireEvent.click(send);
+  expect(await screen.findByText('homepage.feedback.thankYou')).toBeTruthy();
+  expect(save).toHaveBeenCalledTimes(2);
+});
 
 const sourceProps = {
   sentences: ['هل يمكنني التجديد عبر الإنترنت؟'],
