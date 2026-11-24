@@ -171,7 +171,7 @@ Three things in this flow set AI Answers apart from a general-purpose chatbot.
 - **Content blocking**: Profanity, discriminatory language, threats, and manipulation attempts (word lists configurable by admins via Settings page) are detected immediately or by the initial Azure guardrails and blocked.  
 - **Prompt injection prevention**: Codes, keywords and other common prompt injection techniques are blocked.
 - **Scope enforcement**: Strict limitation to Government of Canada sourced content.
-- **Rate limiting**: 3 questions per session to prevent manipulation (longer conversations are more at risk of inaccuracy).
+- **Conversation length**: 3 questions per session to prevent manipulation (longer conversations are more at risk of inaccuracy).
 - **Character limits**: 260 character limit per question helps prevent prompt injection and force clearer questions.
 - **User warnings**: Blocked questions are shown with the offending words or phrases replaced by "###" symbols. Usability testing confirmed that users understood the issue and rephrased their questions.
 
@@ -210,7 +210,7 @@ Three things in this flow set AI Answers apart from a general-purpose chatbot.
 - **Infrastructure monitoring**: CloudWatch metrics and logging for production environment.
 - **Automated backups**: AWS DocumentDB with automated backup systems.
 - **Failover planning**: System designed for model independence with multiple AI providers.
-- **Rate limiting**: Prevents system overload and abuse.
+- **Rate limiting**: Each anonymous visitor is limited to 20 server requests every 2 minutes and one answer at a time. At most 1,500 anonymous conversations can be active at once. Admins can adjust these limits.
 - **Outage setting**: Turn system off and show outage message via admin panel.
 - **Automated health monitoring**: A background monitor continuously probes the system's core dependencies (database, search, and AI model). When a dependency fails repeatedly within a short rolling window, the monitor sends an alert email to the operations team and — if auto-disable is enabled — automatically sets the site to unavailable so users see the outage message instead of failing responses. Polling speeds up while failures are being confirmed and backs off once the dependency recovers, and the site returns to available automatically when the failures clear.
 

@@ -171,7 +171,7 @@ Trois éléments de ce flux distinguent Réponses IA d'un agent conversationnel 
 - **Blocage de contenu** : La profanité, le langage discriminatoire, les menaces et les tentatives de manipulation (listes de mots configurables par les administrateurs via la page Paramètres) sont détectés immédiatement ou par les mesures de protection Azure initiales et bloqués.
 - **Prévention de l'injection d'invite** : Les codes, mots-clés et autres techniques courantes d'injection d'invite sont bloqués.
 - **Application de la portée** : Limitation stricte au contenu provenant du gouvernement du Canada.
-- **Limitation du taux** : 3 questions par session pour prévenir la manipulation (les conversations plus longues présentent un risque accru d'inexactitude).
+- **Longueur des conversations** : 3 questions par session pour prévenir la manipulation (les conversations plus longues présentent un risque accru d'inexactitude).
 - **Limites de caractères** : La limite de 260 caractères par question aide à prévenir l'injection d'invite et force des questions plus claires.
 - **Avertissements utilisateur** : Les questions bloquées sont affichées avec les mots ou expressions fautifs remplacés par des symboles « ### ». Les tests d'utilisabilité ont confirmé que les utilisateurs comprenaient le problème et reformulaient leurs questions.
 
@@ -210,7 +210,7 @@ Trois éléments de ce flux distinguent Réponses IA d'un agent conversationnel 
 - **Surveillance de l'infrastructure** : Métriques CloudWatch et journalisation pour l'environnement de production.
 - **Sauvegardes automatisées** : AWS DocumentDB avec systèmes de sauvegarde automatisés.
 - **Planification de basculement** : Système conçu pour l'indépendance de modèle avec plusieurs fournisseurs d'IA.
-- **Limitation du taux** : Prévient la surcharge du système et les abus.
+- **Limitation du taux** : Chaque visiteur anonyme est limité à 20 requêtes au serveur toutes les 2 minutes et à une réponse à la fois. Au plus 1 500 conversations anonymes peuvent être actives en même temps. Les administrateurs peuvent ajuster ces limites.
 - **Paramètre de panne** : Éteindre le système et afficher un message de panne via le panneau d'administration.
 - **Surveillance automatisée de la santé** : Un moniteur en arrière-plan sonde continuellement les dépendances essentielles du système (base de données, recherche et modèle d'IA). Lorsqu'une dépendance échoue de façon répétée à l'intérieur d'une courte fenêtre glissante, le moniteur envoie un courriel d'alerte à l'équipe d'exploitation et — si la désactivation automatique est activée — règle automatiquement le site à indisponible afin que les utilisateurs voient le message de panne plutôt que des réponses défaillantes. La fréquence de sondage augmente pendant la confirmation des échecs et diminue une fois la dépendance rétablie, et le site redevient disponible automatiquement lorsque les échecs sont résorbés.
 

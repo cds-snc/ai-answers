@@ -1496,14 +1496,15 @@
     "rateLimiting": {
       "title": "Rate limiting",
       "saveLabel": "Save rate limiting",
+      "description": "Each visitor can make a set number of requests per time window. The window length is the request limit divided by the refill rate. For example, a limit of 20 with a refill rate of 10 per minute allows 20 requests every 2 minutes. Every API call counts, not just questions, so one question can use more than one request.",
       "persistence": {
         "label": "Rate-limiter persistence (memory | Redis)"
       },
       "singleAnonymousChatRunEnabled": "Limit anonymous users to one active answer at a time",
-      "rateLimitCapacity": "Rate limit capacity (requests)",
-      "rateLimitRefill": "Rate limit refill (requests per min)",
-      "authenticatedRateLimitCapacity": "Authenticated-user rate limit capacity (requests)",
-      "authenticatedRateLimitRefill": "Authenticated-user rate limit refill (requests per min)"
+      "rateLimitCapacity": "Request limit per window (anonymous users)",
+      "rateLimitRefill": "Refill rate in requests per minute (anonymous users)",
+      "authenticatedRateLimitCapacity": "Request limit per window (signed-in users)",
+      "authenticatedRateLimitRefill": "Refill rate in requests per minute (signed-in users)"
     },
     "redaction": {
       "title": "Redaction settings",
