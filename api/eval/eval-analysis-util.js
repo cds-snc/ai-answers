@@ -16,7 +16,7 @@ export function pickFilters(source = {}) {
 // Maps EvalAnalysisService error codes to HTTP responses; rethrows anything
 // unrecognized so the endpoint's catch block returns a 500.
 export function sendServiceError(res, err) {
-    if (err?.code === 'departmentRequired' || err?.code === 'tooFew' || err?.code === 'tooMany') {
+    if (err?.code === 'departmentRequired') {
         return res.status(400).json({ message: err.message, code: err.code, count: err.count });
     }
     if (err?.code === 'notFound') {

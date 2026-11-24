@@ -1,27 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const countEvalsMock = vi.fn();
-const createAnalysisMock = vi.fn();
-const advanceMock = vi.fn();
+const createAndSynthesizeMock = vi.fn();
 const getAnalysisMock = vi.fn();
 const listAnalysesMock = vi.fn();
 
 vi.mock('../services/EvalAnalysisService.js', () => ({
     __esModule: true,
     default: {
-        countEvals: (...args) => countEvalsMock(...args),
-        createAnalysis: (...args) => createAnalysisMock(...args),
-        advance: (...args) => advanceMock(...args),
+        createAndSynthesize: (...args) => createAndSynthesizeMock(...args),
         getAnalysis: (...args) => getAnalysisMock(...args),
         listAnalyses: (...args) => listAnalysesMock(...args)
-    },
-    MIN_EVALS: 20,
-    MAX_EVALS: 200
+    }
 }));
 
-import precheckHandler from '../api/eval/eval-analysis-precheck.js';
 import runHandler from '../api/eval/eval-analysis-run.js';
-import advanceHandler from '../api/eval/eval-analysis-advance.js';
 import getHandler from '../api/eval/eval-analysis-get.js';
 import listHandler from '../api/eval/eval-analysis-list.js';
 import { pickFilters } from '../api/eval/eval-analysis-util.js';
@@ -63,90 +55,46 @@ describe('pickFilters', () => {
     });
 });
 
-describe('eval-analysis-precheck', () => {
-    it('requires a department', async () => {
-        const res = makeRes();
-        await precheckHandler(authedReq({ method: 'GET', query: {} }), res);
-        expect(res.status).toHaveBeenCalledWith(400);
-        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'departmentRequired' }));
-        expect(countEvalsMock).not.toHaveBeenCalled();
-    });
-
-    it('returns count with min/max gates', async () => {
-        countEvalsMock.mockResolvedValue(42);
-        const res = makeRes();
-        await precheckHandler(authedReq({ method: 'GET', query: { department: 'TBS-SCT' } }), res);
-        expect(countEvalsMock).toHaveBeenCalledWith({ department: 'TBS-SCT' });
-        expect(res.status).toHaveBeenCalledWith(200);
-        expect(res.json).toHaveBeenCalledWith({ count: 42, min: 20, max: 200 });
-    });
-
-    it('rejects non-GET', async () => {
-        const res = makeRes();
-        await precheckHandler(authedReq({ method: 'POST' }), res);
-        expect(res.status).toHaveBeenCalledWith(405);
-    });
-});
-
 describe('eval-analysis-run', () => {
-    it('creates an analysis and passes the requesting user email', async () => {
-        createAnalysisMock.mockResolvedValue({ _id: 'a1', status: 'running' });
+    it('runs the analysis in one request and passes the requesting user email', async () => {
+        createAndSynthesizeMock.mockResolvedValue({ _id: 'a1', status: 'complete' });
         const res = makeRes();
         await runHandler(authedReq({
             method: 'POST',
             body: { filters: { department: 'TBS-SCT' }, language: 'fr' }
         }), res);
-        expect(createAnalysisMock).toHaveBeenCalledWith({
+        expect(createAndSynthesizeMock).toHaveBeenCalledWith({
             filters: { department: 'TBS-SCT' },
             language: 'fr',
             requestedBy: 'lead@dept.gc.ca'
         });
         expect(res.status).toHaveBeenCalledWith(200);
-        expect(res.json).toHaveBeenCalledWith({ analysis: { _id: 'a1', status: 'running' } });
+        expect(res.json).toHaveBeenCalledWith({ analysis: { _id: 'a1', status: 'complete' } });
     });
 
-    it('maps volume-gate errors to 400 with the code and count', async () => {
-        const err = new Error('Too few evaluations to analyze (5 < 20)');
-        err.code = 'tooFew';
-        err.count = 5;
-        createAnalysisMock.mockRejectedValue(err);
+    it('returns a failed insights call as a 200 with the error-status doc', async () => {
+        createAndSynthesizeMock.mockResolvedValue({ _id: 'a1', status: 'error', stats: { total: 3 } });
         const res = makeRes();
         await runHandler(authedReq({ method: 'POST', body: { filters: { department: 'TBS-SCT' } } }), res);
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith({ analysis: { _id: 'a1', status: 'error', stats: { total: 3 } } });
+    });
+
+    it('maps a missing department to 400 with its code', async () => {
+        const err = new Error('An institution (department) filter is required');
+        err.code = 'departmentRequired';
+        createAndSynthesizeMock.mockRejectedValue(err);
+        const res = makeRes();
+        await runHandler(authedReq({ method: 'POST', body: { filters: {} } }), res);
         expect(res.status).toHaveBeenCalledWith(400);
-        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'tooFew', count: 5 }));
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'departmentRequired' }));
     });
 
     it('returns 500 for unexpected errors', async () => {
-        createAnalysisMock.mockRejectedValue(new Error('boom'));
+        createAndSynthesizeMock.mockRejectedValue(new Error('boom'));
         const res = makeRes();
         await runHandler(authedReq({ method: 'POST', body: { filters: { department: 'TBS-SCT' } } }), res);
         expect(res.status).toHaveBeenCalledWith(500);
-    });
-});
-
-describe('eval-analysis-advance', () => {
-    it('advances by id and returns the analysis', async () => {
-        advanceMock.mockResolvedValue({ _id: 'a1', status: 'classifying', progress: { classified: 20, total: 60 } });
-        const res = makeRes();
-        await advanceHandler(authedReq({ method: 'POST', body: { analysisId: 'deadbeefdeadbeefdeadbeef' } }), res);
-        expect(advanceMock).toHaveBeenCalledWith('deadbeefdeadbeefdeadbeef');
-        expect(res.status).toHaveBeenCalledWith(200);
-    });
-
-    it('rejects a non-ObjectId analysisId', async () => {
-        const res = makeRes();
-        await advanceHandler(authedReq({ method: 'POST', body: { analysisId: { $ne: 'x' } } }), res);
-        expect(res.status).toHaveBeenCalledWith(500);
-        expect(advanceMock).not.toHaveBeenCalled();
-    });
-
-    it('maps notFound to 404', async () => {
-        const err = new Error('Analysis not found');
-        err.code = 'notFound';
-        advanceMock.mockRejectedValue(err);
-        const res = makeRes();
-        await advanceHandler(authedReq({ method: 'POST', body: { analysisId: 'deadbeefdeadbeefdeadbeef' } }), res);
-        expect(res.status).toHaveBeenCalledWith(404);
     });
 });
 

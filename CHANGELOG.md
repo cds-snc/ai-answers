@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.214.0](https://github.com/cds-snc/ai-answers/compare/v1.213.10...v1.214.0) (2026-11-23)
+
+
+### Features
+
+* move eval analysis to its own AI-assisted analysis page ([b0b05b7](https://github.com/cds-snc/ai-answers/commit/b0b05b704f9abbd2711d18c3f36138d12cd24a28))
+* simplify eval analysis to a single run with capped AI input ([6959c02](https://github.com/cds-snc/ai-answers/commit/6959c02fca2caec0c8bd60355552a22e2b5fd849))
+
+
+### Bug Fixes
+
+* harden AIA-010 fetch guard (proxy bypass, port check, redirect loop, shared TLS context) ([dd83184](https://github.com/cds-snc/ai-answers/commit/dd8318410fb828e15bc7aabad1ec8f8489da125b))
+* harden db-log GET query validation and register all HTTP methods ([a52c454](https://github.com/cds-snc/ai-answers/commit/a52c45406ceaf62e5df3ce083df91147b8449feb))
+* limit non-GC department hosts and harden fetch path checks ([498e2b2](https://github.com/cds-snc/ai-answers/commit/498e2b20f7258c1347d8570faaf45fbfbd4576fb))
+* move department list changes out of AIA-010 ([2e94d00](https://github.com/cds-snc/ai-answers/commit/2e94d002daa62207a708ad78fadb041cc48d2728))
+* move past analysis section ([0a2549d](https://github.com/cds-snc/ai-answers/commit/0a2549d02b5390db4b791ca100fa91b5f8a37911))
+* remove TLS into separate PR ([dfbc443](https://github.com/cds-snc/ai-answers/commit/dfbc443f118a945a99a3669f20fc76cd56b13808))
+* restrict model-chosen fetches to GC hosts and public IPs (AIA-010) ([b37711b](https://github.com/cds-snc/ai-answers/commit/b37711b8291f554829aee0eb20a4f93a867a6caf))
+* restrict model-chosen fetches to GC hosts and public IPs (AIA-010) ([064f569](https://github.com/cds-snc/ai-answers/commit/064f569e4eab0edbba02c3647e2eab9bd73942e7))
+* script ([c87f497](https://github.com/cds-snc/ai-answers/commit/c87f497316b0efd2f734ef8808b66810dc79fe99))
+* stop accepting client writes on the log endpoint ([f938b40](https://github.com/cds-snc/ai-answers/commit/f938b40a0ed34824fdd13181e59b0130f211a387))
+* stop client writes on db-log and harden partner log reads (AIA-008) ([8f685a6](https://github.com/cds-snc/ai-answers/commit/8f685a635c9e51df65cab92795f7538e89bd6772))
+* update department list URLs and regenerate search domain list ([0ca3b93](https://github.com/cds-snc/ai-answers/commit/0ca3b934b95c129faa5930e3507bc5be51fbdab3))
+* update department list URLs and regenerate search domain list ([5c0d3cb](https://github.com/cds-snc/ai-answers/commit/5c0d3cb8d5f01451b6c086c91d8d5bc44daa3749))
+* verify TLS on fetches and upgrade http redirect hops (AIA-010) ([643beaf](https://github.com/cds-snc/ai-answers/commit/643beafa1c2ead64b9b9a8a25f47c9af894b3328))
+
+
+### Documentation
+
+* note GitHub instruction-file exception in system card fetch claim ([3010b85](https://github.com/cds-snc/ai-answers/commit/3010b85da444fd742d6799c7c46e13b9ab7ba446))
+
 ## [1.213.10](https://github.com/cds-snc/ai-answers/compare/v1.213.9...v1.213.10) (2026-11-19)
 
 

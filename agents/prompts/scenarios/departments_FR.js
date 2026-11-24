@@ -2,6 +2,13 @@
 // Liste des ministères et organismes du gouvernement du Canada avec leurs URLs et abréviations
 // Généré le 2024-12-05T20:50:06.243Z
 // Updated with abbrKey for cross-language matching
+//
+// When you add, remove, or change a `url` here (or in departments_EN.js),
+// run `node scripts/extract_domains.js` and commit the regenerated
+// scripts/domains_for_programmable_search.csv, then sync the Google
+// Programmable Search Engine site list from it. The same urls also feed the
+// fetch/citation allowlist in api/util/govHost.js. See "Updating the search
+// engine site list" in docs/how-to/how-to-add-dept-partner.md.
 
 export const departments_FR = [
   {

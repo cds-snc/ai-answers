@@ -84,9 +84,7 @@ import evalGetHandler from '../api/eval/eval-get.js';
 import evalDeleteHandler from '../api/eval/eval-delete.js';
 import evalRunHandler from '../api/eval/eval-run.js';
 import evalDashboardHandler from '../api/eval/eval-dashboard.js';
-import evalAnalysisPrecheckHandler from '../api/eval/eval-analysis-precheck.js';
 import evalAnalysisRunHandler from '../api/eval/eval-analysis-run.js';
-import evalAnalysisAdvanceHandler from '../api/eval/eval-analysis-advance.js';
 import evalAnalysisGetHandler from '../api/eval/eval-analysis-get.js';
 import evalAnalysisListHandler from '../api/eval/eval-analysis-list.js';
 import dbChatHandler from '../api/db/db-chat.js';
@@ -351,9 +349,7 @@ app.post('/api/eval/eval-get', evalGetHandler);
 app.post('/api/eval/eval-delete', evalDeleteHandler);
 app.post('/api/eval/eval-run', evalRunHandler);
 app.get('/api/eval/eval-dashboard', evalDashboardHandler);
-app.get('/api/eval/eval-analysis-precheck', evalAnalysisPrecheckHandler);
 app.post('/api/eval/eval-analysis-run', evalAnalysisRunHandler);
-app.post('/api/eval/eval-analysis-advance', evalAnalysisAdvanceHandler);
 app.get('/api/eval/eval-analysis-get', evalAnalysisGetHandler);
 app.get('/api/eval/eval-analysis-list', evalAnalysisListHandler);
 app.get('/api/db/db-chat', dbChatHandler);
@@ -397,9 +393,10 @@ app.get('/api/experimental/experimental-instant-answer-dataset', experimentalIns
 app.post('/api/experimental/experimental-instant-answer-dataset', experimentalInstantAnswerDatasetHandler);
 app.delete('/api/experimental/experimental-dataset-delete/:id', experimentalDatasetDeleteHandler);
 app.post('/api/experimental/experimental-dataset-process/:id', experimentalDatasetProcessHandler);
-app.get('/api/db/db-check', dbCheckhandler);
-app.post('/api/db/db-log', dbLogHandler);
-app.get('/api/db/db-log', dbLogHandler);
+// Registered for every method. db-check.js returns 405 for anything other than GET.
+app.all('/api/db/db-check', dbCheckhandler);
+// Registered for every method. db-log.js returns 405 for anything other than GET.
+app.all('/api/db/db-log', dbLogHandler);
 app.get('/api/db/db-chat-logs', dbChatLogsHandler);
 app.post('/api/auth/auth-signup', signupHandler);
 app.post('/api/auth/auth-login', loginHandler);

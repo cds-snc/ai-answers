@@ -314,10 +314,10 @@ Do this whenever a department entry is **added, removed, or has its URL changed*
    ```bash
    node scripts/extract_domains.js
    ```
-   This writes `scripts/domains_for_programmable_search.csv`. It is not committed — don't add it to the PR.
+   This writes `scripts/domains_for_programmable_search.csv`. Commit it in the same PR as the department change, so the file always matches the department lists.
 2. Open the site list in the Programmable Search Engine console and compare it with the CSV.
 3. Add domains that are in the CSV but not in the engine; remove domains that are in the engine but no longer in the CSV.
-4. Note what the script does: `*.gc.ca` and `*.canada.ca` are always included, every other host is collapsed to `*.{base-domain}`, and a domain is dropped only when no remaining entry in either file uses it. Most departments are on gc.ca or canada.ca, so in practice only non-gc.ca / non-canada.ca domains (e.g. `*.radio-canada.ca` for the former CBC/Radio-Canada entry) need a console change.
+4. Note what the script does: `*.gc.ca` and `*.canada.ca` are always included, every other host is collapsed to `*.{base-domain}` — except hosts the GC doesn't control (`NON_GC_DEPARTMENT_HOSTS` in `api/util/govHost.js`), which get `host/*` or only their pinned paths, with no subdomain wildcard — and a domain is dropped only when no remaining entry in either file uses it. Most departments are on gc.ca or canada.ca, so in practice only non-gc.ca / non-canada.ca domains (e.g. `*.radio-canada.ca` for the former CBC/Radio-Canada entry) need a console change.
 
 A removed department's domain stays searchable until step 3 is done. A new department's domain is never searched until it is added.
 

@@ -34,7 +34,9 @@ const EXTRA_GC_HOSTS = new Set([
 //  - 'pinned': that exact host, and only under the listed paths. The host is a
 //    vendor's shared hosting, and its other paths are other customers' content.
 // A new department entry on a domain the GC doesn't control belongs here.
-const NON_GC_DEPARTMENT_HOSTS = new Map([
+// scripts/extract_domains.js reads this too, so the search engine site list
+// gets the same limits.
+export const NON_GC_DEPARTMENT_HOSTS = new Map([
   // GC Core Subject Thesaurus (EN /cst/, FR /tsb/) on MultiTes's hosting.
   ['canada.multites.net', { match: 'pinned', paths: ['/cst/', '/tsb/'] }],
   // World Ozone and Ultraviolet Radiation Data Centre: WMO centre run by ECCC.

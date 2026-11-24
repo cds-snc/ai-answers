@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useId } from 'react';
 import { GcdsButton, GcdsLink } from '@gcds-core/components-react';
 import FeedbackService from '../../../services/FeedbackService.js';
-import ClientLoggingService from '../../../services/ClientLoggingService.js';
 import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
 import { formatNumber } from '../../../utils/numberFormat.js';
 import { resolveDisplayContent, toLangAttr, getAnswerLanguage } from '../../../utils/answerLanguage.js';
@@ -65,7 +64,6 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
             } else {
                 message.expertFeedback = undefined;
             }
-            await ClientLoggingService.info(interactionId, 'Expert feedback deleted', {});
             // The mutation above only updates this shared `message` object in
             // place - it doesn't tell React anything changed, so
             // ChatInterface.js's own `!message.interaction.expertFeedback`
@@ -100,7 +98,6 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
             }
 
             await FeedbackService.setExpertNeverStale({ interactionId, neverStale: newVal });
-            await ClientLoggingService.info(interactionId, 'Expert feedback neverStale toggled', { neverStale: newVal });
         } catch (err) {
             // Revert optimistic update on error
             try {

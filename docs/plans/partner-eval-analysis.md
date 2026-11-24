@@ -1,7 +1,11 @@
 # Partner dashboard — eval analysis (v2 redesign)
 
-**Status:** v2 redesign in progress — PR 1 (coverage table) on `analysis-update`; PR 2 (most-used evaluations) on `eval-reuse-lists`. v1 is implemented and live (see
-[What v1 does today](#what-v1-does-today)).
+**Status:** v2 redesign in progress. PR 1 (coverage table, `analysis-update`)
+and PR 2 (most-used evaluations, `eval-reuse-lists`) are merged. PR 3 (Part B
+simplification) is on `eval-analysis-v2`, which also moves Part B off the
+partner dashboard to its own page (see [Where Part B lives](#where-part-b-lives)).
+For the v1 design it replaces, see
+[What v1 did](#what-v1-did).
 **Owner:** Lisa Fast
 **Written:** 2026-07-10 (v1) · **Rewritten:** 2026-11-15 (v2)
 
@@ -40,15 +44,17 @@ only looks at evaluated rows and knows nothing about reuse.
 | Actions in the coverage table | **One "Actions asked about" column per service**, most frequent first — not a program × action breakdown. `''`, `unknown` and `Other` are left out. Shows at most 3, skips actions asked only once (unless that's all there is), then "and N more". |
 | Volume gates (min 20 / max 200) | **Remove both.** The statistics are database aggregation and need no cap. A small-sample note replaces the minimum. Only the LLM insights call is limited, by the number of rows it is sent. |
 | Institution gate | The deterministic section follows the dashboard filters like every other card (no gate). The insights button still requires an institution, because themes across departments aren't actionable for one team. |
-| Insights prompt (Tier 3) | Kept. **Wording was reviewed by the prompt maintainers.** The "not reviewed" note in `evalAnalysisInsightsStrategy.js` is stale and should be removed. |
+| Insights prompt (Tier 3) | Kept. **Wording was reviewed by the prompt maintainers**, and the stale "not reviewed" note was removed. PR 3 changed one sentence, approved by a maintainer (2026-11-18): the model no longer gets the per-program cross-tab, and is told it may receive a subset (errors first, then the most recent). |
+| Scores by service table in the report | **Dropped for new runs** (decided 2026-11-18). The plan had Part A replace it, but the coverage table no longer shows scores; quality is left to the themes. Old v1 reports still display their stored table. |
+| EN vs FR and evaluator tables | **Stay in the Part B report** (decided 2026-11-18), computed over every evaluation in scope. Moving them into Part A was dropped to keep PR 3 a simplification only. |
 | Reuse window | Reuse metrics only count answers from **late August 2026** onward (when `qaMatches` started being saved). The UI states that start date. Earlier ranges show "no reuse data" rather than zero. |
 | Report language | Unchanged: insights are generated in the dashboard language only. |
 | Evaluator table | Kept as is (titled "Evaluators", no "vs others" column). |
 
 ## What v2 looks like
 
-Two parts at the bottom of `src/components/admin/PartnerDashboard.js`, below
-the existing eval-informed card.
+Part A is at the bottom of `src/components/admin/PartnerDashboard.js`, below
+the existing eval-informed card. Part B is on its own page (below).
 
 ### Part A — "Evaluation coverage and use" (live, no LLM)
 
@@ -109,7 +115,8 @@ One list goes below the table (PR 2, built).
   (`expertCitationUrl` is optional) — revisit only if that turns out to matter.
 
 The existing human-only stats from v1 (the EN vs FR table and the evaluators
-table) move into Part A, computed by aggregation over the same scope.
+table) were planned to move into Part A. They stay in the Part B report
+instead (see Decisions).
 
 **Out of Part A on purpose:** before/after effect of evals on scores. Evaluated
 samples are small and the choice of which chats get evaluated skews them, so
@@ -117,21 +124,44 @@ the result would be misleading. Revisit only if volume grows.
 
 ### Part B — "What the explanations say" (on demand, one LLM call)
 
-- An institution filter is required. The button is labelled with the number of
-  non-perfect evaluations in scope.
+#### Where Part B lives
+
+Moved off the partner dashboard (decided 2026-11-22) to the **AI-assisted
+analysis** page (`src/pages/AiAnalysisPage.js`, route `ai-analysis`, admin and
+partner roles, linked from the Partner menu as "Run AI-assisted analysis").
+A planned question analysis will sit beside it, so on-demand AI runs get one
+page rather than a button at the bottom of a dashboard. The page has its own
+`FilterPanel` (same configuration as the partner dashboard) and states up
+front that an institution must be selected; each section's Run button points
+at that note with `aria-describedby` while disabled. Question analysis is a
+heading and a "coming soon" line until it's built — no disabled button.
+Components are in `src/components/aiAnalysis/`; locale keys moved from
+`partnerDashboard.evalAnalysis.*` to `admin.aiAnalysis.evalAnalysis.*`.
+
+- An institution filter is required. The button has a plain label: the
+  planned count would have needed the precheck request, which was removed.
+  The report says how many evaluations the model saw instead.
 - **One** call to the existing `evalAnalysisInsightsStrategy`. The inputs are
-  the Part A numbers and the non-perfect and content-issue rows.
-- **Input limit, not population limit:** send at most `MAX_INSIGHT_ROWS`
-  (start at 150) non-perfect rows. When there are more, prioritise errors
-  first, then the most recent. The report states "based on N of M".
+  the computed stats (score categories, EN vs FR, evaluators) and the
+  non-perfect and content-issue rows. The per-program cross-tab is no longer
+  sent.
+- **Input limit, not population limit:** send at most `MAX_INSIGHT_ROWS` (150)
+  non-perfect rows and at most 150 content-issue rows. When there are more,
+  errors (harmful, answer and citation errors) go first, then the most recent.
+  Question and citation text are fetched only for the rows sent. The report
+  header says "the findings use N of M" for each list that was cut.
 - Theme minimum is unchanged: max(2, 20% of non-perfect rows), asked in the
   prompt and filtered on the output.
 - Results are stored as before (an `EvalAnalysis` doc with the insights and the
   filter snapshot) so past runs can be re-displayed without cost. The
   past-runs list stays.
-- It is a single request, with no advance loop. The UI shows the loading state
-  through `LoadingOverlay`. If one call proves too slow for the request
-  timeout, the fallback is a two-step create/advance, not chunking.
+- It is a single request, with no advance loop. The UI shows a running
+  message next to the button. If one call proves too slow for the request
+  timeout, the fallback is a two-step create/advance, not chunking. **Not yet
+  checked on a large department.** The past-runs list refreshes even when the
+  request fails, so a run the server finished after a timeout can be found.
+  A stored run still `running` shows "In progress" for 10 minutes, then "Did
+  not finish".
 
 ## Backend changes
 
@@ -152,32 +182,39 @@ the result would be misleading. Revisit only if volume grows.
 
 **Changed**
 
-- `services/EvalAnalysisService.js` collapses to `createAndSynthesize(filters,
-  language)`. It fetches non-perfect and content-issue rows only, with the
-  input limit, then makes one insights call and stores the result.
-- `evalAnalysisInsightsStrategy.js`: remove the stale "not reviewed" note.
-  **No prompt wording change in this work.** If the new inputs (coverage,
-  reuse) seem worth giving to the model, flag it to the maintainers instead.
+- `services/EvalAnalysisService.js` collapses to `createAndSynthesize({
+  filters, language, requestedBy })` (**PR 3, built**). It aggregates every
+  human evaluation in scope (no volume limit) for the stats, picks the rows for
+  the model with `selectInsightRows`, then makes one insights call and stores
+  the result with an `insightInput` record of how many rows were sent.
+- `evalAnalysisInsightsStrategy.js`: the stale note is removed, the cross-tab
+  input is gone, and one prompt sentence changed with maintainer approval (see
+  Decisions). A test pins the payload fields.
 - `api/eval/eval-analysis-run.js` does the whole run in one request and
   returns the finished doc.
 
-**Removed** (confirm before deleting)
+**Removed** (PR 3, confirmed with the owner)
 
-- `agents/strategies/evalAnalysisClassifyStrategy.js` and its tests
+- `agents/strategies/evalAnalysisClassifyStrategy.js`
 - `api/eval/eval-analysis-advance.js`, `api/eval/eval-analysis-precheck.js`
-- The `classifying` status, `progress`, the stored `programs` vocabulary and
-  the full `rows` snapshot on `models/evalAnalysis.js`. Keep old docs readable:
-  the report component must still render a v1 doc's `crossTab`.
-- `rowNeedsClassification` and the `MIN_EVALS`/`MAX_EVALS` exports, if nothing
-  else uses them.
-- Check whether `getSeedPrograms`/`ACTION_SEEDS` still have other callers (the
-  per-question classifier uses its own guidance) before touching them.
+- The `classifying`/`synthesizing` statuses, `progress`, the stored `programs`
+  vocabulary and the full `rows` snapshot on `models/evalAnalysis.js`. Old docs
+  stay readable: the report still renders a v1 doc's `crossTab`, and old
+  non-terminal statuses show as "Did not finish".
+- `rowNeedsClassification`, `buildCrossTab` and the `MIN_EVALS`/`MAX_EVALS`
+  constants. `getSeedPrograms`/`ACTION_SEEDS` have other callers and stay;
+  eval analysis no longer imports them.
 
 **Database notes (DocumentDB 8)**
 
-- Always `$match` on `Chat.createdAt` before the interactions lookup. v1's
-  `buildPipeline` doesn't, and runs every chat through the lookup on each
-  precheck.
+- Always `$match` on `Chat.createdAt` before the interactions lookup (done in
+  PR 3). The chat match starts one day before the range so a chat that began
+  just before it still counts; the exact range applies to
+  `interactions.createdAt`. An evaluation from a chat that began more than a
+  day before the range is left out, so counts can differ slightly from the
+  eval dashboard's. This trade-off is intended (confirmed 2026-11-22).
+- Validate the new `buildPipeline` with `explain("executionStats")` on a
+  large department and range.
 - Validate the `qaMatches` unwind with `explain("executionStats")` on a
   production-sized range.
 
@@ -186,11 +223,11 @@ the result would be misleading. Revisit only if volume grows.
 - Service + hook: coverage is an opt-in fetch in `useDashboardMetrics`
   (`includeEvalCoverage`, via `MetricsService.getEvalCoverageMetrics`), like the
   other partner-only cards — same filters, loading and abort handling, no new
-  hook. `useEvalAnalysis.js` drops the precheck and drive loop (PR 3).
-- Components in `src/components/admin/dashboard/`: `EvalCoverageCard.js` for
-  Part A (PR 1). `EvalAnalysisSection.js` /
-  `EvalAnalysisReport.js` shrink to Part B. The report drops the cross-tab for
-  new runs because Part A replaces it.
+  hook. `useEvalAnalysis.js` drops the precheck and drive loop (PR 3, built).
+- Components: `EvalCoverageCard.js` in `src/components/admin/dashboard/` for
+  Part A (PR 1). `EvalAnalysisSection.js` / `EvalAnalysisReport.js` shrink to
+  Part B (PR 3, built) and move to `src/components/aiAnalysis/`. The report drops the
+  cross-tab and the row-data table for new runs.
 - Locales: new keys under `partnerDashboard.evalCoverage.*`, EN and FR
   together. Remove the dead `tooFew`/`tooMany`/progress keys. Program and
   action names go through the existing display-time FR maps.
@@ -211,8 +248,8 @@ already groups `en`/`fr` the same way). Kept out of PR 1 to keep it reviewable.
    section, dashboards doc. It stands alone and carries most of the value.
 2. **Part A, most-used evaluations** (built): endpoint, card, EN/FR copy,
    how-to guide, dashboards doc. The weak-examples list was dropped.
-3. **Part B simplification**: one call, input limit, removals, and moving the
-   EN/FR and evaluator tables into Part A.
+3. **Part B simplification** (built, `eval-analysis-v2`): one call, input
+   limit, removals. The EN/FR and evaluator tables stayed in the report.
 
 Docs in the same PRs: update `docs/coding-agent-docs/dashboards.md` for the new
 cards, and the admin how-to guide in `public/content/admin/` if it covers this
@@ -222,10 +259,17 @@ section (EN + FR).
 
 - Is the 60-day "expiring soon" window right, or should it match an evaluation
   cadence the team already works to?
+- **Worst-case run time (not yet measured):** a run is one request with no
+  limit on evaluations in scope, then one insights call with up to 150 + 150
+  rows. Time a run on prod for a large institution with a wide date range
+  against the 300-second request limit and the agent's `timeoutMs`. If it's
+  close, add a guard (range or row cap) rather than bring back the v1 step
+  loop. Until then, a request that times out shows "The analysis failed" even
+  if the server finishes; the run then appears in the past-runs list.
 
-## What v1 does today
+## What v1 did
 
-For reference, until v2 replaces it.
+For reference. v1 reports stored before PR 3 still display.
 
 - **Gates:** an institution filter is required. A precheck counts the human
   evals in scope, and a run is only allowed between 20 and 200.
