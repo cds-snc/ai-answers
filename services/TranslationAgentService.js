@@ -52,11 +52,11 @@ export async function translateQuestion({ text, desiredLanguage, selectedAI = 'o
     const src = (result.originalLanguage || '').toLowerCase();
     const tgt = (result.translatedLanguage || '').toLowerCase();
     if (src && tgt && src === tgt) {
+      // Languages only, never the text: the question may still be blocked by
+      // postTranslateGuard, and blocked questions are never stored (AIA-018).
       ServerLoggingService.info('translate coerced to no-op (source==target, dropping within-language transform)', chatId, {
         originalLanguage: result.originalLanguage,
         translatedLanguage: result.translatedLanguage,
-        translatedText: result.translatedText,
-        originalText: text,
       });
       return {
         originalLanguage: result.originalLanguage,

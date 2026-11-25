@@ -14,6 +14,7 @@ vi.mock('../ServerLoggingService.js', () => ({
 }));
 
 import { translateQuestion } from '../TranslationAgentService.js';
+import ServerLoggingService from '../ServerLoggingService.js';
 
 describe('TranslationAgentService — same-language no-op coercion', () => {
   beforeEach(() => invokeWithStrategy.mockReset());
@@ -36,6 +37,26 @@ describe('TranslationAgentService — same-language no-op coercion', () => {
     expect(out.translatedText).toBe('Could you answer in French?');
     expect(out.originalText).toBe('Could you answer in French?');
     expect(out.translatedLanguage).toBe('en');
+  });
+
+  it('logs the coercion under the caller\'s chat with languages only, never the text (AIA-018)', async () => {
+    invokeWithStrategy.mockResolvedValue({
+      result: {
+        originalLanguage: 'eng',
+        translatedLanguage: 'eng',
+        translatedText: 'Pourriez-vous répondre en français ?',
+        noTranslation: false,
+      },
+    });
+    ServerLoggingService.info.mockClear();
+
+    await translateQuestion({ text: 'Could you answer in French?', desiredLanguage: 'en', chatId: 'chat-123' });
+
+    expect(ServerLoggingService.info).toHaveBeenCalledWith(
+      expect.stringContaining('coerced to no-op'),
+      'chat-123',
+      { originalLanguage: 'eng', translatedLanguage: 'eng' },
+    );
   });
 
   it('does not coerce a genuine cross-language translation (fra -> eng)', async () => {

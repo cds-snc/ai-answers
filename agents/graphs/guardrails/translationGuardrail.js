@@ -40,10 +40,13 @@ export const UNSUPPORTED_INDIGENOUS_ISO3 = new Set([
 // of this toggle and always on.
 const INDIGENOUS_LANGUAGE_BLOCKING_SETTING = 'guardrail.indigenousLanguageBlocking';
 
-export async function translateWithGuardrail(text, lang, selectedAI, translationContext = []) {
-  const resp = await translateService({ text, desiredLanguage: lang, selectedAI, translationContext });
+export async function translateWithGuardrail(text, lang, selectedAI, translationContext = [], chatId) {
+  // Required: without it, translation logs fall back to a shared 'translate'
+  // bucket that is not tied to the chat (AIA-018).
+  if (!chatId) throw new Error('translateWithGuardrail requires a chatId');
+  const resp = await translateService({ text, desiredLanguage: lang, selectedAI, chatId, translationContext });
   if (resp && resp.blocked === true) {
-    await ServerLoggingService.info('translate blocked - graph workflow', null, { resp });
+    await ServerLoggingService.info('translate blocked - graph workflow', chatId, { resp });
     throw new RedactionError('Blocked content detected in translation', '#############', null, BLOCK_TYPE.AZURE_GUARDRAIL);
   }
   return resp;

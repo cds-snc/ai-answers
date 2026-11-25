@@ -40,8 +40,8 @@ export class GraphWorkflowHelper {
     return result;
   }
 
-  async translateQuestion(text, lang, selectedAI, translationContext = []) {
-    return translateWithGuardrail(text, lang, selectedAI, translationContext);
+  async translateQuestion(text, lang, selectedAI, translationContext = [], chatId) {
+    return translateWithGuardrail(text, lang, selectedAI, translationContext, chatId);
   }
 
   // Second-stage guardrail: re-run redaction word-lists + regex PII patterns on

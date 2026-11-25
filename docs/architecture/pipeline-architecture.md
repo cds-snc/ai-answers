@@ -313,11 +313,17 @@ stage-2 PII check, so the text was never fully screened, and the system card pro
 blocked questions are never stored (AIA-018). The trade-off: the logs show which
 languages are blocked, but not enough to judge whether a block was a false positive.
 
-**Known gap:** the guardrail's log is not the only one. Every graph's `node:redact output`
-and `node:translate input` events log the stage-1-redacted `redactedText` before
-`postTranslateGuard` runs. So a hard-blocked question, or one blocked by the stage-2 PII
-check, still reaches the chat logs that way. The system card promise is not fully kept
-until those node logs stop recording the text (follow-up to AIA-018).
+The same rule covers every log written before `postTranslateGuard` finishes, since any
+of those questions may still be blocked. The `node:redact output` and
+`node:translate input` events carry no question text, and the translation service's
+"coerced to no-op" log records languages only. Dropping the text loses nothing for
+debugging: every stage-1 redaction blocks, so any question that gets past `redact`
+is unchanged, and it is saved with the interaction if it is answered. Translation logs
+are filed under the real `chatId`, which `translateWithGuardrail` requires.
+`blockedQuestionLogs.security.test.js` runs every graph through each block type after
+`redact`. It runs everything except the model call itself (agent orchestrator,
+translation and PII services, strategies), and fails if any log call contains the
+question text or is filed under a different chat.
 
 ---
 
