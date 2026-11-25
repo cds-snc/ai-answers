@@ -55,8 +55,14 @@ const PublicFeedbackComponent = ({
     try {
       await FeedbackService.persistPublicFeedback({ chatId, interactionId: userMessageId, publicFeedback: feedbackPayload });
     } catch (err) {
-      // A failed save stores nothing. Keep the form on screen so the person
-      // can try again.
+      // 409 means this interaction already has feedback: the first request
+      // stored it and the response was lost, or a second click lost the race.
+      // Show the thank-you. Any other failure stored nothing the person can
+      // see, so keep the form and let them try again.
+      if (err.status === 409) {
+        onSubmit(feedbackPayload);
+        return;
+      }
       console.error('Failed to persist public feedback', err);
       triggerSaveError();
       return;

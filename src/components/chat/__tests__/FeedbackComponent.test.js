@@ -226,4 +226,23 @@ describe('FeedbackComponent — public feedback', () => {
     expect(screen.getByText('homepage.publicFeedback.send')).toBeTruthy();
     errorSpy.mockRestore();
   });
+
+  it('shows the thank-you when feedback was already recorded', async () => {
+    mockUseHasAnyRole.mockReturnValue(false);
+    const alreadyRecorded = new Error('Public feedback already recorded');
+    alreadyRecorded.status = 409;
+    mockPersistPublicFeedback.mockRejectedValue(alreadyRecorded);
+    renderComponent();
+
+    fireEvent.click(screen.getByText('common.yes'));
+    fireEvent.click(screen.getByLabelText('homepage.publicFeedback.yes.options.noCall'));
+    await act(async () => {
+      fireEvent.click(screen.getByText('homepage.publicFeedback.send'));
+    });
+
+    expect(mockPersistPublicFeedback).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('homepage.feedback.thankYou')).toBeTruthy();
+    expect(screen.queryByText('homepage.feedback.error')).toBeNull();
+    expect(screen.queryByText('homepage.publicFeedback.send')).toBeNull();
+  });
 });

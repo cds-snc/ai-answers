@@ -10,12 +10,14 @@ import { FEEDBACK_OPTIONS } from '../../src/constants/UserFeedbackOptions.js';
 // check and then be counted as no, so the stored value is the trimmed one.
 const PUBLIC_FEEDBACK_ANSWERS = new Set(['yes', 'no']);
 
-// The public form's scores. A session holder can submit one record per
-// interaction; a score outside this set would still be grouped into the
-// reason charts whenever it is greater than null.
-const PUBLIC_FEEDBACK_SCORES = new Set(
-  [...FEEDBACK_OPTIONS.YES, ...FEEDBACK_OPTIONS.NO].map((opt) => opt.score)
-);
+// Reason charts group by score whenever the score is greater than null, and
+// only fall back to the raw reason string when it is not. The score has to
+// be one of the options for this answer: "yes" with a "no" score is counted
+// as yes and labeled with the other answer's reason.
+const SCORES_FOR_ANSWER = {
+  yes: new Set(FEEDBACK_OPTIONS.YES.map((opt) => opt.score)),
+  no: new Set(FEEDBACK_OPTIONS.NO.map((opt) => opt.score)),
+};
 
 // Translated option labels are short (the longest is well under 100
 // characters). The cap is what stops an arbitrary essay from landing on
@@ -36,17 +38,14 @@ function publicFeedbackFields(input) {
   }
 
   const publicFeedbackScore = input.publicFeedbackScore;
-  if (
-    publicFeedbackScore != null &&
-    (!Number.isInteger(publicFeedbackScore) || !PUBLIC_FEEDBACK_SCORES.has(publicFeedbackScore))
-  ) {
+  if (!Number.isInteger(publicFeedbackScore) || !SCORES_FOR_ANSWER[feedback].has(publicFeedbackScore)) {
     return null;
   }
 
   return {
     feedback,
     publicFeedbackReason: typeof publicFeedbackReason === 'string' ? publicFeedbackReason.trim() : '',
-    publicFeedbackScore: publicFeedbackScore ?? null,
+    publicFeedbackScore,
   };
 }
 
@@ -92,23 +91,37 @@ async function feedbackPersistPublicHandler(req, res) {
       return res.status(409).json({ message: 'Public feedback already recorded' });
     }
 
+    // The id exists as soon as the document is constructed, so the interaction
+    // can point at it before the insert. Claiming first means a failed insert
+    // can drop the pointer and a retry stores one record. Inserting first
+    // leaves an orphan when the claim throws, and the retry attaches a second
+    // document. Null in the filter is a check-and-set, same as question
+    // assignment: two requests that both passed the read above cannot both claim.
     const publicFeedbackDoc = new PublicFeedback(fields);
-    await publicFeedbackDoc.save();
-
-    // Null in the filter is a check-and-set, same as question assignment:
-    // two requests that both passed the read above cannot both attach.
     const claimed = await Interaction.findOneAndUpdate(
       { _id: existingInteraction._id, publicFeedback: null },
       { $set: { publicFeedback: publicFeedbackDoc._id } },
       { new: true }
     );
     if (!claimed) {
-      await PublicFeedback.deleteOne({ _id: publicFeedbackDoc._id });
       const stillThere = await Interaction.findOne({ _id: existingInteraction._id }, { _id: 1 }).lean();
       if (!stillThere) {
         return res.status(404).json({ message: 'Interaction not found' });
       }
       return res.status(409).json({ message: 'Public feedback already recorded' });
+    }
+    try {
+      await publicFeedbackDoc.save();
+    } catch (saveError) {
+      try {
+        await Interaction.updateOne(
+          { _id: existingInteraction._id, publicFeedback: publicFeedbackDoc._id },
+          { $set: { publicFeedback: null } }
+        );
+      } catch (clearError) {
+        console.error('Error clearing public feedback after a failed save:', clearError);
+      }
+      throw saveError;
     }
 
     res.status(200).json({ message: 'Public feedback logged successfully' });

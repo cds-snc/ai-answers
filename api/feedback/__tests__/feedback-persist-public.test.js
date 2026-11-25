@@ -182,6 +182,19 @@ describe('feedback-persist-public', () => {
     expect(await PublicFeedback.countDocuments()).toBe(0);
   });
 
+  it('rejects a missing score and a score from the other answer', async () => {
+    await seedChat();
+    const body = validBody();
+    delete body.publicFeedback.publicFeedbackScore;
+    const missing = await run(body);
+    const yesWithNoScore = await run(validBody({ feedback: 'yes', publicFeedbackScore: 10 }));
+    const noWithYesScore = await run(validBody({ feedback: 'no', publicFeedbackScore: 1 }));
+    expect(missing.statusCode).toBe(400);
+    expect(yesWithNoScore.statusCode).toBe(400);
+    expect(noWithYesScore.statusCode).toBe(400);
+    expect(await PublicFeedback.countDocuments()).toBe(0);
+  });
+
   it('rejects an over-long reason', async () => {
     await seedChat();
     const res = await run(validBody({ publicFeedbackReason: 'x'.repeat(301) }));
@@ -206,8 +219,8 @@ describe('feedback-persist-public', () => {
     expect(await PublicFeedback.countDocuments()).toBe(0);
   });
 
-  it('returns a generic message when saving throws', async () => {
-    await seedChat();
+  it('returns a generic message when saving throws and leaves the interaction free for a retry', async () => {
+    const { interaction } = await seedChat();
     const save = vi.spyOn(PublicFeedback.prototype, 'save').mockRejectedValueOnce(new Error('E11000 duplicate key secret'));
     try {
       const res = await run(validBody());
@@ -216,6 +229,16 @@ describe('feedback-persist-public', () => {
     } finally {
       save.mockRestore();
     }
+    const updated = await Interaction.findById(interaction._id);
+    expect(updated.publicFeedback).toBeFalsy();
+    expect(await PublicFeedback.countDocuments()).toBe(0);
+
+    const retry = await run(validBody());
+    expect(retry.statusCode).toBe(200);
+    const saved = await PublicFeedback.find();
+    expect(saved).toHaveLength(1);
+    const afterRetry = await Interaction.findById(interaction._id);
+    expect(afterRetry.publicFeedback.toString()).toBe(saved[0]._id.toString());
   });
 
   it('returns 400 when required fields are missing and 405 for other methods', async () => {
