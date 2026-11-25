@@ -1,13 +1,13 @@
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import fs from 'fs';
+import { corsMiddleware } from './corsPolicy.js';
 import { renderIndexHtml } from './renderIndexHtml.js';
 import { normalizePathname } from '../src/utils/normalizePathname.js';
 
 
 import similarChatsHandler from '../api/vector/vector-similar-chats.js';
 import express from 'express';
-import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -230,10 +230,8 @@ const isRegisteredApiRoute = (method, pathName) => {
   });
 };
 
-app.use(cors({
-  origin: true,
-  credentials: true
-}));
+// Credentialed CORS only for this app's own hosts. See corsPolicy.js (AIA-022).
+app.use(corsMiddleware);
 
 // Reject unknown API routes before body parsing, sessions, Passport, and API middleware.
 app.use('/api', (req, res, next) => {
