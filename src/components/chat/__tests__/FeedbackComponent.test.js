@@ -221,7 +221,7 @@ describe('FeedbackComponent — public feedback', () => {
     });
 
     expect(mockPersistPublicFeedback).toHaveBeenCalledTimes(1);
-    expect(screen.getByText('homepage.feedback.error')).toBeTruthy();
+    expect(screen.getByText('homepage.publicFeedback.saveError')).toBeTruthy();
     expect(screen.queryByText('homepage.feedback.thankYou')).toBeNull();
     expect(screen.getByText('homepage.publicFeedback.send')).toBeTruthy();
     errorSpy.mockRestore();
@@ -242,7 +242,7 @@ describe('FeedbackComponent — public feedback', () => {
 
     expect(mockPersistPublicFeedback).toHaveBeenCalledTimes(1);
     expect(screen.getByText('homepage.feedback.thankYou')).toBeTruthy();
-    expect(screen.queryByText('homepage.feedback.error')).toBeNull();
+    expect(screen.queryByText('homepage.publicFeedback.saveError')).toBeNull();
     expect(screen.queryByText('homepage.publicFeedback.send')).toBeNull();
   });
 });

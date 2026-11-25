@@ -36,6 +36,7 @@
       "send": "Envoyer la rétroaction",
       "question": "C'était utile ?",
       "selectionRequired": "Veuillez sélectionner une raison.",
+      "saveError": "Nous n'avons pas pu enregistrer votre rétroaction. Réessayez.",
       "requiredLabel": "obligatoire",
       "yes": {
         "title": "Dites-nous plus",

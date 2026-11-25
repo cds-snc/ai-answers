@@ -131,7 +131,7 @@ const PublicFeedbackComponent = ({
           {saveFailed && (
             <FeedbackInlineError
               id="public-feedback-save-error"
-              message={t('homepage.feedback.error')}
+              message={t('homepage.publicFeedback.saveError')}
               errorCount={saveErrorCount}
               inputRef={saveErrorRef}
             />

@@ -36,6 +36,7 @@
       "send": "Send feedback",
       "question": "Was this helpful?",
       "selectionRequired": "Please select a reason.",
+      "saveError": "We couldn't save your feedback. Try again.",
       "requiredLabel": "required",
       "yes": {
         "title": "Tell us more",
