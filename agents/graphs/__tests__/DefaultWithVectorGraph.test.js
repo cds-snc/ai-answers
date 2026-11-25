@@ -53,7 +53,7 @@ vi.mock('../guardrails/index.js', () => ({
     runInitialPiiGuardrail: vi.fn(),
     runPostTranslationGuardrail: vi.fn(),
     runRedactionGuardrail: vi.fn((userMessage) => ({ redactedText: userMessage, redactedItems: [] })),
-    translateWithGuardrail: vi.fn((text) => ({ translatedText: text, originalLanguage: 'en' })),
+    translateWithGuardrail: vi.fn(({ text }) => ({ translatedText: text, originalLanguage: 'en' })),
     validateShortQueryOrThrow: vi.fn(),
 }));
 vi.mock('../services/piiService.js', () => ({

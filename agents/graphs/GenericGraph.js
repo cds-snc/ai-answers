@@ -103,7 +103,7 @@ graph.addNode('translate', async (state) => {
     selectedAI: state.selectedAI,
   });
 
-  const translationData = await workflow.translateQuestion(state.redactedText, 'en', state.selectedAI, translationContext, state.chatId);
+  const translationData = await workflow.translateQuestion({ text: state.redactedText, lang: 'en', selectedAI: state.selectedAI, translationContext, chatId: state.chatId });
   await workflow.postTranslateGuard(translationData, state.chatId, state.selectedAI);
 
   const out = { translationData, status: WorkflowStatus.BUILDING_CONTEXT };

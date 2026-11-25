@@ -49,7 +49,7 @@ graph.addNode('redact', async (state) => {
 graph.addNode('translate', async (state) => {
   const translationContext = workflow.buildTranslationContext(state.conversationHistory);
   logGraphEvent('info', 'node:translate input', state.chatId, { translationContext, selectedAI: state.selectedAI });
-  const translationData = await workflow.translateQuestion(state.redactedText, 'en', state.selectedAI, translationContext, state.chatId);
+  const translationData = await workflow.translateQuestion({ text: state.redactedText, lang: 'en', selectedAI: state.selectedAI, translationContext, chatId: state.chatId });
   await workflow.postTranslateGuard(translationData, state.chatId, state.selectedAI);
   const out = { translationData, status: WorkflowStatus.BUILDING_CONTEXT };
   logGraphEvent('info', 'node:translate output', state.chatId, out);
