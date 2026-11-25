@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.214.2](https://github.com/cds-snc/ai-answers/compare/v1.214.1...v1.214.2) (2026-11-25)
+
+
+### Bug Fixes
+
+* AIA-021 prevent stored questions forging fields in eval-informed examples ([272f2d9](https://github.com/cds-snc/ai-answers/commit/272f2d9367d27bca8a4820d8756112fa920ed5ac))
+* answer availability OPTIONS despite Cookie header ([f62bfb7](https://github.com/cds-snc/ai-answers/commit/f62bfb7bb291487caded4f9198cfcbf5472d697f))
+* keep question text out of logs written before the post-translati… ([d17c51e](https://github.com/cds-snc/ai-answers/commit/d17c51e3fdd8af4e03e8d8596367f8678f479c4d))
+* keep question text out of logs written before the post-translation guardrail (AIA-018 follow-up) ([eb5b1b5](https://github.com/cds-snc/ai-answers/commit/eb5b1b5306dfa46e916060aaf1c1abb758f5ac6a))
+* log only metadata for language and encoding hard-blocks (AIA-018)) ([76d9931](https://github.com/cds-snc/ai-answers/commit/76d993152ee7285f8606721082d2a63be4f5f54d))
+* log only metadata for language and encoding hard-blocks (AIA-018)) ([2e07dce](https://github.com/cds-snc/ai-answers/commit/2e07dcefd96103521bcf333f69b8f0e09d2e92d7))
+* narrow the description ([ae61508](https://github.com/cds-snc/ai-answers/commit/ae615087bbc34eb8c0e008cbbb26c8ed9c13571c))
+* prevent raw pii in console ([6933b98](https://github.com/cds-snc/ai-answers/commit/6933b98da4ad256c581f4be714a4e148f893a82f))
+* prevent raw pii in console AIA-014 ([63d78fd](https://github.com/cds-snc/ai-answers/commit/63d78fd018849409e91601a69e7a6ee4232a3e7e))
+* replace it with [removed] instead of an empty string, so the pieces can’t join back up ([53cd617](https://github.com/cds-snc/ai-answers/commit/53cd617e5306eae4b1f8e40dd7fb080ee113f37f))
+* replace with removed ([53cd617](https://github.com/cds-snc/ai-answers/commit/53cd617e5306eae4b1f8e40dd7fb080ee113f37f))
+* require chatId in the translation service and harden AIA-018 log tests ([fa5a3a3](https://github.com/cds-snc/ai-answers/commit/fa5a3a3ad7cc9c4508b36bedcf0d857c7696ff9d))
+* restrict API CORS for credentialed requests (AIA-022) ([23c82c4](https://github.com/cds-snc/ai-answers/commit/23c82c4a961ac671b6c011910bbdb34be21965f1))
+* skip wildcard CORS on chat-session-availability when cookies are sent ([a2301e8](https://github.com/cds-snc/ai-answers/commit/a2301e848b9022831d2952a41782d938957c84a4))
+* vary every CORS response on Origin and accept availability HEAD ([9a036d9](https://github.com/cds-snc/ai-answers/commit/9a036d90eb33ad3299be5128343c2308fd90db8b))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump the npm-security group across 1 directory with 2 updates ([aba5976](https://github.com/cds-snc/ai-answers/commit/aba59763ad4dd551154556ad9625b3751ffd6096))
+
 ## [1.214.1](https://github.com/cds-snc/ai-answers/compare/v1.214.0...v1.214.1) (2026-11-24)
 
 
