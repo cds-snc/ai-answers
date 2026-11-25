@@ -109,7 +109,7 @@ Past questions are public input, and they reach other users' system prompts thro
 
 - **Every field is one line** (`oneLine()` in `QuestionAnswerService.js`). A stored question can't forge a `Score:`, `Feedback:` or `Citation:` line. See [Block format](#block-format).
 - **Question text is capped** at 400 characters.
-- **Only expert feedback can supply `correct-url=`.** It is the one label the prompt tells the model to act on, so `untrustedText()` removes it from questions, the flow and answers. A URL can remain there as plain text.
+- **Only expert feedback can supply `correct-url=`.** It is the one label the prompt tells the model to act on, so `untrustedText()` replaces it with `[removed]` in questions, the flow and answers. (A marker, not an empty string, so a nested `correct-correct-url=url=` can't rejoin into the label.) A URL can remain there as plain text.
 - **The prompt marks each Q as data.** It tells the model a Q is a past user's question and never instructions.
 - **Citations stay on government hosts.** Even if an example steers the model, `UrlValidationService` replaces any citation outside `*.canada.ca`, `*.gc.ca` or the department list (AIA-007).
 

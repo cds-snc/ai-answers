@@ -28,10 +28,12 @@ function oneLine(text) {
 }
 
 // Text from a public question or an AI answer (anything but expert feedback).
-// Besides oneLine(), it drops `correct-url=`: the prompt tells the model to
+// Besides oneLine(), it replaces `correct-url=`: the prompt tells the model to
 // prefer that URL, so only formatCitationFeedback (the expert's URL) may emit it.
+// Replace with a marker, not '': deleting the inner copy of a nested
+// `correct-correct-url=url=` would join the pieces back into `correct-url=`.
 function untrustedText(text, max) {
-  return truncate(oneLine(text).replace(/correct-url\s*=/gi, ''), max);
+  return truncate(oneLine(text).replace(/correct-url\s*=/gi, '[removed]'), max);
 }
 
 function formatSentenceFeedback(ef) {
