@@ -13,6 +13,29 @@ function truncate(text = '', max = 400) {
   return `${text.slice(0, max).trim()}...`;
 }
 
+// Max length of stored question text in an example block. The chat UI caps input
+// at 260; the API can be called directly, so the cap is enforced here too.
+const MAX_QUESTION_CHARS = 400;
+
+// The model reads each example as one line per field (Q:/Flow:/A:/Score:/Date:/
+// Feedback:/Citation:). Questions are public input and notes are free text, so
+// a line break in either could forge a field this service never wrote, e.g. a
+// fake "Score: 100/100" or "Citation: correct-url=..." (AIA-021). Every value
+// goes through this before it is placed in a block.
+function oneLine(text) {
+  if (!text || typeof text !== 'string') return '';
+  return text.replace(/[\r\n\v\f\u0085\u2028\u2029]+/g, ' ').replace(/[ \t]{2,}/g, ' ').trim();
+}
+
+// Text from a public question or an AI answer (anything but expert feedback).
+// Besides oneLine(), it replaces `correct-url=`: the prompt tells the model to
+// prefer that URL, so only formatCitationFeedback (the expert's URL) may emit it.
+// Replace with a marker, not '': deleting the inner copy of a nested
+// `correct-correct-url=url=` would join the pieces back into `correct-url=`.
+function untrustedText(text, max) {
+  return truncate(oneLine(text).replace(/correct-url\s*=/gi, '[removed]'), max);
+}
+
 function formatSentenceFeedback(ef) {
   const parts = [];
   const sentences = [1, 2, 3, 4];
@@ -96,11 +119,11 @@ class QuestionAnswerService {
       for (const inter of chat.interactions) {
         const q = inter?.question;
         const text = q?.redactedQuestion || q?.englishQuestion || '';
-        if (text) flow.push(`Question ${n}: ${text}`);
+        if (text) flow.push(`Question ${n}: ${untrustedText(text, MAX_QUESTION_CHARS)}`);
         n += 1;
         if (inter?._id?.toString?.() === targetId) break;
       }
-      return flow.join('\n');
+      return flow.join(' | ');
     } catch (err) {
       ServerLoggingService.warn('buildQuestionFlow failed', '', err);
       return '';
@@ -200,13 +223,13 @@ class QuestionAnswerService {
         if (!questionText || !answerText) continue;
 
         const blockParts = [];
-        blockParts.push(`Q: ${questionText}`);
+        blockParts.push(`Q: ${untrustedText(questionText, MAX_QUESTION_CHARS)}`);
         if (flowText) blockParts.push(`Flow: ${flowText}`);
-        blockParts.push(`A: ${truncate(answerText, maxAnswerChars)}`);
+        blockParts.push(`A: ${untrustedText(answerText, maxAnswerChars)}`);
         if (totalScore !== null) blockParts.push(`Score: ${totalScore}/100 (expert feedback)`);
         if (dateStr) blockParts.push(`Date: ${dateStr}`);
-        if (feedbackText) blockParts.push(`Feedback: ${feedbackText}`);
-        if (citationText) blockParts.push(`Citation: ${citationText}`);
+        if (feedbackText) blockParts.push(`Feedback: ${oneLine(feedbackText)}`);
+        if (citationText) blockParts.push(`Citation: ${oneLine(citationText)}`);
 
         lines.push(blockParts.join('\n'));
         if (returnDebugData) {
