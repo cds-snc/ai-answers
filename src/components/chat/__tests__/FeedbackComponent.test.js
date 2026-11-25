@@ -17,10 +17,11 @@ vi.mock('../../RoleBasedUI.js', () => ({
 }));
 
 const mockPersistExpertFeedback = vi.fn();
+const mockPersistPublicFeedback = vi.fn();
 vi.mock('../../../services/FeedbackService.js', () => ({
   default: {
     persistExpertFeedback: (...args) => mockPersistExpertFeedback(...args),
-    persistPublicFeedback: vi.fn(),
+    persistPublicFeedback: (...args) => mockPersistPublicFeedback(...args),
   },
 }));
 
@@ -29,6 +30,7 @@ import FeedbackComponent from '../FeedbackComponent.js';
 afterEach(() => {
   cleanup();
   mockPersistExpertFeedback.mockClear();
+  mockPersistPublicFeedback.mockClear();
 });
 
 const renderComponent = (props = {}) => {
@@ -182,5 +184,27 @@ describe('FeedbackComponent — expert eval submit hands off on next click', () 
     expect(onExpertFeedbackChange).toHaveBeenCalledWith(
       expect.objectContaining({ feedback: 'positive', totalScore: 100, type: 'expert' })
     );
+  });
+});
+
+describe('FeedbackComponent — public feedback', () => {
+  it('saves public feedback once', async () => {
+    mockUseHasAnyRole.mockReturnValue(false);
+    mockPersistPublicFeedback.mockResolvedValue({ message: 'Public feedback logged successfully' });
+    renderComponent();
+
+    fireEvent.click(screen.getByText('common.yes'));
+    fireEvent.click(screen.getByLabelText('homepage.publicFeedback.yes.options.noCall'));
+    await act(async () => {
+      fireEvent.click(screen.getByText('homepage.publicFeedback.send'));
+    });
+
+    expect(mockPersistPublicFeedback).toHaveBeenCalledTimes(1);
+    expect(mockPersistPublicFeedback).toHaveBeenCalledWith({
+      chatId: 'chat-1',
+      interactionId: 'msg-1',
+      publicFeedback: expect.objectContaining({ feedback: 'yes', publicFeedbackScore: 1 }),
+    });
+    expect(screen.getByText('homepage.feedback.thankYou')).toBeTruthy();
   });
 });
