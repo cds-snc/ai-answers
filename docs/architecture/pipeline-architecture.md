@@ -306,6 +306,13 @@ The same guardrail wrapper also maps translation-service blocks to `azureGuardra
 obfuscated `zxx` source language to `manipulation`, and unsupported `und` source
 language to `unsupportedLanguage`.
 
+Each hard block (`zxx`, `und`, unsupported Indigenous language) is logged to the chat
+logs as metadata only: detected language, block type, original length and translated
+language. The text is never logged. These branches throw before the stage-2 PII check,
+so the text was never fully screened, and the system card promises blocked questions
+are never stored (AIA-018). The trade-off: the logs show which languages are blocked,
+but not enough to judge whether a block was a false positive.
+
 ---
 
 ### 5. Context Derivation (`contextNode`)

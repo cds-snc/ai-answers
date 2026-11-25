@@ -58,7 +58,8 @@ export class GraphWorkflowHelper {
   //     mechanisms are in place. Logged separately so we can monitor false
   //     positives independently from the zxx case.
   // Both blocks are only as good as the translator's labeling — false positives
-  // will reject legit users, which is why we log every trigger for auditing.
+  // will reject legit users, which is why we log every trigger for auditing
+  // (language and block type only — never the text; AIA-018).
   async postTranslateGuard(translationData, chatId, selectedAI, originalLang) {
     return runPostTranslationGuardrail(translationData, chatId, selectedAI, originalLang);
   }
