@@ -36,6 +36,7 @@ describe('credentialedCorsOrigin', () => {
 
   it('allows a loopback dev server and a preview host only for itself', () => {
     expect(credentialedCorsOrigin('http://localhost:3000', 'localhost:3000', 'production')).toBe('http://localhost:3000');
+    expect(credentialedCorsOrigin('http://[::1]:3000', '[::1]:3000', 'production')).toBe('http://[::1]:3000');
     const preview = 'abc123.lambda-url.ca-central-1.on.aws';
     expect(credentialedCorsOrigin(`https://${preview}`, preview, 'production')).toBe(`https://${preview}`);
     expect(credentialedCorsOrigin('https://other.lambda-url.ca-central-1.on.aws', preview, 'production')).toBeNull();
@@ -105,6 +106,47 @@ describe('corsMiddleware', () => {
     expect(result.nextCalled).toBe(true);
   });
 
+  it('does not pair availability with a wildcard when the request has cookies', () => {
+    const result = run({
+      method: 'GET',
+      url: '/api/chat/chat-session-availability',
+      originalUrl: '/api/chat/chat-session-availability',
+      headers: {
+        origin: 'https://www.canada.ca',
+        host: EN,
+        cookie: 'connect.sid=abc',
+      },
+    });
+    expect(result.headers['access-control-allow-origin']).toBeUndefined();
+    expect(result.nextCalled).toBe(true);
+  });
+
+  it('advertises only GET and HEAD on the public availability preflight', () => {
+    const result = run({
+      method: 'OPTIONS',
+      url: '/api/chat/chat-session-availability',
+      originalUrl: '/api/chat/chat-session-availability',
+      headers: { origin: 'https://www.canada.ca', host: EN },
+    });
+    expect(result.headers['access-control-allow-origin']).toBe('*');
+    expect(result.headers['access-control-allow-methods']).toBe('GET,HEAD');
+    expect(result.res.ended).toBe(true);
+    expect(result.nextCalled).toBe(false);
+  });
+
+  it('answers an allowed preflight with credentials for the language partner', () => {
+    const result = run({
+      method: 'OPTIONS',
+      url: '/api/db/db-chat-logs',
+      originalUrl: '/api/db/db-chat-logs',
+      headers: { origin: `https://${FR}`, host: EN },
+    });
+    expect(result.headers['access-control-allow-origin']).toBe(`https://${FR}`);
+    expect(result.headers['access-control-allow-credentials']).toBe('true');
+    expect(result.res.ended).toBe(true);
+    expect(result.nextCalled).toBe(false);
+  });
+
   it('answers a disallowed preflight without CORS headers and without calling next', () => {
     const result = run({
       method: 'OPTIONS',
@@ -114,6 +156,9 @@ describe('corsMiddleware', () => {
     });
     expect(result.res.statusCode).toBe(204);
     expect(result.res.ended).toBe(true);
+    expect(result.headers['content-length']).toBe('0');
+    expect(result.headers.vary).toBe('Origin');
+    expect(result.headers['cache-control']).toBe('no-store');
     expect(result.headers['access-control-allow-origin']).toBeUndefined();
     expect(result.headers['access-control-allow-credentials']).toBeUndefined();
     expect(result.nextCalled).toBe(false);

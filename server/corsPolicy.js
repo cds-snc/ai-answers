@@ -10,7 +10,9 @@
  *
  * The canada.ca banner reads chat-session-availability from another origin and
  * does not send cookies. That one route stays readable cross-origin, without
- * credentials. Wildcard origins cannot be combined with cookies.
+ * credentials. Wildcard origins cannot be combined with cookies; if the
+ * request carries a Cookie header we skip CORS so a user-specific body is
+ * never paired with Access-Control-Allow-Origin: *.
  */
 
 import cors from 'cors';
@@ -26,8 +28,25 @@ const LANGUAGE_HOST_LABELS = {
 
 const AVAILABILITY_PATH = '/api/chat/chat-session-availability';
 
+const PUBLIC_AVAILABILITY_CORS = cors({
+  origin: '*',
+  credentials: false,
+  methods: ['GET', 'HEAD'],
+});
+
+function endDeniedPreflight(res) {
+  res.statusCode = 204;
+  res.setHeader('Content-Length', '0');
+  res.setHeader('Vary', 'Origin');
+  res.setHeader('Cache-Control', 'no-store');
+  res.end();
+}
+
 function isLoopback(hostname) {
-  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
+  return hostname === 'localhost'
+    || hostname === '127.0.0.1'
+    || hostname === '::1'
+    || hostname === '[::1]';
 }
 
 // An Origin header is only a scheme, host, and optional port. parseHttpUrl
@@ -102,12 +121,14 @@ export function corsMiddleware(req, res, next) {
 
   const pathName = (req.originalUrl || req.url || '').split('?')[0];
   if (originHeader && isPublicAvailabilityRequest(req.method, pathName)) {
-    return cors({ origin: '*', credentials: false })(req, res, next);
+    if (req.headers.cookie) {
+      return next();
+    }
+    return PUBLIC_AVAILABILITY_CORS(req, res, next);
   }
 
   if (req.method === 'OPTIONS') {
-    res.statusCode = 204;
-    res.end();
+    endDeniedPreflight(res);
     return;
   }
 
