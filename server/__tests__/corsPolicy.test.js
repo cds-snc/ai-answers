@@ -121,6 +121,24 @@ describe('corsMiddleware', () => {
     expect(result.nextCalled).toBe(true);
   });
 
+  it('answers a public availability preflight even when the request has cookies', () => {
+    const result = run({
+      method: 'OPTIONS',
+      url: '/api/chat/chat-session-availability',
+      originalUrl: '/api/chat/chat-session-availability',
+      headers: {
+        origin: 'https://www.canada.ca',
+        host: EN,
+        cookie: 'connect.sid=abc',
+      },
+    });
+    expect(result.headers['access-control-allow-origin']).toBe('*');
+    expect(result.headers['access-control-allow-methods']).toBe('GET,HEAD');
+    expect(result.headers['access-control-allow-credentials']).toBeUndefined();
+    expect(result.res.ended).toBe(true);
+    expect(result.nextCalled).toBe(false);
+  });
+
   it('advertises only GET and HEAD on the public availability preflight', () => {
     const result = run({
       method: 'OPTIONS',

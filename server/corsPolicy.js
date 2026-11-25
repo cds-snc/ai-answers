@@ -10,9 +10,10 @@
  *
  * The canada.ca banner reads chat-session-availability from another origin and
  * does not send cookies. That one route stays readable cross-origin, without
- * credentials. Wildcard origins cannot be combined with cookies; if the
- * request carries a Cookie header we skip CORS so a user-specific body is
- * never paired with Access-Control-Allow-Origin: *.
+ * credentials. Wildcard origins cannot be combined with cookies; a GET or
+ * HEAD that carries a Cookie header skips CORS so a user-specific body is
+ * never paired with Access-Control-Allow-Origin: *. An OPTIONS preflight has
+ * no body and is still answered, including when the request has cookies.
  */
 
 import cors from 'cors';
@@ -121,7 +122,9 @@ export function corsMiddleware(req, res, next) {
 
   const pathName = (req.originalUrl || req.url || '').split('?')[0];
   if (originHeader && isPublicAvailabilityRequest(req.method, pathName)) {
-    if (req.headers.cookie) {
+    // Skip only the actual response. Preflight must be answered here so
+    // OPTIONS never reaches a handler, and it carries no body to expose.
+    if (req.headers.cookie && req.method !== 'OPTIONS') {
       return next();
     }
     return PUBLIC_AVAILABILITY_CORS(req, res, next);
