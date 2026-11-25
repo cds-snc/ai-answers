@@ -18,6 +18,13 @@ const PublicFeedbackComponent = ({
   const { t } = useTranslations(lang);
   const [selected, setSelected] = useState('');
   const { hasError, errorCount, errorRef, triggerError, clearError } = useInlineFormError();
+  const {
+    hasError: saveFailed,
+    errorCount: saveErrorCount,
+    errorRef: saveErrorRef,
+    triggerError: triggerSaveError,
+    clearError: clearSaveError,
+  } = useInlineFormError();
 
   const options = (isPositive ? FEEDBACK_OPTIONS.YES : FEEDBACK_OPTIONS.NO).map(opt => ({
     ...opt,
@@ -29,6 +36,7 @@ const PublicFeedbackComponent = ({
   const handleOptionChange = (id) => {
     setSelected(id);
     clearError();
+    clearSaveError();
   };
 
   const handleSend = async () => {
@@ -47,8 +55,11 @@ const PublicFeedbackComponent = ({
     try {
       await FeedbackService.persistPublicFeedback({ chatId, interactionId: userMessageId, publicFeedback: feedbackPayload });
     } catch (err) {
+      // A failed save stores nothing. Keep the form on screen so the person
+      // can try again.
       console.error('Failed to persist public feedback', err);
-      // parent still shows its own thank-you message even if logging fails
+      triggerSaveError();
+      return;
     }
     onSubmit(feedbackPayload);
   };
@@ -111,6 +122,14 @@ const PublicFeedbackComponent = ({
               </li>
             ))}
           </ul>
+          {saveFailed && (
+            <FeedbackInlineError
+              id="public-feedback-save-error"
+              message={t('homepage.feedback.error')}
+              errorCount={saveErrorCount}
+              inputRef={saveErrorRef}
+            />
+          )}
           <button type="submit" className="btn-primary mt-150">
             {t('homepage.publicFeedback.send')}
           </button>

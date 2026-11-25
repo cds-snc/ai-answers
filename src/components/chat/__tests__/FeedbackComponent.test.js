@@ -207,4 +207,23 @@ describe('FeedbackComponent — public feedback', () => {
     });
     expect(screen.getByText('homepage.feedback.thankYou')).toBeTruthy();
   });
+
+  it('keeps the form up and shows an error when the save fails', async () => {
+    mockUseHasAnyRole.mockReturnValue(false);
+    mockPersistPublicFeedback.mockRejectedValue(new Error('Failed to persist public feedback'));
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    renderComponent();
+
+    fireEvent.click(screen.getByText('common.yes'));
+    fireEvent.click(screen.getByLabelText('homepage.publicFeedback.yes.options.noCall'));
+    await act(async () => {
+      fireEvent.click(screen.getByText('homepage.publicFeedback.send'));
+    });
+
+    expect(mockPersistPublicFeedback).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('homepage.feedback.error')).toBeTruthy();
+    expect(screen.queryByText('homepage.feedback.thankYou')).toBeNull();
+    expect(screen.getByText('homepage.publicFeedback.send')).toBeTruthy();
+    errorSpy.mockRestore();
+  });
 });

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
 import mongoose from 'mongoose';
 import handler from '../feedback-persist-public.js';
 import dbConnect from '../../db/db-connect.js';
@@ -166,6 +166,56 @@ describe('feedback-persist-public', () => {
     }));
     expect(res.statusCode).toBe(400);
     expect(await PublicFeedback.countDocuments()).toBe(0);
+  });
+
+  it('rejects feedback outside yes or no', async () => {
+    await seedChat();
+    const res = await run(validBody({ feedback: 'maybe' }));
+    expect(res.statusCode).toBe(400);
+    expect(await PublicFeedback.countDocuments()).toBe(0);
+  });
+
+  it('rejects a score outside the known options', async () => {
+    await seedChat();
+    const res = await run(validBody({ publicFeedbackScore: 11 }));
+    expect(res.statusCode).toBe(400);
+    expect(await PublicFeedback.countDocuments()).toBe(0);
+  });
+
+  it('rejects an over-long reason', async () => {
+    await seedChat();
+    const res = await run(validBody({ publicFeedbackReason: 'x'.repeat(301) }));
+    expect(res.statusCode).toBe(400);
+    expect(await PublicFeedback.countDocuments()).toBe(0);
+  });
+
+  it('stores a trimmed yes or no so the metrics match can see it', async () => {
+    await seedChat();
+    const res = await run(validBody({ feedback: 'yes ' }));
+    expect(res.statusCode).toBe(200);
+    const saved = await PublicFeedback.find();
+    expect(saved).toHaveLength(1);
+    expect(saved[0].feedback).toBe('yes');
+  });
+
+  it('returns 400 for a whitespace chatId and writes nothing', async () => {
+    await seedChat();
+    const res = await run({ ...validBody(), chatId: '   ' });
+    expect(res.statusCode).toBe(400);
+    expect(res.payload.error).toBeUndefined();
+    expect(await PublicFeedback.countDocuments()).toBe(0);
+  });
+
+  it('returns a generic message when saving throws', async () => {
+    await seedChat();
+    const save = vi.spyOn(PublicFeedback.prototype, 'save').mockRejectedValueOnce(new Error('E11000 duplicate key secret'));
+    try {
+      const res = await run(validBody());
+      expect(res.statusCode).toBe(500);
+      expect(res.payload).toEqual({ message: 'Failed to log public feedback' });
+    } finally {
+      save.mockRestore();
+    }
   });
 
   it('returns 400 when required fields are missing and 405 for other methods', async () => {
