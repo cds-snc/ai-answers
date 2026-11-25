@@ -13,7 +13,9 @@ function isAuthenticated(req) {
 }
 
 async function availabilityHandler(req, res) {
-  if (req.method !== 'GET') return res.status(405).json({ error: 'method_not_allowed' });
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    return res.status(405).json({ error: 'method_not_allowed' });
+  }
   try {
     const siteStatusRaw = SettingsService.get('siteStatus');
     const siteStatus = siteStatusRaw === 'available';

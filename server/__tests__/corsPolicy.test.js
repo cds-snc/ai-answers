@@ -91,6 +91,7 @@ describe('corsMiddleware', () => {
     });
     expect(denied.headers['access-control-allow-origin']).toBeUndefined();
     expect(denied.headers['access-control-allow-credentials']).toBeUndefined();
+    expect(denied.headers.vary).toBe('Origin');
     expect(denied.nextCalled).toBe(true);
   });
 
@@ -103,6 +104,7 @@ describe('corsMiddleware', () => {
     });
     expect(result.headers['access-control-allow-origin']).toBe('*');
     expect(result.headers['access-control-allow-credentials']).toBeUndefined();
+    expect(result.headers.vary).toBe('Origin');
     expect(result.nextCalled).toBe(true);
   });
 
@@ -118,6 +120,7 @@ describe('corsMiddleware', () => {
       },
     });
     expect(result.headers['access-control-allow-origin']).toBeUndefined();
+    expect(result.headers.vary).toBe('Origin');
     expect(result.nextCalled).toBe(true);
   });
 
@@ -190,6 +193,7 @@ describe('corsMiddleware', () => {
       headers: { host: EN },
     });
     expect(result.headers['access-control-allow-origin']).toBeUndefined();
+    expect(result.headers.vary).toBe('Origin');
     expect(result.nextCalled).toBe(true);
   });
 });

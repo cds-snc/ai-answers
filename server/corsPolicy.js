@@ -114,6 +114,11 @@ export function isPublicAvailabilityRequest(method, pathName) {
 // Preflight is answered here, as it was when cors() covered every route, so
 // OPTIONS never reaches a handler that would treat it as a real API call.
 export function corsMiddleware(req, res, next) {
+  // Same-origin navigations often omit Origin. A cache that stored that
+  // response could reuse it for the language-partner host, which needs CORS
+  // headers for a cross-origin font or module script.
+  res.setHeader('Vary', 'Origin');
+
   const originHeader = req.headers.origin;
   const reflected = credentialedCorsOrigin(originHeader, req.headers.host);
   if (reflected) {
