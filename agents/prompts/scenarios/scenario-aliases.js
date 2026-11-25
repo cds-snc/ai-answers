@@ -1,6 +1,6 @@
 // Maps non-canonical department abbrKeys to the canonical abbrKey whose
-// scenario file should be loaded. Used by systemPrompt.js before the
-// dynamic import of context-{dept}/{dept}-scenarios.js.
+// scenario file should be loaded. Used by systemPrompt.js before looking the
+// key up in SCENARIO_LOADERS (scenario-loaders.js).
 //
 // Portfolio scenarios (one partner, many matched abbrKeys):
 //   Defence portfolio → DND-MDN
@@ -36,4 +36,12 @@ export const SCENARIO_ALIASES = {
   'TARIFF-TARIF': 'FIN',
 };
 
-export const resolveScenarioKey = (key) => SCENARIO_ALIASES[key] || key;
+// Same leniency as findScenarioKey in scenario-loaders.js (lowercase,
+// whitespace → '-'), so 'bizpal-perle' resolves just as 'ised-isde' loads.
+// Map, not object lookup: '__proto__' / 'constructor' must not reach
+// Object.prototype. Unaliased keys come back unchanged.
+const ALIASES_BY_NORMALIZED_KEY = new Map(
+  Object.entries(SCENARIO_ALIASES).map(([alias, canonical]) => [alias.toLowerCase(), canonical])
+);
+export const resolveScenarioKey = (key) =>
+  (typeof key === 'string' && ALIASES_BY_NORMALIZED_KEY.get(key.toLowerCase().replace(/\s+/g, '-'))) || key;

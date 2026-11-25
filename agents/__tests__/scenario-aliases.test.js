@@ -8,7 +8,7 @@ import { departments_FR } from '../prompts/scenarios/departments_FR.js';
 
 const scenariosDir = path.dirname(fileURLToPath(import.meta.resolve('../prompts/scenarios/scenario-aliases.js')));
 
-// Mirrors the path derivation in systemPrompt.js
+// Mirrors the folder naming used by SCENARIO_LOADERS (scenario-loaders.js)
 const scenarioFileFor = (abbrKey) => {
     const dashed = abbrKey.toLowerCase().replace(/\s+/g, '-');
     return path.join(scenariosDir, `context-${dashed}`, `${dashed}-scenarios.js`);
@@ -50,6 +50,16 @@ describe('resolveScenarioKey', () => {
     it('maps an aliased abbrKey to its canonical abbrKey', () => {
         expect(resolveScenarioKey('BIZPAL-PERLE')).toBe('ISED-ISDE');
         expect(resolveScenarioKey('AGPAL')).toBe('AAFC-AAC');
+    });
+
+    it('matches aliases regardless of case or spaces', () => {
+        expect(resolveScenarioKey('bizpal-perle')).toBe('ISED-ISDE');
+        expect(resolveScenarioKey('cannor')).toBe('ISED-ISDE');
+    });
+
+    it('never returns an Object.prototype member', () => {
+        expect(resolveScenarioKey('__proto__')).toBe('__proto__');
+        expect(resolveScenarioKey('constructor')).toBe('constructor');
     });
 
     it('returns unaliased keys unchanged', () => {

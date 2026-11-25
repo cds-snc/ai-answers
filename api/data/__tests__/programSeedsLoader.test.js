@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import {
   parseProgramsMarkdown,
   getSeedPrograms,
@@ -102,6 +104,28 @@ describe('getSeedPrograms — empty cases', () => {
     // curated, so use a department that is genuinely not onboarded.)
     expect(getSeedPrograms('PSPC-SPAC')).toEqual([]);
   });
+
+  it('still matches a registered department in another case', () => {
+    expect(getSeedPrograms('cra-arc')).toEqual(getSeedPrograms('CRA-ARC'));
+  });
+});
+
+// AIA-017: the department comes from the interaction's context (LLM output /
+// client-held), so it must never become part of a file path.
+describe('getSeedPrograms — untrusted department values', () => {
+  const scenariosDir = path.dirname(fileURLToPath(import.meta.resolve('../../../agents/prompts/scenarios/scenario-loaders.js')));
+  // Climbs to the filesystem root and back down to a real file. The old
+  // `context-${d}/${d}-services.md` path resolved this to CRA's .md, proving
+  // any *-services.md on disk was readable.
+  const rootClimb = 'x/' + '../'.repeat(40) + path.join(scenariosDir, 'context-cra-arc', 'cra-arc').slice(1);
+
+  it.each([rootClimb, '../context-cra-arc/cra-arc', 'cra-arc/../cra-arc', '__proto__', 'constructor'])(
+    'returns no programs for %j',
+    (dept) => {
+      expect(getSeedPrograms(dept)).toEqual([]);
+      expect(getProgramNameMap(dept).size).toBe(0);
+    },
+  );
 });
 
 describe('getAllProgramNameMap — merged across departments', () => {
