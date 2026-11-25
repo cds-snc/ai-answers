@@ -306,12 +306,18 @@ The same guardrail wrapper also maps translation-service blocks to `azureGuardra
 obfuscated `zxx` source language to `manipulation`, and unsupported `und` source
 language to `unsupportedLanguage`.
 
-Each hard block (`zxx`, `und`, unsupported Indigenous language) is logged to the chat
-logs as metadata only: detected language, block type, original length and translated
-language. The text is never logged. These branches throw before the stage-2 PII check,
-so the text was never fully screened, and the system card promises blocked questions
-are never stored (AIA-018). The trade-off: the logs show which languages are blocked,
-but not enough to judge whether a block was a false positive.
+The guardrail logs each hard block (`zxx`, `und`, unsupported Indigenous language) to
+the chat logs as metadata only: detected language, block type, original length and
+translated language. Its log never includes the text. These branches throw before the
+stage-2 PII check, so the text was never fully screened, and the system card promises
+blocked questions are never stored (AIA-018). The trade-off: the logs show which
+languages are blocked, but not enough to judge whether a block was a false positive.
+
+**Known gap:** the guardrail's log is not the only one. Every graph's `node:redact output`
+and `node:translate input` events log the stage-1-redacted `redactedText` before
+`postTranslateGuard` runs. So a hard-blocked question, or one blocked by the stage-2 PII
+check, still reaches the chat logs that way. The system card promise is not fully kept
+until those node logs stop recording the text (follow-up to AIA-018).
 
 ---
 
