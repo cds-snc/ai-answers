@@ -14,7 +14,8 @@ import CitationPagesCard from './dashboard/CitationPagesCard.js';
 import AnswerTypesCard from './dashboard/AnswerTypesCard.js';
 import ContentIssueChatsCard from './dashboard/ContentIssueChatsCard.js';
 import CollapsibleCard from './dashboard/CollapsibleCard.js';
-import EvalAnalysisSection from './dashboard/EvalAnalysisSection.js';
+import EvalCoverageCard from './dashboard/EvalCoverageCard.js';
+import MostUsedEvalsCard from './dashboard/MostUsedEvalsCard.js';
 import NoDataCard from './dashboard/NoDataCard.js';
 import { COLOURS } from '../../constants/dashboardColours.js';
 import { buildBlockedBarData } from '../../utils/dashboard/blockedQueryBars.js';
@@ -39,14 +40,11 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   const fmtN = (n) => formatNumber(n, lang);
   const fmtPct = (n) => formatPercent(n, lang);
   const fmtSec = (ms) => formatDecimal((ms || 0) / 1000, lang, 1);
-  const { metrics, loading, error, fetchMetrics } = useDashboardMetrics({ includeReferrals: true, includeCitations: true, includePrograms: true, includeContentIssueChats: true, includeHarmfulChats: true, includeEvalInformedChats: true });
+  const { metrics, loading, error, fetchMetrics } = useDashboardMetrics({ includeReferrals: true, includeCitations: true, includePrograms: true, includeContentIssueChats: true, includeHarmfulChats: true, includeEvalInformedChats: true, includeEvalCoverage: true, includeMostUsedEvals: true });
   useResultsLoadedAnnouncement({ loading, count: metrics.totalQuestions, error, t });
   const autoApplyFired = useRef(false);
   const [hasUserApplied, setHasUserApplied] = useState(false);
   const [appliedDepartment, setAppliedDepartment] = useState('');
-  // Full filters object as last applied — the eval-analysis section runs its
-  // precheck and analysis against exactly what the dashboard is showing.
-  const [appliedFilters, setAppliedFilters] = useState(null);
   const handleApplyFilters = (filters) => {
     if (autoApplyFired.current) {
       // Second+ call is user-triggered: mark as applied so FilterPanel can collapse.
@@ -54,12 +52,10 @@ const PartnerDashboard = ({ lang = 'en' }) => {
     }
     autoApplyFired.current = true;
     setAppliedDepartment(filters?.department || '');
-    setAppliedFilters(filters || null);
     fetchMetrics(filters);
   };
   const handleClearFilters = (filters) => {
     setAppliedDepartment(filters?.department || '');
-    setAppliedFilters(filters || null);
     fetchMetrics(filters);
   };
 
@@ -666,6 +662,25 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         )}
       </div>
 
+      {/* Evaluation coverage by service — where eval-informed answering has
+          few or no expert evaluations to draw on, and which evaluations are
+          about to stop being used. Presence-gated like the programs chart:
+          hidden when no question in scope has been classified. */}
+      {metrics.evalCoverage?.programs?.length > 0 && (
+        <div className="dashboard-section">
+          <EvalCoverageCard coverage={metrics.evalCoverage} lang={lang} />
+        </div>
+      )}
+
+      {/* Most-used evaluations — the evaluations injected into the most
+          answers in the period, each linking to its chat in review mode.
+          Presence-gated like the other lists. */}
+      {metrics.mostUsedEvals?.length > 0 && (
+        <div className="dashboard-section">
+          <MostUsedEvalsCard evals={metrics.mostUsedEvals} lang={lang} />
+        </div>
+      )}
+
       {/* Operations metrics. Median response time is drawn from the technical
           metrics endpoint (ms, displayed in seconds); token totals come from
           the usage endpoint. */}
@@ -791,13 +806,6 @@ const PartnerDashboard = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {/* Eval analysis — runs over the currently applied filters; requires an
-          institution to be selected before the Run button enables. */}
-      <EvalAnalysisSection
-        lang={lang}
-        appliedDepartment={appliedDepartment}
-        appliedFilters={appliedFilters}
-      />
       </>
       )}
 

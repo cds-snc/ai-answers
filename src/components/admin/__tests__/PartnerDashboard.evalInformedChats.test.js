@@ -29,7 +29,6 @@ vi.mock('../dashboard/ContentIssueChatsCard.js', () => ({
   default: ({ title, subtitle }) => <section data-title={title}>{subtitle}</section>,
 }));
 vi.mock('../dashboard/CollapsibleCard.js', () => ({ default: ({ children }) => <div>{children}</div> }));
-vi.mock('../dashboard/EvalAnalysisSection.js', () => ({ default: () => null }));
 vi.mock('../dashboard/NoDataCard.js', () => ({ default: () => null }));
 
 describe('PartnerDashboard eval-informed chats list', () => {

@@ -314,6 +314,30 @@ The same guardrail wrapper also maps translation-service blocks to `azureGuardra
 obfuscated `zxx` source language to `manipulation`, and unsupported `und` source
 language to `unsupportedLanguage`.
 
+The guardrail logs each hard block (`zxx`, `und`, unsupported Indigenous language) to
+the chat logs as metadata only: detected language, block type, original length and
+translated language. Its log never includes the text. These branches throw before the
+stage-2 PII check, so the text was never fully screened, and the system card promises
+blocked questions are never stored (AIA-018). The trade-off: the logs show which
+languages are blocked, but not enough to judge whether a block was a false positive.
+
+The same rule covers every log written before `postTranslateGuard` finishes, since any
+of those questions may still be blocked. The `node:redact output` and
+`node:translate input` events carry no question text, and the translation service's
+"coerced to no-op" log records languages only. Dropping the question text costs little
+for debugging: every stage-1 redaction blocks, so any question that gets past `redact`
+is unchanged, and it is saved with the interaction if it is answered. One thing is
+lost: when the translation model rewrites a question in the same language (for
+example, it follows an instruction embedded in the question), that rewrite is
+discarded and is no longer logged, so there is no record of what the model produced.
+Translation logs
+are filed under the real `chatId`, which `TranslationAgentService.translateQuestion`
+requires (there is no shared fallback bucket).
+`blockedQuestionLogs.security.test.js` runs every graph through each block type after
+`redact`. It runs everything except the model call itself (agent orchestrator,
+translation and PII services, strategies), and fails if any log call contains the
+question text or is filed under a different chat.
+
 ---
 
 ### 5. Context Derivation (`contextNode`)
@@ -343,6 +367,12 @@ verified answer is found
 - Identify relevant URLs
 - Parse the institution code / `abbrKey` (e.g., `EDSC-ESDC`, `CRA-ARC`)
 - The `abbrKey` is what loads that institution's scenarios into the answer prompt (step 7)
+- `parseContextMessage` keeps the department only if it is an `abbrKey` in
+  `departments_EN.js`/`departments_FR.js`, and the URL only if `isGovernmentUrl` accepts
+  it (the citation host check). Anything else becomes `''` and is logged as
+  `Context agent department rejected`. Both values go into the answer agent's system
+  prompt, and the prompts treat `<department-url>`'s domain as an approved source, so a
+  question that steers the context agent must not be able to set them.
 - Categorizing *what the question was about* is not done here — that is the program/action
   classification, which runs after the answer
   ([After the Answer](#after-the-answer-evaluation-and-the-feedback-loop))
@@ -432,6 +462,15 @@ short-circuit variants when a verified match was found)
 - `checkUrlStatus`: Validate URL accessibility
 - `contextAgentTool`: Re-derive context if needed
 
+Both fetch tools take a model-chosen URL, so they are restricted (AIA-010):
+`normalizeFetchUrl` allows only Government of Canada hosts (`api/util/govHost.js`, the same
+check citations get) plus `raw.githubusercontent.com/cds-snc/ai-answers/main/…` for scenario
+files (no encoded `/`, `\` or `.` in the path), on default ports. `api/util/fetchGuard.js` refuses connections whose DNS answer
+includes a private, loopback, link-local or reserved address (checked at connect time, so it
+covers DNS rebinding and every hop) and re-checks the allowlist on each redirect, https only.
+TLS certificates are verified, with one bundled intermediate that some GC servers omit. A
+certificate failure is logged as `TLS verification failed: <host> <code> <tool> <url>`.
+
 **Output Parsing:**
 - `<answer>` block: Main content (1-4 sentences)
 - `<citation-url>`: AI's proposed citation
@@ -451,28 +490,31 @@ short-circuit variants when a verified match was found)
 **Type:** Programmatic URL validation
 **Status:** `verifyingCitation`
 
-**Purpose:** Ensure citation URL is accessible and build final result object
+**Purpose:** Gate the model's citation URL on host, then build the final result object
 
-**Process:**
-1. Send HEAD request to URL (fast, low bandwidth)
-2. If fails: try GET request
-3. Follow up to 10 redirects
-4. Timeout: 10 seconds
-5. Check for known 404 pages
+**Process** (`GraphWorkflowHelper.verifyCitation` → `UrlValidationService.validateUrlFormatting`;
+no network request — the page is not fetched):
+1. No URL → no citation (`verifyCitation` returns `{ url: null, fallbackUrl: null }`
+   before reaching the validator).
+2. URL must be absolute `http(s)`, carry no credentials, and have a Government of Canada
+   host: `canada.ca`/`gc.ca` or a subdomain, or a host from `departments_EN.js` /
+   `departments_FR.js` (`api/util/govHost.js`). Matching is exact or dot-boundary suffix,
+   never substring. Department hosts the GC doesn't control (`NON_GC_DEPARTMENT_HOSTS`)
+   match without subdomains, and `canada.multites.net` (shared vendor hosting) only under
+   the thesaurus paths. Anything else → fallback, and a `warn` graph event is logged with the
+   hostname only (AIA-007).
+3. Allowed URL is passed through unchanged (no http→https upgrade).
+4. If the validator throws → general/department search fallback (fails closed).
 
-**Output:**
-```javascript
-{
-  isValid: boolean,
-  url: string,
-  status: number,
-  confidenceRating: 0 | 1,
-  error?: string
-}
-```
+Reused answers (short circuit / instant answer) skip this node, so
+`buildShortCircuitPayload` runs the same check (`UrlValidationService.checkCitationUrl`)
+on the stored citation.
+
+**Output:** `{ isValid: true, url }`, or on fallback `{ isValid: false, fallbackUrl, fallbackText }`
 
 **Fallback:**
-- If invalid: use `fallbackUrl` or Canada.ca search
+- Department search page (CRA, IRCC, ISC) or the general Canada.ca search, with the question as the query
+- `src/utils/safeUrl.js` (`safeHttpHref`) remains the client-side scheme backstop
 
 **File:** [`services/UrlValidationService.js`](../../services/UrlValidationService.js)
 
@@ -538,8 +580,8 @@ finishes) and emitted as a `result` SSE event with `chatId` merged in:
     citationUrl: string
   },
   context: {
-    department: string,
-    departmentUrl: string,
+    department: string,      // a listed abbrKey or '' — parseContextMessage drops anything else
+    departmentUrl: string,   // that department's EN/FR URL from the list, or ''
     searchResults: array,
     similarQuestions: string,   // injected eval block (GenericWithQAGraph)
     qaMatches: array            // matched past Q/A, for ChatViewer

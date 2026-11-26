@@ -1,10 +1,11 @@
 import { tool } from "@langchain/core/tools";
 import axios from 'axios';
-import { Agent } from 'https';
+import { guardedRequestOptions, logTlsVerificationFailure } from '../../api/util/fetchGuard.js';
 import { normalizeFetchUrl } from '../../api/util/normalizeFetchUrl.js';
 
 const checkUrlStatus = async (url, chatId = 'system') => {
-    const httpsAgent = new Agent({ rejectUnauthorized: false });
+    // Resolved-IP and redirect checks (AIA-010); see api/util/fetchGuard.js.
+    const guarded = guardedRequestOptions();
 
     // Normalized outside the try below so a bad URL is not reported as a
     // network failure. See api/util/normalizeFetchUrl.js.
@@ -12,7 +13,7 @@ const checkUrlStatus = async (url, chatId = 'system') => {
 
     try {
         const response = await axios.get(url, { 
-            httpsAgent, 
+            ...guarded,
             maxRedirects: 10,
             timeout: 5000,
             headers: {
@@ -25,6 +26,7 @@ const checkUrlStatus = async (url, chatId = 'system') => {
         }
         return `URL is live (${url})`;
     } catch (error) {
+        logTlsVerificationFailure(error, url, 'checkUrl');
         if (error.code === 'ECONNREFUSED') {
             throw new Error(`Connection refused: ${url}`);
         } else if (error.response?.status === 403) {

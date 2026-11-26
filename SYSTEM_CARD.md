@@ -94,7 +94,7 @@ Two entry points appear on the left: "External uses" (Canada.ca, AI Answers) and
 
 ### Agentic capabilities
 - **Tool usage**: During answer generation, the AI can autonomously choose to use specialized tools:
-  - **downloadWebPage**: Critical for accuracy — downloads and reads web pages to verify current information, especially new or updated pages, time-sensitive content (tax year changes, program updates), and specific details like numbers, codes, dates, and dollar amounts
+  - **downloadWebPage**: Critical for accuracy — downloads and reads web pages to verify current information, especially new or updated pages, time-sensitive content (tax year changes, program updates), and specific details like numbers, codes, dates, and dollar amounts. It can only read Government of Canada websites, plus this project's own published instruction files on GitHub, and it cannot reach internal network addresses, even if a redirect points there. It also checks each site's security certificate, so it only reads pages that really come from that site.
   - **OpenGov API**: Finds open datasets for data-oriented questions
 - **Context generation**: Derives fresh context for **every question**, including follow-on questions, to ensure accurate institution identification and relevant content
 
@@ -122,7 +122,7 @@ Three things in this flow set AI Answers apart from a general-purpose chatbot.
 7. **Context derivation** (AI - full model): Institution matching and context generation from search results; optionally loads Institution-specific scenarios.
 8. **Eval-informed answering** (embedding lookup, no language-model call): Adds up to three of the most similar expert-rated past answers from the same department to the model's instructions as examples (see Using evaluations to improve answers). In production since August 2026.
 9. **Answer generation** (AI - Configurable model): Generate response with citations using specialized tools.
-10. **Citation verification** (Programmatic): Validate citation URL formatting and generate fallback search URL if needed.
+10. **Citation verification** (Programmatic): Check that the citation link points to a Government of Canada website (canada.ca, gc.ca, or a known federal institution's own site). If it doesn't, a Canada.ca search link is shown instead. The same check applies when an earlier answer is reused.
 11. **Persistence**: Save interaction to database, create embeddings, trigger evaluation.
 12. **Auto-evaluation** (background; not every answer receives one): Evaluation worker checks whether the saved interaction already has a linked AI evaluation (e.g. from a QA match); if not, runs the AI auto-evaluation and links the result to the interaction.
 13. **Task classifier** (AI - full model, runs in the background after the answer is delivered): use question and answer to assign program and action (e.g. IRCC account - sign in) to question for reporting and analysis by institutions.
@@ -138,7 +138,7 @@ Three things in this flow set AI Answers apart from a general-purpose chatbot.
 **Mitigation strategies:**
 - **Real-time content verification**: downloadWebPage tool downloads and reads current web pages to verify information accuracy.
 - **Citation requirements**: Every answer must include a single verified government source link.
-- **URL validation**: Automatic checking of citation URLs for validity and accessibility.
+- **URL validation**: Citation links that don't point to a Government of Canada website are replaced with a Canada.ca search link, so a manipulated or invented link is never shown as an official source.
 - **Expert evaluation system**: Continuous human expert evaluation of response accuracy — a sample of 2,500 questions was evaluated across the public trials, producing an accuracy rate of 96%.
 - **Eval-informed answers**: Similar expert-rated past answers are shown to the model as examples.
 - **Content freshness monitoring**: Prioritizes freshly downloaded content over potentially outdated training data.
@@ -171,7 +171,7 @@ Three things in this flow set AI Answers apart from a general-purpose chatbot.
 - **Content blocking**: Profanity, discriminatory language, threats, and manipulation attempts (word lists configurable by admins via Settings page) are detected immediately or by the initial Azure guardrails and blocked.  
 - **Prompt injection prevention**: Codes, keywords and other common prompt injection techniques are blocked.
 - **Scope enforcement**: Strict limitation to Government of Canada sourced content.
-- **Rate limiting**: 3 questions per session to prevent manipulation (longer conversations are more at risk of inaccuracy).
+- **Conversation length**: 3 questions per session to prevent manipulation (longer conversations are more at risk of inaccuracy).
 - **Character limits**: 260 character limit per question helps prevent prompt injection and force clearer questions.
 - **User warnings**: Blocked questions are shown with the offending words or phrases replaced by "###" symbols. Usability testing confirmed that users understood the issue and rephrased their questions.
 
@@ -210,7 +210,7 @@ Three things in this flow set AI Answers apart from a general-purpose chatbot.
 - **Infrastructure monitoring**: CloudWatch metrics and logging for production environment.
 - **Automated backups**: AWS DocumentDB with automated backup systems.
 - **Failover planning**: System designed for model independence with multiple AI providers.
-- **Rate limiting**: Prevents system overload and abuse.
+- **Rate limiting**: Each anonymous visitor is limited to 20 server requests every 2 minutes and one answer at a time. At most 1,500 anonymous conversations can be active at once. Admins can adjust these limits.
 - **Outage setting**: Turn system off and show outage message via admin panel.
 - **Automated health monitoring**: A background monitor continuously probes the system's core dependencies (database, search, and AI model). When a dependency fails repeatedly within a short rolling window, the monitor sends an alert email to the operations team and — if auto-disable is enabled — automatically sets the site to unavailable so users see the outage message instead of failing responses. Polling speeds up while failures are being confirmed and backs off once the dependency recovers, and the site returns to available automatically when the failures clear.
 
@@ -239,7 +239,7 @@ Three things in this flow set AI Answers apart from a general-purpose chatbot.
 
 Expert evaluations of past answers are not only used for reporting — they can also be fed back into live answer generation. Two mechanisms have been built for this, both drawing on the same store of expert-rated question/answer pairs. 
 
-- **Eval-informed answering (similar questions) — in production since August 2026**: Before the AI generates an answer, the system retrieves a few of the most similar expert-rated past question-answer-evals sets and includes them in the model's instructions as evaluated examples — perfect-score pairs to follow, and flagged-mistake pairs (with the expert's sentence-by-sentence notes and the corrected citation) so the model can avoid repeating known errors. A similarity floor ensures only genuinely related examples are used. Examples must come from the same department the question was matched to, so a general question such as "when is the deadline?" never draws on another department's program. If no department was matched, no examples are used. An expert rating older than one year is not reused. When no relevant example exists, none is injected. 
+- **Eval-informed answering (similar questions) — in production since August 2026**: Before the AI generates an answer, the system retrieves a few of the most similar expert-rated past question-answer-evals sets and includes them in the model's instructions as evaluated examples — perfect-score pairs to follow, and flagged-mistake pairs (with the expert's sentence-by-sentence notes and the corrected citation) so the model can avoid repeating known errors. A similarity floor ensures only genuinely related examples are used. Examples must come from the same department the question was matched to, so a general question such as "when is the deadline?" never draws on another department's program. If no department was matched, no examples are used. An expert rating older than one year is not reused. When no relevant example exists, none is injected. The past questions in these examples were written by members of the public, so the model is told to treat them as reference data, never as instructions. 
 - **Instant verified answers (short-circuit serving) — not yet in production**: When a new question very closely matches a past question whose answer an expert scored a perfect 100/100, the system would serve that verified answer directly and skip the AI model, reducing cost and latency. Only perfect-score answers would be eligible, and the match must be very close to avoid serving the wrong answer. In testing this approach has not yet performed reliably enough to deploy, so it remains off in production.
 
 Both mechanisms are implemented as selectable pipeline variants ("graphs"), require that expert feedback exists for a past answer, and are designed to degrade gracefully — if the lookup is unavailable, answer generation proceeds normally without examples.

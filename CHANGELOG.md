@@ -1,5 +1,128 @@
 # Changelog
 
+## [1.214.3](https://github.com/cds-snc/ai-answers/compare/v1.214.2...v1.214.3) (2026-11-26)
+
+
+### Bug Fixes
+
+* AIA-015 take the user's role from the database on each request ([4e55281](https://github.com/cds-snc/ai-answers/commit/4e55281846cccfc4adece10820649167b0fd3112))
+* allowlist the context agent's department and URL before they rea… ([fc1f8e0](https://github.com/cds-snc/ai-answers/commit/fc1f8e089ae557d49440650ffc029f7de409f29c))
+* allowlist the context agent's department and URL before they reach the answer prompt ([e76cd15](https://github.com/cds-snc/ai-answers/commit/e76cd15809998977989c4245345274649f628ebc))
+* load department scenarios from a static allowlist (AIA-017) ([4b2511a](https://github.com/cds-snc/ai-answers/commit/4b2511adb10441bc148bf4abb309ce376f4e32c2))
+* load department scenarios from a static allowlist (AIA-017) ([2dd5250](https://github.com/cds-snc/ai-answers/commit/2dd52500837f173111f0580479484869c91e00cb))
+* take the user's role from the database on each request, not the sign-in session ([f66f56a](https://github.com/cds-snc/ai-answers/commit/f66f56a2a4ee58ceb27ca9b878d6f7f9895efd7a))
+
+## [1.214.2](https://github.com/cds-snc/ai-answers/compare/v1.214.1...v1.214.2) (2026-11-25)
+
+
+### Bug Fixes
+
+* AIA-021 prevent stored questions forging fields in eval-informed examples ([272f2d9](https://github.com/cds-snc/ai-answers/commit/272f2d9367d27bca8a4820d8756112fa920ed5ac))
+* answer availability OPTIONS despite Cookie header ([f62bfb7](https://github.com/cds-snc/ai-answers/commit/f62bfb7bb291487caded4f9198cfcbf5472d697f))
+* keep question text out of logs written before the post-translati… ([d17c51e](https://github.com/cds-snc/ai-answers/commit/d17c51e3fdd8af4e03e8d8596367f8678f479c4d))
+* keep question text out of logs written before the post-translation guardrail (AIA-018 follow-up) ([eb5b1b5](https://github.com/cds-snc/ai-answers/commit/eb5b1b5306dfa46e916060aaf1c1abb758f5ac6a))
+* log only metadata for language and encoding hard-blocks (AIA-018)) ([76d9931](https://github.com/cds-snc/ai-answers/commit/76d993152ee7285f8606721082d2a63be4f5f54d))
+* log only metadata for language and encoding hard-blocks (AIA-018)) ([2e07dce](https://github.com/cds-snc/ai-answers/commit/2e07dcefd96103521bcf333f69b8f0e09d2e92d7))
+* narrow the description ([ae61508](https://github.com/cds-snc/ai-answers/commit/ae615087bbc34eb8c0e008cbbb26c8ed9c13571c))
+* prevent raw pii in console ([6933b98](https://github.com/cds-snc/ai-answers/commit/6933b98da4ad256c581f4be714a4e148f893a82f))
+* prevent raw pii in console AIA-014 ([63d78fd](https://github.com/cds-snc/ai-answers/commit/63d78fd018849409e91601a69e7a6ee4232a3e7e))
+* replace it with [removed] instead of an empty string, so the pieces can’t join back up ([53cd617](https://github.com/cds-snc/ai-answers/commit/53cd617e5306eae4b1f8e40dd7fb080ee113f37f))
+* replace with removed ([53cd617](https://github.com/cds-snc/ai-answers/commit/53cd617e5306eae4b1f8e40dd7fb080ee113f37f))
+* require chatId in the translation service and harden AIA-018 log tests ([fa5a3a3](https://github.com/cds-snc/ai-answers/commit/fa5a3a3ad7cc9c4508b36bedcf0d857c7696ff9d))
+* restrict API CORS for credentialed requests (AIA-022) ([23c82c4](https://github.com/cds-snc/ai-answers/commit/23c82c4a961ac671b6c011910bbdb34be21965f1))
+* skip wildcard CORS on chat-session-availability when cookies are sent ([a2301e8](https://github.com/cds-snc/ai-answers/commit/a2301e848b9022831d2952a41782d938957c84a4))
+* vary every CORS response on Origin and accept availability HEAD ([9a036d9](https://github.com/cds-snc/ai-answers/commit/9a036d90eb33ad3299be5128343c2308fd90db8b))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump the npm-security group across 1 directory with 2 updates ([aba5976](https://github.com/cds-snc/ai-answers/commit/aba59763ad4dd551154556ad9625b3751ffd6096))
+
+## [1.214.1](https://github.com/cds-snc/ai-answers/compare/v1.214.0...v1.214.1) (2026-11-24)
+
+
+### Bug Fixes
+
+* catch db-check auth errors instead of unhandled rejections ([3c4a88c](https://github.com/cds-snc/ai-answers/commit/3c4a88c050c7f02bf28bbf9af1ab158ef55c3e5c))
+* clarify rate-limit settings and document current limits ([0803d3e](https://github.com/cds-snc/ai-answers/commit/0803d3e814a469473f6627739444ea725f542952))
+* log TLS verification failures from the fetch tools ([255165b](https://github.com/cds-snc/ai-answers/commit/255165b592a26d19359902155335a102ace1b3ac))
+* neutralize formula-leading cells in CSV exports (AIA-020) ([4a4e9c0](https://github.com/cds-snc/ai-answers/commit/4a4e9c06144ab3691635f84cd4f6f5afaba3fbd0))
+* neutralize formula-leading text in CSV exports ([f2c4215](https://github.com/cds-snc/ai-answers/commit/f2c42157d85aafcc2a142d3f60bf9c0744566f06))
+* neutralize formula-like CSV cells that already start with an apostrophe ([7523db9](https://github.com/cds-snc/ai-answers/commit/7523db94f4400266055ab05dc842d400d7eece4f))
+* restrict db-check to admins and remove client startup probe ([e9d791a](https://github.com/cds-snc/ai-answers/commit/e9d791ac484163dc9e104932f261157513bc614a))
+* restrict db-check to admins and remove client startup probe (AIA-012) ([407684c](https://github.com/cds-snc/ai-answers/commit/407684cc7e2f3c71b6c78651063c9a2d35224483))
+* strip formula prefixes when CSV exports are imported again ([cea21d8](https://github.com/cds-snc/ai-answers/commit/cea21d89f7cfbf9a9af5723c0200e1713fd8c46b))
+* treat a leading line feed as a CSV formula ([cb36923](https://github.com/cds-snc/ai-answers/commit/cb36923e94517f6d147c74ad3c5628637179d9ca))
+* verify TLS certificates on model-chosen fetches ([f90c9e5](https://github.com/cds-snc/ai-answers/commit/f90c9e5ca7d826dbe7c592deefc9f89a0b5314a8))
+
+
+### Documentation
+
+* clarify rate-limit settings and document current limits ([f60ac49](https://github.com/cds-snc/ai-answers/commit/f60ac49514edcad2ff40431f6ebaaea22b328a07))
+* note certificate checks in system card; log more TLS error codes ([1f0d766](https://github.com/cds-snc/ai-answers/commit/1f0d766d5e384039926945f96c9e764a75b35853))
+
+## [1.214.0](https://github.com/cds-snc/ai-answers/compare/v1.213.10...v1.214.0) (2026-11-23)
+
+
+### Features
+
+* move eval analysis to its own AI-assisted analysis page ([b0b05b7](https://github.com/cds-snc/ai-answers/commit/b0b05b704f9abbd2711d18c3f36138d12cd24a28))
+* simplify eval analysis to a single run with capped AI input ([6959c02](https://github.com/cds-snc/ai-answers/commit/6959c02fca2caec0c8bd60355552a22e2b5fd849))
+
+
+### Bug Fixes
+
+* harden AIA-010 fetch guard (proxy bypass, port check, redirect loop, shared TLS context) ([dd83184](https://github.com/cds-snc/ai-answers/commit/dd8318410fb828e15bc7aabad1ec8f8489da125b))
+* harden db-log GET query validation and register all HTTP methods ([a52c454](https://github.com/cds-snc/ai-answers/commit/a52c45406ceaf62e5df3ce083df91147b8449feb))
+* limit non-GC department hosts and harden fetch path checks ([498e2b2](https://github.com/cds-snc/ai-answers/commit/498e2b20f7258c1347d8570faaf45fbfbd4576fb))
+* move department list changes out of AIA-010 ([2e94d00](https://github.com/cds-snc/ai-answers/commit/2e94d002daa62207a708ad78fadb041cc48d2728))
+* move past analysis section ([0a2549d](https://github.com/cds-snc/ai-answers/commit/0a2549d02b5390db4b791ca100fa91b5f8a37911))
+* remove TLS into separate PR ([dfbc443](https://github.com/cds-snc/ai-answers/commit/dfbc443f118a945a99a3669f20fc76cd56b13808))
+* restrict model-chosen fetches to GC hosts and public IPs (AIA-010) ([b37711b](https://github.com/cds-snc/ai-answers/commit/b37711b8291f554829aee0eb20a4f93a867a6caf))
+* restrict model-chosen fetches to GC hosts and public IPs (AIA-010) ([064f569](https://github.com/cds-snc/ai-answers/commit/064f569e4eab0edbba02c3647e2eab9bd73942e7))
+* script ([c87f497](https://github.com/cds-snc/ai-answers/commit/c87f497316b0efd2f734ef8808b66810dc79fe99))
+* stop accepting client writes on the log endpoint ([f938b40](https://github.com/cds-snc/ai-answers/commit/f938b40a0ed34824fdd13181e59b0130f211a387))
+* stop client writes on db-log and harden partner log reads (AIA-008) ([8f685a6](https://github.com/cds-snc/ai-answers/commit/8f685a635c9e51df65cab92795f7538e89bd6772))
+* update department list URLs and regenerate search domain list ([0ca3b93](https://github.com/cds-snc/ai-answers/commit/0ca3b934b95c129faa5930e3507bc5be51fbdab3))
+* update department list URLs and regenerate search domain list ([5c0d3cb](https://github.com/cds-snc/ai-answers/commit/5c0d3cb8d5f01451b6c086c91d8d5bc44daa3749))
+* verify TLS on fetches and upgrade http redirect hops (AIA-010) ([643beaf](https://github.com/cds-snc/ai-answers/commit/643beafa1c2ead64b9b9a8a25f47c9af894b3328))
+
+
+### Documentation
+
+* note GitHub instruction-file exception in system card fetch claim ([3010b85](https://github.com/cds-snc/ai-answers/commit/3010b85da444fd742d6799c7c46e13b9ab7ba446))
+
+## [1.213.10](https://github.com/cds-snc/ai-answers/compare/v1.213.9...v1.213.10) (2026-11-19)
+
+
+### Bug Fixes
+
+* restrict citation links to Government of Canada hosts (AIA-007) ([d7e084b](https://github.com/cds-snc/ai-answers/commit/d7e084b65e7fa80f0da8c6c058e607b14589af98))
+* restrict citation links to Government of Canada hosts (AIA-007) ([9e51d05](https://github.com/cds-snc/ai-answers/commit/9e51d05f92eb1466bfd9117e115aff4512bcc39c))
+
+
+### Code Refactoring
+
+* share URL parsing between referring-url and citation checks ([ed9c4b5](https://github.com/cds-snc/ai-answers/commit/ed9c4b5d08f2cfe5e46e550909b9250cf8103b37))
+
+## [1.213.9](https://github.com/cds-snc/ai-answers/compare/v1.213.8...v1.213.9) (2026-11-18)
+
+
+### Bug Fixes
+
+* design changes ([b431439](https://github.com/cds-snc/ai-answers/commit/b4314390dccaf62749590471eb61f6bf2cd8b04d))
+* update department URLs and add 19 organizations ([fd5bfec](https://github.com/cds-snc/ai-answers/commit/fd5bfec6e8ba6f6cd61ff1566eeb5e508775d7f8))
+* update department URLs and add 19 organizations ([9cfe655](https://github.com/cds-snc/ai-answers/commit/9cfe65512b208eb15dcf4b13d500b8fbdc96a9fc))
+
+## [1.213.8](https://github.com/cds-snc/ai-answers/compare/v1.213.7...v1.213.8) (2026-11-18)
+
+
+### Bug Fixes
+
+* fail closed on a missing session secret (AIA-004) ([901985b](https://github.com/cds-snc/ai-answers/commit/901985b925ee21fbcd7c010f7b3cdd7f281bd2af))
+* skip onnxruntime CUDA binary download in Docker builds ([f1f82d4](https://github.com/cds-snc/ai-answers/commit/f1f82d433cd9a6c4a3ed40f15ba6eeb03cd4c024))
+* skip onnxruntime CUDA binary download in Docker builds ([3dbd32e](https://github.com/cds-snc/ai-answers/commit/3dbd32e88dc759277b4009bfec13430e28edd7f9))
+
 ## [1.213.7](https://github.com/cds-snc/ai-answers/compare/v1.213.6...v1.213.7) (2026-11-17)
 
 

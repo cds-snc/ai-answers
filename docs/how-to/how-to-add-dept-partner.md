@@ -47,14 +47,14 @@ Abbreviations are **bilingual**, ordered by **headquarters location**:
 |---|------|-----------------|
 | 1 | **NEW FILE** `/agents/prompts/scenarios/context-{slug}/{slug}-scenarios.js` | Create with export constant (e.g., `CBSA_ASFC_SCENARIOS`) containing department-specific instructions |
 | 2 | `src/constants/partnerDepartments.js` | Add department to `PARTNER_DEPARTMENTS` array using `abbrKey` (single source of truth for FilterPanel + dashboards) |
-| 3 | `scenario-overrides.js` | Add department to `SUPPORTED_DEPARTMENTS` using `abbrKey` |
+| 3 | `agents/prompts/scenarios/scenario-loaders.js` | Add department to `SCENARIO_LOADERS` using `abbrKey` (the answer prompt and the scenario override API both read it) |
 | 4 | `ScenarioOverridesPage.js` | Add department to `SUPPORTED_DEPARTMENTS` array using `abbrKey` |
 | 5 | `how-to-add-dept-partner.md` | Add department to "Current Departments" table |
 | 6 | System prompt docs | Run `node scripts/generate-system-prompt-documentation.js` to regenerate |
 
 **Note:** `departments_EN.js` and `departments_FR.js` already contain the `abbrKey`—do NOT add entries there. Use the existing `abbrKey` from those files in all other locations.
 
-**Note:** `systemPrompt.js` no longer requires manual updates—it uses dynamic imports to automatically load scenarios based on the department name.
+**Note:** `systemPrompt.js` needs no update, but it only loads scenarios registered in `SCENARIO_LOADERS` — the department name comes from LLM output and client-held context, so it is never used to build a file path (AIA-017). `agents/__tests__/scenario-loaders.test.js` fails if a `context-{slug}/` folder is missing from the registry.
 
 **Note:** If you *do* change `departments_EN.js` / `departments_FR.js` (a new department, a changed URL, or a removed one), the live search engine's site list needs a manual update too — see [Updating the search engine site list](#updating-the-search-engine-site-list-when-the-department-lists-change). Adding a partner for an existing `abbrKey` does not change that list.
 
@@ -107,23 +107,17 @@ Example for CBSA:
 'CBSA-ASFC',
 ```
 
-### Step 3: Update `scenario-overrides.js`
+### Step 3: Update `scenario-loaders.js`
 
-Add to `SUPPORTED_DEPARTMENTS` object in **alphabetical order**:
+Add to the `SCENARIO_LOADERS` object in `agents/prompts/scenarios/scenario-loaders.js`, in **alphabetical order**:
 
 ```javascript
-'{ABBR_KEY}': async () => {
-  const mod = await import('../../agents/prompts/scenarios/context-{slug}/{slug}-scenarios.js');
-  return mod.{UPPER_KEY}_SCENARIOS || '';
-},
+'{ABBR_KEY}': async () => (await import('./context-{slug}/{slug}-scenarios.js')).{UPPER_KEY}_SCENARIOS || '',
 ```
 
 Example for CBSA:
 ```javascript
-'CBSA-ASFC': async () => {
-  const mod = await import('../../agents/prompts/scenarios/context-cbsa-asfc/cbsa-asfc-scenarios.js');
-  return mod.CBSA_ASFC_SCENARIOS || '';
-},
+'CBSA-ASFC': async () => (await import('./context-cbsa-asfc/cbsa-asfc-scenarios.js')).CBSA_ASFC_SCENARIOS || '',
 ```
 
 ### Step 4: Update `ScenarioOverridesPage.js`
@@ -181,11 +175,11 @@ Current aliases:
 ### Steps to add a new shared-scenario group
 
 1. **Pick the canonical `abbrKey`** (the partner/home department, e.g. `DND-MDN`).
-2. **Follow Steps 1–5 above using only the canonical `abbrKey`.** Create one scenario file, add one entry to `scenario-overrides.js`, one entry to `ScenarioOverridesPage.js`.
+2. **Follow Steps 1–5 above using only the canonical `abbrKey`.** Create one scenario file, add one entry to `scenario-loaders.js`, one entry to `ScenarioOverridesPage.js`.
 3. **Add alias entries** for every other `abbrKey` in the portfolio to `SCENARIO_ALIASES` in `scenario-aliases.js`, each mapping to the canonical `abbrKey`.
 4. **Top-of-file comment in the scenario file:** list every `abbrKey` that resolves to this file (so a reader of the scenario file can see the full audience at a glance).
 5. **`PARTNER_DEPARTMENTS` (`src/constants/partnerDepartments.js`):** add the canonical `abbrKey`, plus any alias member that is itself an official partner. Sharing a scenario file is a *prompt* decision; being in `PARTNER_DEPARTMENTS` is a *filtering* decision, and the two are independent. Add an alias member here when its own logs need to be filterable separately in the admin dashboards (as with `RCAANC-CIRNAC` and `PHAC-ASPC`); leave it out when the portfolio only ever needs the one canonical entry.
-6. **`SUPPORTED_DEPARTMENTS` in `scenario-overrides.js` and `ScenarioOverridesPage.js`:** only the canonical entry, even for alias members that appear in `PARTNER_DEPARTMENTS`. The scenario override is per scenario file, so the partner manages one override that covers the whole portfolio.
+6. **`SCENARIO_LOADERS` in `scenario-loaders.js` and `SUPPORTED_DEPARTMENTS` in `ScenarioOverridesPage.js`:** only the canonical entry, even for alias members that appear in `PARTNER_DEPARTMENTS`. The scenario override is per scenario file, so the partner manages one override that covers the whole portfolio.
 7. Run `node scripts/generate-system-prompt-documentation.js` — the generator uses the alias map too, and the hardcoded portfolio descriptions in `getDepartmentDisplayName` should be updated to mention the shared group.
 
 ---
@@ -246,7 +240,7 @@ Single-department files use the same mechanism but stay in the department folder
 - [ ] Look up `abbrKey` in `departments_EN.js` or `departments_FR.js`
 - [ ] Create `/agents/prompts/scenarios/context-{slug}/{slug}-scenarios.js` with empty export
 - [ ] Add to `PARTNER_DEPARTMENTS` in `src/constants/partnerDepartments.js` (alphabetically)
-- [ ] Add to `SUPPORTED_DEPARTMENTS` in `scenario-overrides.js` (alphabetically)
+- [ ] Add to `SCENARIO_LOADERS` in `scenario-loaders.js` (alphabetically)
 - [ ] Add to `SUPPORTED_DEPARTMENTS` in `ScenarioOverridesPage.js` (alphabetically)
 - [ ] Update "Current Departments" table in this document (alphabetically)
 - [ ] Check the shared instruction files — does this department field questions on a shared topic? If so, paste the pointer block into its scenario file (a new RDA, for example, needs the `TRADE & TARIFFS FILE` block). This doesn't follow from `PARTNER_DEPARTMENTS` or the alias map.
@@ -267,7 +261,7 @@ Removing a partner (e.g. an institution that decided not to join, or is pausing 
 - **`contextSystemPrompt.js`** — topic→department routing hints (e.g. "Public service pay system → PSPC-SPAC") stay. The department may still administer those topics regardless of partner status, and this is a maintainer-tuned prompt file.
 - **`usePageParam.js`, other scenario files** — any incidental mentions (e.g. a contact email in another department's scenario) are unrelated to partner status.
 
-**Why deleting the scenario file is safe:** `systemPrompt.js` wraps the dynamic scenario import in a try/catch. If the context service matches the (still-valid) `abbrKey` but no scenario file exists, it logs `no-department-scenarios` and loads an empty scenario — the question is still answered with general GC handling.
+**Why deleting the scenario file is safe:** `systemPrompt.js` only loads scenarios registered in `SCENARIO_LOADERS`. If the context service matches the (still-valid) `abbrKey` but it is no longer registered, it logs `no-department-scenarios` and loads an empty scenario — the question is still answered with general GC handling.
 
 ### Files to Update When Removing a Partner
 
@@ -275,7 +269,7 @@ Removing a partner (e.g. an institution that decided not to join, or is pausing 
 |---|------|-----------------|
 | 1 | `/agents/prompts/scenarios/context-{slug}/` | **Delete** the scenario file and its directory |
 | 2 | `src/constants/partnerDepartments.js` | Remove the `abbrKey` from `PARTNER_DEPARTMENTS` |
-| 3 | `api/scenario/scenario-overrides.js` | Remove the `abbrKey` entry from `SUPPORTED_DEPARTMENTS` |
+| 3 | `agents/prompts/scenarios/scenario-loaders.js` | Remove the `abbrKey` entry from `SCENARIO_LOADERS` |
 | 4 | `src/pages/ScenarioOverridesPage.js` | Remove the `abbrKey` from the `SUPPORTED_DEPARTMENTS` array |
 | 5 | `how-to-add-dept-partner.md` | Remove the row from the "Current Departments" table |
 | 6 | `scripts/generate-system-prompt-documentation.js` | Remove the `abbrKey` entry from `getDepartmentDisplayName` (if present) — leave the topic-routing lines |
@@ -291,7 +285,7 @@ If the partner is part of a shared-scenario group (see [Shared scenarios](#share
 
 - [ ] Delete `/agents/prompts/scenarios/context-{slug}/`
 - [ ] Remove `abbrKey` from `PARTNER_DEPARTMENTS` in `src/constants/partnerDepartments.js`
-- [ ] Remove `abbrKey` entry from `SUPPORTED_DEPARTMENTS` in `scenario-overrides.js`
+- [ ] Remove `abbrKey` entry from `SCENARIO_LOADERS` in `scenario-loaders.js`
 - [ ] Remove `abbrKey` from `SUPPORTED_DEPARTMENTS` in `ScenarioOverridesPage.js`
 - [ ] Remove the row from the "Current Departments" table in this document
 - [ ] Remove the `getDepartmentDisplayName` entry in the generator script (if present)
@@ -314,10 +308,10 @@ Do this whenever a department entry is **added, removed, or has its URL changed*
    ```bash
    node scripts/extract_domains.js
    ```
-   This writes `scripts/domains_for_programmable_search.csv`. It is not committed — don't add it to the PR.
+   This writes `scripts/domains_for_programmable_search.csv`. Commit it in the same PR as the department change, so the file always matches the department lists.
 2. Open the site list in the Programmable Search Engine console and compare it with the CSV.
 3. Add domains that are in the CSV but not in the engine; remove domains that are in the engine but no longer in the CSV.
-4. Note what the script does: `*.gc.ca` and `*.canada.ca` are always included, every other host is collapsed to `*.{base-domain}`, and a domain is dropped only when no remaining entry in either file uses it. Most departments are on gc.ca or canada.ca, so in practice only non-gc.ca / non-canada.ca domains (e.g. `*.radio-canada.ca` for the former CBC/Radio-Canada entry) need a console change.
+4. Note what the script does: `*.gc.ca` and `*.canada.ca` are always included, every other host is collapsed to `*.{base-domain}` — except hosts the GC doesn't control (`NON_GC_DEPARTMENT_HOSTS` in `api/util/govHost.js`), which get `host/*` or only their pinned paths, with no subdomain wildcard — and a domain is dropped only when no remaining entry in either file uses it. Most departments are on gc.ca or canada.ca, so in practice only non-gc.ca / non-canada.ca domains (e.g. `*.radio-canada.ca` for the former CBC/Radio-Canada entry) need a console change.
 
 A removed department's domain stays searchable until step 3 is done. A new department's domain is never searched until it is added.
 

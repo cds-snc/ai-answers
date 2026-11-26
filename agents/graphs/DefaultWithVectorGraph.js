@@ -99,7 +99,8 @@ graph.addNode('redact', async (state) => {
 
     const out = { redactedText };
     // Emit output log for redact node
-    logGraphEvent('info', 'node:redact output', state.chatId, out);
+    // Never log the question text before postTranslateGuard: it may still be blocked (AIA-018).
+    logGraphEvent('info', 'node:redact output', state.chatId, {});
     return out;
   } catch (error) {
     if (error instanceof RedactionError) {
@@ -113,12 +114,11 @@ graph.addNode('translate', async (state) => {
   // Emit input log for translate node
   const translationContext = workflow.buildTranslationContext(state.conversationHistory);
   logGraphEvent('info', 'node:translate input', state.chatId, {
-    redactedText: state.redactedText,
     translationContext,
     selectedAI: state.selectedAI,
   });
 
-  const translationData = await workflow.translateQuestion(state.redactedText, "en", state.selectedAI, translationContext);
+  const translationData = await workflow.translateQuestion({ text: state.redactedText, lang: 'en', selectedAI: state.selectedAI, translationContext, chatId: state.chatId });
   await workflow.postTranslateGuard(translationData, state.chatId, state.selectedAI);
 
   const out = { translationData };

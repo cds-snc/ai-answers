@@ -22,7 +22,8 @@ vi.mock('../../../services/InteractionPersistenceService.js', () => ({
     InteractionPersistenceService: { persistInteraction: vi.fn() }
 }));
 vi.mock('../../../services/UrlValidationService.js', () => ({
-    UrlValidationService: { validateUrl: vi.fn(), validateUrlFormatting: vi.fn() }
+    // checkCitationUrl passes through: this suite tests graph wiring, not the host gate.
+    UrlValidationService: { validateUrlFormatting: vi.fn(), checkCitationUrl: vi.fn((url) => ({ isValid: true, url })) }
 }));
 
 vi.mock('../GraphEventLogger.js', () => ({
@@ -52,7 +53,7 @@ vi.mock('../guardrails/index.js', () => ({
     runInitialPiiGuardrail: vi.fn(),
     runPostTranslationGuardrail: vi.fn(),
     runRedactionGuardrail: vi.fn((userMessage) => ({ redactedText: userMessage, redactedItems: [] })),
-    translateWithGuardrail: vi.fn((text) => ({ translatedText: text, originalLanguage: 'en' })),
+    translateWithGuardrail: vi.fn(({ text }) => ({ translatedText: text, originalLanguage: 'en' })),
     validateShortQueryOrThrow: vi.fn(),
 }));
 vi.mock('../services/piiService.js', () => ({
@@ -110,7 +111,6 @@ describe('DefaultWithVectorGraph Workflow', () => {
 
         InteractionPersistenceService.persistInteraction.mockResolvedValue({ success: true });
 
-        UrlValidationService.validateUrl.mockResolvedValue({ isValid: true, url: 'https://example.com', confidenceRating: 1 });
         UrlValidationService.validateUrlFormatting.mockResolvedValue({ isValid: true, url: 'https://example.com' });
     });
 

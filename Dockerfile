@@ -4,6 +4,10 @@ FROM node:24.22.1 AS build
 # Set working directory
 WORKDIR /app
 
+# onnxruntime-node (via @huggingface/transformers) downloads optional CUDA binaries
+# on Linux x64 during install. We run on CPU only, and the download 404s.
+ENV ONNXRUNTIME_NODE_INSTALL_CUDA=skip
+
 # Copy package files and install dependencies
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -29,6 +33,10 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 # Download AWS DocumentDB certificate bundle
 RUN wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+
+# onnxruntime-node (via @huggingface/transformers) downloads optional CUDA binaries
+# on Linux x64 during install. We run on CPU only, and the download 404s.
+ENV ONNXRUNTIME_NODE_INSTALL_CUDA=skip
 
 # Copy package files and install dependencies
 COPY package.json package-lock.json ./

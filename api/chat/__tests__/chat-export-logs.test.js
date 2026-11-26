@@ -31,6 +31,47 @@ vi.mock('../../../middleware/auth.js', () => ({
 
 import handler from '../chat-export-logs.js';
 
+function mockChat(overrides = {}) {
+    Chat.find.mockReturnValue({
+        populate: vi.fn().mockReturnValue({
+            lean: vi.fn().mockResolvedValue([
+                {
+                    chatId: 'test-chat',
+                    interactions: [
+                        {
+                            interactionId: 'i1',
+                            context: { searchQuery: 'query' },
+                            answer: { content: overrides.answer ?? 'A normal answer' },
+                            question: { question: overrides.question ?? 'What is a passport?' },
+                            expertFeedback: { totalScore: overrides.totalScore ?? 1 },
+                            publicFeedback: { feedback: overrides.feedback ?? '' },
+                            autoEval: { expertFeedback: { totalScore: 1 } },
+                        },
+                    ],
+                },
+            ]),
+        }),
+    });
+}
+
+function captureCsvResponse() {
+    const res = new PassThrough();
+    const chunks = [];
+    res.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+    const finished = new Promise((resolve, reject) => {
+        res.on('finish', resolve);
+        res.on('error', reject);
+    });
+    res.status = vi.fn().mockReturnThis();
+    res.json = vi.fn();
+    res.setHeader = vi.fn();
+    return {
+        res,
+        finished,
+        text: () => Buffer.concat(chunks).toString('utf8'),
+    };
+}
+
 describe('chat-export-logs API', () => {
     let req, res;
 
@@ -252,5 +293,77 @@ describe('chat-export-logs API', () => {
         const row = res.json.mock.calls[0][0][0];
         expect(row['context.qaMatches.0.chatId']).toBe('');
         expect(row['context.qaMatches.0.answerText']).toBe('');
+    });
+
+    it('prefixes formula-leading text in CSV exports without changing JSON or numbers', async () => {
+        const formula = '=HYPERLINK("http://evil.example")';
+        mockChat({ question: formula, feedback: '\t+cmd', answer: 'A normal answer', totalScore: -42 });
+
+        req.query.format = 'json';
+        await handler(req, res);
+        const jsonRow = res.json.mock.calls[0][0][0];
+        expect(jsonRow.redactedQuestion).toBe(formula);
+        expect(jsonRow.answer).toBe('A normal answer');
+        expect(jsonRow['expertFeedback.totalScore']).toBe(-42);
+        expect(jsonRow['publicFeedback.feedback']).toBe('\t+cmd');
+
+        req.query.format = 'csv';
+        const csvResponse = captureCsvResponse();
+        const csvDone = handler(req, csvResponse.res);
+        await csvResponse.finished;
+        await csvDone;
+        const csv = csvResponse.text();
+
+        expect(csv).toContain(`"'=HYPERLINK(""http://evil.example"")"`);
+        expect(csv).toContain("'\t+cmd");
+        expect(csv).toContain('A normal answer');
+        expect(csv).not.toContain("'A normal answer");
+        expect(csv).toContain(',-42,');
+        expect(csv).not.toContain("'-42");
+    });
+
+    it('neutralizes a formula hidden by a null byte or by the first item of an array', async () => {
+        const formula = '\u0000=HYPERLINK("http://evil.example")';
+        Chat.find.mockReturnValue({
+            populate: vi.fn().mockReturnValue({
+                lean: vi.fn().mockResolvedValue([
+                    {
+                        chatId: 'test-chat',
+                        interactions: [
+                            {
+                                interactionId: 'i1',
+                                context: { searchQuery: 'query' },
+                                answer: { content: 'A normal answer' },
+                                question: { question: formula },
+                                expertFeedback: { totalScore: 1 },
+                                publicFeedback: { feedback: '' },
+                                autoEval: { expertFeedback: { totalScore: 1 } },
+                                labels: ['=CMD()', 'kept'],
+                            },
+                        ],
+                    },
+                ]),
+            }),
+        });
+
+        req.query.view = 'auto-eval-debug';
+        req.query.format = 'json';
+        await handler(req, res);
+        const jsonRow = res.json.mock.calls[0][0][0];
+        expect(jsonRow['question.question']).toBe(formula);
+        expect(jsonRow.labels).toEqual(['=CMD()', 'kept']);
+
+        req.query.format = 'csv';
+        const csvResponse = captureCsvResponse();
+        const csvDone = handler(req, csvResponse.res);
+        await csvResponse.finished;
+        await csvDone;
+        const csv = csvResponse.text();
+
+        expect(csv).toContain(`"'=HYPERLINK(""http://evil.example"")"`);
+        expect(csv).toContain(`"'=CMD(),kept"`);
+        expect(csv).not.toContain('\u0000');
+        expect(csv).not.toContain(',=CMD()');
+        expect(csv).not.toContain(',=HYPERLINK');
     });
 });

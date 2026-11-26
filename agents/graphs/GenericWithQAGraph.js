@@ -4,7 +4,7 @@ import { logGraphEvent } from './GraphEventLogger.js';
 import { GraphWorkflowHelper } from './workflows/GraphWorkflowHelper.js';
 import QuestionAnswerService from '../../services/QuestionAnswerService.js';
 import { graphRequestContext } from './requestContext.js';
-import { EVAL_INFORMED_WORKFLOW } from '../../src/config/workflows.js';
+import { EVAL_INFORMED_WORKFLOW, EVAL_INFORMED_RECENCY_DAYS } from '../../src/config/workflows.js';
 import { normalizeMatchDepartment } from '../../services/matchDepartment.js';
 
 const WorkflowStatus = {
@@ -91,7 +91,8 @@ graph.addNode('redact', async (state) => {
     const { redactedText } = await workflow.processRedaction(state.userMessage, state.lang, state.chatId, state.selectedAI);
 
     const out = { redactedText };
-    logGraphEvent('info', 'node:redact output', state.chatId, out);
+    // Never log the question text before postTranslateGuard: it may still be blocked (AIA-018).
+    logGraphEvent('info', 'node:redact output', state.chatId, {});
     return out;
   } catch (error) {
     throw error;
@@ -101,12 +102,11 @@ graph.addNode('redact', async (state) => {
 graph.addNode('translate', async (state) => {
   const translationContext = workflow.buildTranslationContext ? workflow.buildTranslationContext(state.conversationHistory) : null;
   logGraphEvent('info', 'node:translate input', state.chatId, {
-    redactedText: state.redactedText,
     translationContext,
     selectedAI: state.selectedAI,
   });
 
-  const translationData = await workflow.translateQuestion(state.redactedText, 'en', state.selectedAI, translationContext);
+  const translationData = await workflow.translateQuestion({ text: state.redactedText, lang: 'en', selectedAI: state.selectedAI, translationContext, chatId: state.chatId });
   await workflow.postTranslateGuard(translationData, state.chatId, state.selectedAI);
 
   const out = { translationData, status: WorkflowStatus.BUILDING_CONTEXT };
@@ -174,7 +174,7 @@ graph.addNode('similarQuestions', async (state) => {
       language: state.lang,
       interactionLanguage: state.context?.originalLang || state.translationData?.originalLanguage || state.lang,
       includeQuestionFlow: true,
-      recencyDays: 365,
+      recencyDays: EVAL_INFORMED_RECENCY_DAYS,
       useDenormalizedPreFilter: true,
       returnDebugData: true,
     });

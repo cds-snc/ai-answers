@@ -75,18 +75,20 @@ Model selection is decoupled from workflow — the `model.default` setting contr
 
 ### How department scenarios load
 
-**The context node must run first.** `contextSystemPrompt.js` (via `ContextAgentService`) uses the user's question, referring URL, and search results to match a department `abbrKey`. Only after this match does `systemPrompt.js` dynamically import the scenario:
+**The context node must run first.** `contextSystemPrompt.js` (via `ContextAgentService`) uses the user's question, referring URL, and search results to match a department `abbrKey`. Only after this match does `systemPrompt.js` look the scenario up in the static registry:
 
 ```js
-// In systemPrompt.js — dynamic import using the abbrKey returned by contextSystemPrompt
-const deptDashed = department.toLowerCase().replace(/\s+/g, '-');
-const mod = await import(`./scenarios/context-${deptDashed}/${deptDashed}-scenarios.js`);
+// In systemPrompt.js — alias → canonical key, then a case-insensitive registry lookup
+const loader = findScenarioLoader(resolveScenarioKey(String(department)));
+if (loader) content.scenarios = await loader();
 ```
+
+**Never build a module path from `department`.** It comes from LLM output and from client-held conversation context, so a template-literal `import()` is a path-traversal sink (AIA-017). Every scenario file is registered in `SCENARIO_LOADERS` (`agents/prompts/scenarios/scenario-loaders.js`), which the scenario override API also uses.
 
 - `scenarios-all.js` is always included (global rules for all departments)
 - `context-{abbrKey}/` folders provide department-specific overrides — one per partner department
 - If context matching returns no department → no department scenario is loaded
-- Falls back gracefully if a matched department has no scenario folder
+- An unregistered department (including any LLM/client junk) loads no department scenarios
 
 ## AI Model Config (`config/ai-models.js`)
 

@@ -1,13 +1,13 @@
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import fs from 'fs';
+import { corsMiddleware } from './corsPolicy.js';
 import { renderIndexHtml } from './renderIndexHtml.js';
 import { normalizePathname } from '../src/utils/normalizePathname.js';
 
 
 import similarChatsHandler from '../api/vector/vector-similar-chats.js';
 import express from 'express';
-import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -84,9 +84,7 @@ import evalGetHandler from '../api/eval/eval-get.js';
 import evalDeleteHandler from '../api/eval/eval-delete.js';
 import evalRunHandler from '../api/eval/eval-run.js';
 import evalDashboardHandler from '../api/eval/eval-dashboard.js';
-import evalAnalysisPrecheckHandler from '../api/eval/eval-analysis-precheck.js';
 import evalAnalysisRunHandler from '../api/eval/eval-analysis-run.js';
-import evalAnalysisAdvanceHandler from '../api/eval/eval-analysis-advance.js';
 import evalAnalysisGetHandler from '../api/eval/eval-analysis-get.js';
 import evalAnalysisListHandler from '../api/eval/eval-analysis-list.js';
 import dbChatHandler from '../api/db/db-chat.js';
@@ -105,6 +103,8 @@ import blockedMetricsHandler from '../api/metrics/metrics-blocked.js';
 import referralMetricsHandler from '../api/metrics/metrics-referrals.js';
 import citationMetricsHandler from '../api/metrics/metrics-citations.js';
 import programMetricsHandler from '../api/metrics/metrics-programs.js';
+import evalCoverageMetricsHandler from '../api/metrics/metrics-eval-coverage.js';
+import evalReuseMetricsHandler from '../api/metrics/metrics-eval-reuse.js';
 import contentIssueChatsMetricsHandler from '../api/metrics/metrics-content-issue-chats.js';
 import evalInformedChatsMetricsHandler from '../api/metrics/metrics-eval-informed-chats.js';
 import harmfulChatsMetricsHandler from '../api/metrics/metrics-harmful-chats.js';
@@ -230,10 +230,8 @@ const isRegisteredApiRoute = (method, pathName) => {
   });
 };
 
-app.use(cors({
-  origin: true,
-  credentials: true
-}));
+// Credentialed CORS only for this app's own hosts. See corsPolicy.js (AIA-022).
+app.use(corsMiddleware);
 
 // Reject unknown API routes before body parsing, sessions, Passport, and API middleware.
 app.use('/api', (req, res, next) => {
@@ -349,9 +347,7 @@ app.post('/api/eval/eval-get', evalGetHandler);
 app.post('/api/eval/eval-delete', evalDeleteHandler);
 app.post('/api/eval/eval-run', evalRunHandler);
 app.get('/api/eval/eval-dashboard', evalDashboardHandler);
-app.get('/api/eval/eval-analysis-precheck', evalAnalysisPrecheckHandler);
 app.post('/api/eval/eval-analysis-run', evalAnalysisRunHandler);
-app.post('/api/eval/eval-analysis-advance', evalAnalysisAdvanceHandler);
 app.get('/api/eval/eval-analysis-get', evalAnalysisGetHandler);
 app.get('/api/eval/eval-analysis-list', evalAnalysisListHandler);
 app.get('/api/db/db-chat', dbChatHandler);
@@ -395,9 +391,10 @@ app.get('/api/experimental/experimental-instant-answer-dataset', experimentalIns
 app.post('/api/experimental/experimental-instant-answer-dataset', experimentalInstantAnswerDatasetHandler);
 app.delete('/api/experimental/experimental-dataset-delete/:id', experimentalDatasetDeleteHandler);
 app.post('/api/experimental/experimental-dataset-process/:id', experimentalDatasetProcessHandler);
-app.get('/api/db/db-check', dbCheckhandler);
-app.post('/api/db/db-log', dbLogHandler);
-app.get('/api/db/db-log', dbLogHandler);
+// Registered for every method. db-check.js returns 405 for anything other than GET.
+app.all('/api/db/db-check', dbCheckhandler);
+// Registered for every method. db-log.js returns 405 for anything other than GET.
+app.all('/api/db/db-log', dbLogHandler);
 app.get('/api/db/db-chat-logs', dbChatLogsHandler);
 app.post('/api/auth/auth-signup', signupHandler);
 app.post('/api/auth/auth-login', loginHandler);
@@ -441,6 +438,8 @@ app.get('/api/metrics/metrics-blocked', blockedMetricsHandler);
 app.get('/api/metrics/metrics-referrals', referralMetricsHandler);
 app.get('/api/metrics/metrics-citations', citationMetricsHandler);
 app.get('/api/metrics/metrics-programs', programMetricsHandler);
+app.get('/api/metrics/metrics-eval-coverage', evalCoverageMetricsHandler);
+app.get('/api/metrics/metrics-eval-reuse', evalReuseMetricsHandler);
 app.get('/api/metrics/metrics-content-issue-chats', contentIssueChatsMetricsHandler);
 app.get('/api/metrics/metrics-eval-informed-chats', evalInformedChatsMetricsHandler);
 app.get('/api/metrics/metrics-harmful-chats', harmfulChatsMetricsHandler);

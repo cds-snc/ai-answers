@@ -53,6 +53,19 @@ Le **Tableau de bord partenaire** affiche une carte **Réponses informées par l
 
 Ouvrez un ID de clavardage dans la liste pour voir les évaluations antérieures qu'il a utilisées.
 
+## Voir où il manque des évaluations
+
+Sous cette carte, **Couverture des évaluations par service** présente les 10 services ayant reçu le plus de questions. Utilisez-la pour choisir quoi évaluer ensuite.
+
+- Ouvrez-la avec **Principaux services par couverture des évaluations**.
+- **Évaluations d'experts** compte les évaluations que l'IA peut utiliser comme exemples : celles de la dernière année, ainsi que celles marquées **Toujours valide**. Cette colonne ne tient pas compte de la période choisie. Le tableau présente d'abord les services les plus sollicités. Ceux en haut du tableau qui ont peu d'évaluations sont donc ceux à évaluer en priorité.
+- **Réponses utilisant des évaluations** indique si les évaluations faites correspondent à ce que les gens demandent.
+- **Expirent bientôt** compte les évaluations qui cesseront d'être utilisées d'ici 60 jours. Évaluez de nouvelles questions pour ce service afin de les remplacer. Cette colonne ne tient pas compte non plus de la période choisie.
+- **Actions demandées** énumère jusqu'à trois choses que les gens ont demandé de faire, de la plus fréquente à la moins fréquente. Les actions demandées une seule fois sont omises.
+- Les autres colonnes suivent les filtres du tableau de bord.
+
+**Évaluations les plus utilisées** présente les évaluations fournies le plus souvent à l'IA pendant la période. Ouvrez un ID de clavardage pour vérifier qu'une évaluation est toujours juste. Une évaluation erronée souvent utilisée touche de nombreuses réponses.
+
 ## Règles appliquées par le système
 
 - Correspondance sur le sens plutôt que sur la formulation.

@@ -31,6 +31,19 @@ export const DEFAULT_WORKFLOW = 'GenericGraph';
 // can't silently zero the rate.
 export const EVAL_INFORMED_WORKFLOW = 'GenericWithQAGraph';
 
+// How old a human evaluation can be (days since it was saved) and still be
+// injected by eval-informed answering, unless it is flagged neverStale. The
+// graph passes it to retrieval and the partner dashboard's evaluation
+// coverage card counts "usable" evaluations with it, so the card follows the
+// production graph. QuestionAnswerService (recencyDays default) and
+// SimilarAnswerService (DEFAULT_RECENCY_DAYS, short-circuit path only) still
+// default to their own 365 — change those too if this changes.
+export const EVAL_INFORMED_RECENCY_DAYS = 365;
+
 // Rows in the partner dashboard's eval-informed chats list. The server caps
 // the query at this and the list's subtitle states it, so they can't drift.
 export const EVAL_INFORMED_CHATS_LIMIT = 20;
+
+// Rows in the partner dashboard's most-used evaluations list. Same idea: the
+// server caps the query and the list's subtitle states it.
+export const MOST_USED_EVALS_LIMIT = 20;

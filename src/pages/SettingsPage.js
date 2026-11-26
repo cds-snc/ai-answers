@@ -1432,6 +1432,7 @@ const SettingsPage = ({ lang = 'en' }) => {
       <details>
         <summary>{t('settings.rateLimiting.title')}</summary>
         <div className="settings-form-width">
+          <p id="rate-limiting-description" className="field-hint">{t('settings.rateLimiting.description')}</p>
           {fieldErrors['session.rateLimitPersistence'] && (
             <FeedbackInlineError id="session-rate-persistence-error" message={fieldErrors['session.rateLimitPersistence']} announce={false} />
           )}

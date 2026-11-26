@@ -440,6 +440,7 @@
       "metrics": "Voir les métriques de performance",
       "publicDashboard": "Tableau de bord public",
       "partnerDashboard": "Tableau de bord partenaire",
+      "aiAnalysis": "Lancer une analyse assistée par l'IA",
       "technicalMetrics": "Voir les métriques techniques",
       "sessions": "Sessions actives",
       "chatDashboard": "Voir les chats",
@@ -861,6 +862,75 @@
       "avgLatency": "Latence moyenne (ms)",
       "rpm": "Requêtes / minute",
       "errorLoading": "Échec du chargement des sessions : {error}"
+    },
+    "aiAnalysis": {
+      "title": "Analyse assistée par l'IA",
+      "intro": "Utilisez l'IA pour dégager des tendances dans les évaluations et les questions d'une institution.",
+      "selectInstitution": "Sélectionnez une institution dans les filtres pour lancer une analyse.",
+      "evalAnalysis": {
+        "title": "Analyse des évaluations",
+        "description": "Analysez les évaluations d'experts correspondant aux filtres actuels pour dégager des tendances : ce que révèlent les explications, problèmes de contenu, différences entre l'anglais et le français et résultats par évaluateur.",
+        "runButton": "Lancer l'analyse des évaluations",
+        "error": "L'analyse a échoué. Réessayez.",
+        "running": "Analyse des évaluations en cours. Cela peut prendre une minute.",
+        "status": {
+          "inProgress": "En cours",
+          "incomplete": "Non terminée",
+          "complete": "Terminée",
+          "error": "Échouée"
+        },
+        "pastRuns": {
+          "title": "Analyses antérieures",
+          "colDate": "Date d'exécution",
+          "colRange": "Plage de dates",
+          "colCount": "Évaluations",
+          "colStatus": "État",
+          "colBy": "Lancée par",
+          "colActions": "Actions",
+          "view": "Afficher",
+          "none": "Aucune analyse antérieure pour cette institution."
+        },
+        "report": {
+          "title": "Rapport d'analyse",
+          "header": "{count} évaluations d'experts · {department} · {start} – {end}",
+          "runOn": "Exécutée le {date}",
+          "runBy": "par {email}",
+          "excluded": "{count} sans note exclues des statistiques de résultats",
+          "unclassified": "{count} n'ont pas pu être classées par service",
+          "partial": "Cette analyse ne s'est pas terminée — les résultats ci-dessous sont partiels.",
+          "incomplete": "Cette analyse a été interrompue avant la fin et n'a aucun rapport à afficher. Lancez une nouvelle analyse.",
+          "inProgress": "Cette analyse est toujours en cours. Revenez dans quelques minutes.",
+          "programActionsTitle": "Résultats par service et action",
+          "colProgramAction": "Service — action",
+          "singlesSkipped": "{groups} groupes n'ayant qu'une seule évaluation ne sont pas affichés ({count} évaluations).",
+          "colCount": "Évaluations",
+          "colNonPerfect": "Non parfaites",
+          "colPctNonPerfect": "% non parfaites",
+          "colExample": "Exemple",
+          "allPerfect": "Toutes parfaites",
+          "themesTitle": "Ce que révèlent les explications",
+          "themeCount": "{count} évaluations",
+          "basedOn": "Les constats s'appuient sur {sent} des {total} évaluations notées sous la note parfaite : les erreurs d'abord, puis les plus récentes.",
+          "basedOnContentIssues": "Les constats sur les problèmes de contenu s'appuient sur {sent} des {total} évaluations signalées : les erreurs d'abord, puis les plus récentes.",
+          "contentIssuesTitle": "Problèmes de contenu",
+          "contentIssuesCount": "{count} évaluations ont signalé un problème de contenu.",
+          "languageTitle": "Anglais vs français",
+          "colLanguage": "Langue",
+          "colMeanScore": "Note moyenne",
+          "colPctPerfect": "% parfaites",
+          "lang": {
+            "en": "Anglais",
+            "fr": "Français"
+          },
+          "evaluatorsTitle": "Évaluateurs",
+          "colEvaluator": "Évaluateur",
+          "flagged": "À examiner"
+        }
+      },
+      "questionAnalysis": {
+        "title": "Analyse des questions",
+        "comingSoon": "L'analyse des questions sera bientôt offerte."
+      }
     },
     "common": {
       "searchLabel": "Rechercher :",
@@ -1426,14 +1496,15 @@
     "rateLimiting": {
       "title": "Limitation du débit",
       "saveLabel": "Enregistrer la limitation du débit",
+      "description": "Chaque visiteur peut faire un nombre fixe de requêtes par période. La durée de la période est la limite de requêtes divisée par le taux de recharge. Par exemple, une limite de 20 avec un taux de recharge de 10 par minute permet 20 requêtes toutes les 2 minutes. Chaque appel à l'API compte, pas seulement les questions. Une question peut donc utiliser plus d'une requête.",
       "persistence": {
         "label": "Persistance du limiteur de débit (mémoire | Redis)"
       },
       "singleAnonymousChatRunEnabled": "Limiter les utilisateurs anonymes à une seule réponse active à la fois",
-      "rateLimitCapacity": "Capacité du quota (requêtes)",
-      "rateLimitRefill": "Recharge du quota (requêtes/min)",
-      "authenticatedRateLimitCapacity": "Capacité du quota des utilisateurs authentifiés (requêtes)",
-      "authenticatedRateLimitRefill": "Recharge du quota des utilisateurs authentifiés (requêtes/min)"
+      "rateLimitCapacity": "Limite de requêtes par période (utilisateurs anonymes)",
+      "rateLimitRefill": "Taux de recharge en requêtes par minute (utilisateurs anonymes)",
+      "authenticatedRateLimitCapacity": "Limite de requêtes par période (utilisateurs connectés)",
+      "authenticatedRateLimitRefill": "Taux de recharge en requêtes par minute (utilisateurs connectés)"
     },
     "redaction": {
       "title": "Paramètres de rédaction",
@@ -1797,88 +1868,38 @@
       "trigger": "Voir tous les clavardages nuisibles par ID",
       "noData": "Aucun clavardage nuisible signalé pour cette période."
     },
+    "evalCoverage": {
+      "title": "Couverture des évaluations par service",
+      "subtitle": "Jusqu'à 10 services ayant reçu le plus de questions. Compte les questions ayant reçu une réponse directe.",
+      "trigger": "Principaux services par couverture des évaluations",
+      "colActions": "Actions demandées",
+      "colQuestions": "Questions",
+      "colEvaluations": "Évaluations d'experts",
+      "colExpiring": "Expirent bientôt",
+      "colInformed": "Réponses utilisant des évaluations",
+      "unclassified": "Pas encore classées",
+      "notApplicable": "Sans objet",
+      "noActions": "Aucune action enregistrée",
+      "moreActions": {
+        "one": "et {count} autre",
+        "other": "et {count} autres"
+      },
+      "noteEvaluations": "Évaluations que l'IA peut utiliser comme exemples pour de nouvelles réponses : celles des {days} derniers jours, ou marquées pour ne jamais expirer. Compte toutes les évaluations du service, quelle que soit la période choisie. Les services en haut du tableau qui ont peu d'évaluations sont ceux à évaluer en priorité.",
+      "noteExpiring": "Évaluations qui cesseront d'être utilisées d'ici {days} jours, quelle que soit la période choisie. Évaluez de nouvelles questions pour ces services afin de garder des exemples disponibles.",
+      "noteInformed": "Réponses pour lesquelles l'IA a reçu des évaluations d'experts antérieures comme exemples."
+    },
+    "mostUsedEvals": {
+      "title": "Évaluations les plus utilisées",
+      "subtitle": "Jusqu'à {n} évaluations d'experts fournies le plus souvent à l'IA comme exemples pendant cette période",
+      "trigger": "Voir les évaluations les plus utilisées",
+      "colUses": "Nombre d'utilisations",
+      "colEvaluated": "Date de l'évaluation"
+    },
     "evalInformedChats": {
       "title": "Réponses informées par les évaluations, par ID de clavardage",
       "subtitle": "Affiche jusqu'aux {n} plus récentes",
       "trigger": "Clavardages récents informés par les évaluations, par ID",
       "noData": "Aucune réponse informée par les évaluations pour cette période."
-    },
-    "evalAnalysis": {
-      "title": "Analyse des évaluations",
-      "description": "Analysez les évaluations d'experts correspondant aux filtres actuels pour dégager des tendances : écarts de résultats par service, ce que révèlent les explications, problèmes de contenu, différences entre l'anglais et le français et résultats par évaluateur.",
-      "selectInstitution": "Sélectionnez une institution dans les filtres ci-dessus pour activer l'analyse.",
-      "checkingEligibility": "Vérification de l'admissibilité…",
-      "precheckCount": "{count} évaluations d'experts correspondent aux filtres actuels.",
-      "tooFew": "Pas assez d'évaluations à analyser — au moins {min} sont nécessaires ({count} correspondent aux filtres actuels).",
-      "tooMany": "Trop d'évaluations pour une seule analyse — réduisez la plage de dates jusqu'à {max} ou moins ({count} correspondent actuellement).",
-      "runButton": "Lancer l'analyse des évaluations",
-      "viewRunning": "Afficher les résultats actuels",
-      "exportRunning": "Exporter les résultats actuels",
-      "error": "L'analyse a échoué. Des résultats partiels peuvent être affichés ci-dessous.",
-      "running": {
-        "preparing": "Préparation de l'analyse…",
-        "classifying": "Classification des services… {done} de {total}",
-        "synthesizing": "Rédaction des constats…"
-      },
-      "status": {
-        "running": "En préparation",
-        "classifying": "En classification",
-        "synthesizing": "En synthèse",
-        "complete": "Terminée",
-        "error": "Échouée"
-      },
-      "pastRuns": {
-        "title": "Analyses antérieures",
-        "colDate": "Date d'exécution",
-        "colRange": "Plage de dates",
-        "colCount": "Évaluations",
-        "colStatus": "État",
-        "colBy": "Lancée par",
-        "colActions": "Actions",
-        "view": "Afficher"
-      },
-      "report": {
-        "title": "Rapport d'analyse",
-        "header": "{count} évaluations d'experts · {department} · {start} – {end}",
-        "runOn": "Exécutée le {date}",
-        "runBy": "par {email}",
-        "excluded": "{count} sans note exclues des statistiques de résultats",
-        "unclassified": "{count} n'ont pas pu être classées par service",
-        "partial": "Cette analyse ne s'est pas terminée — les résultats ci-dessous sont partiels.",
-        "running": "Cette analyse est toujours en cours ({status}). Les résultats ci-dessous sont partiels.",
-        "incomplete": "Cette analyse a été interrompue avant la fin et n'a aucun rapport à afficher. Lancez une nouvelle analyse.",
-        "rowsTitle": "Détails des évaluations",
-        "viewRowData": "Afficher toutes les données de la ligne",
-        "noValue": "Non disponible",
-        "programActionsTitle": "Résultats par service et action",
-        "colProgramAction": "Service — action",
-        "singlesSkipped": "{groups} groupes n'ayant qu'une seule évaluation ne sont pas affichés ({count} évaluations).",
-        "colCount": "Évaluations",
-        "colNonPerfect": "Non parfaites",
-        "colPctNonPerfect": "% non parfaites",
-        "colExample": "Exemple",
-        "allPerfect": "Toutes parfaites",
-        "themesTitle": "Ce que révèlent les explications",
-        "themeCount": "{count} évaluations",
-        "contentIssuesTitle": "Problèmes de contenu",
-        "contentIssuesCount": "{count} évaluations ont signalé un problème de contenu.",
-        "languageTitle": "Anglais vs français",
-        "colLanguage": "Langue",
-        "colMeanScore": "Note moyenne",
-        "colPctPerfect": "% parfaites",
-        "lang": {
-          "en": "Anglais",
-          "fr": "Français"
-        },
-        "evaluatorsTitle": "Évaluateurs",
-        "colEvaluator": "Évaluateur",
-        "colQuestion": "Question",
-        "colScore": "Note",
-        "colProgram": "Service",
-        "colAction": "Action",
-        "colDetails": "Détails",
-        "flagged": "À examiner"
-      }
     }
   },
   "metrics": {

@@ -2,41 +2,25 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { departments_EN } from '../agents/prompts/scenarios/departments_EN.js';
+import { departments_FR } from '../agents/prompts/scenarios/departments_FR.js';
+import { NON_GC_DEPARTMENT_HOSTS } from '../api/util/govHost.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Files to scan (relative to repo root)
-// Updated to use server-side copies under agents/prompts/scenarios
-const files = [
-  path.join(__dirname, '..', 'agents', 'prompts', 'scenarios', 'departments_EN.js'),
-  path.join(__dirname, '..', 'agents', 'prompts', 'scenarios', 'departments_FR.js'),
-];
-
-function extractDomains(text) {
+// Hosts come from the department lists' `url` fields, parsed with URL so that
+// page names like `home.page` or `mn-eng.cfm` are never mistaken for hosts.
+// Same source govHost.js (the fetch/citation allowlist) builds from.
+function extractDomains(departments) {
   const domains = new Set();
-
-  // Match hostnames in URLs or bare hostnames. Capture host only (no path or file)
-  // Examples matched: example.com, sub.example.co.uk, www.example.ca
-  const urlHostRegex = /(?:https?:\/\/)?(?:www\.)?([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+)(?=[\/:"'\s,]|$)/g;
-
-  let m;
-  while ((m = urlHostRegex.exec(text)) !== null) {
-    let d = m[1].toLowerCase();
-
-    // strip trailing dots
-    d = d.replace(/\.+$/, '');
-
-    // skip IPs
-    if (/^\d+\.\d+\.\d+\.\d+$/.test(d)) continue;
-
-    // filter out tokens that look like filenames (contain a dot after a slash or no TLD-like structure)
-    // We allow typical hostnames containing letters/numbers and hyphens and at least one dot
-    if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(d)) continue;
-
-    domains.add(d);
+  for (const dept of departments) {
+    try {
+      domains.add(new URL(dept.url).hostname.toLowerCase().replace(/^www\./, ''));
+    } catch {
+      console.error(`Skipping malformed url for ${dept.name}: ${dept.url}`);
+    }
   }
-
   return Array.from(domains);
 }
 
@@ -60,60 +44,52 @@ function filterAndFormat(domains) {
   });
 
   // split into gc/canada and others
-  const others = filtered.filter(d => !excludedSuffixes.some(s => d.endsWith(s)));
-
-  // Ensure special entries in fixed order and ensure uniqueness
-  const special = ['*.gc.ca', '*.canada.ca'];
+  const others = filtered.filter(d => !excludedSuffixes.some(s => d.endsWith(s) || d === s.slice(1)));
 
   // Normalize and dedupe others
   const normalized = Array.from(new Set(others.map(d => d.toLowerCase())));
 
-  // Remove overlapping subdomains: if a parent domain exists in the set, drop subdomains
-  // Collapse to registrable base domains using a conservative heuristic.
-  // Ideally we'd use the Public Suffix List; offline we use a small manual list
-  const knownMultiPartTlds = new Set(['co.uk', 'org.uk', 'gov.uk', 'ac.uk', 'co.jp']);
+  // Wildcard each exact host, never its parent domain: collapsing
+  // acme.azurewebsites.net to *.azurewebsites.net would search every tenant on
+  // the platform. Matches govHost.js, which allows a department host and its
+  // subdomains only. Drop a host already covered by another entry's wildcard.
+  const keep = normalized.filter(d => !normalized.some(parent => parent !== d && d.endsWith('.' + parent)));
 
-  function baseDomain(domain) {
-    const parts = domain.split('.');
-    if (parts.length <= 2) return domain;
-    const lastTwo = parts.slice(-2).join('.');
-    const lastThree = parts.slice(-3).join('.');
-    // if last two form a known multi-part tld, use last three labels
-    if (knownMultiPartTlds.has(lastTwo) && parts.length >= 3) return parts.slice(-3).join('.');
-    // fallback: use last two labels
-    return lastTwo;
-  }
-
-  const collapsed = Array.from(new Set(normalized.map(d => baseDomain(d))));
-
-  // Remove any residual overlaps (shouldn't be necessary after baseDomain)
-  const keep = collapsed.filter(d => !collapsed.some(parent => parent !== d && d.endsWith('.' + parent)));
-
-  // Sort consistently
-  keep.sort();
-
-  // wildcard other hostnames
-  const wildcarded = keep.map(d => '*.' + d);
-
-  // remove any duplicates in final list and join lines
-  const final = Array.from(new Set(special.concat(wildcarded)));
-  return final.join('\n');
+  return keep.map(d => '*.' + d);
 }
 
 async function main() {
-  const allDomains = new Set();
+  const domains = extractDomains([...departments_EN, ...departments_FR]);
 
-  for (const file of files) {
-    try {
-      const text = fs.readFileSync(file, 'utf8');
-      const domains = extractDomains(text);
-      domains.forEach(d => allDomains.add(d));
-    } catch (err) {
-      console.error(`Failed to read ${file}: ${err.message}`);
+  // Hosts the GC doesn't control get no *.domain wildcard, matching the
+  // fetch/citation allowlist in govHost.js: 'host' entries cover that host
+  // with or without www, 'pinned' entries only their listed paths.
+  const restricted = [];
+  for (const [host, rule] of NON_GC_DEPARTMENT_HOSTS) {
+    if (!domains.includes(host)) continue;
+    if (rule.match === 'pinned') {
+      rule.paths.forEach(p => restricted.push(`${host}${p}*`));
+    } else {
+      restricted.push(`${host}/*`, `www.${host}/*`);
     }
   }
 
-  const csv = filterAndFormat(Array.from(allDomains));
+  // A department host under a restricted domain that isn't itself a key would
+  // otherwise get a wildcard. govHost.js doesn't allow it either, so stop here.
+  const isUnder = (d, host) => d.endsWith('.' + host);
+  for (const d of domains) {
+    for (const host of NON_GC_DEPARTMENT_HOSTS.keys()) {
+      if (isUnder(d, host) || isUnder(host, d)) {
+        throw new Error(`${d} overlaps NON_GC_DEPARTMENT_HOSTS entry ${host}. Add it to that map in api/util/govHost.js with its own rule.`);
+      }
+    }
+  }
+  const open = domains.filter(d => !NON_GC_DEPARTMENT_HOSTS.has(d));
+
+  // *.gc.ca and *.canada.ca first, the rest sorted so the file diffs cleanly
+  // against the search engine's site list.
+  const rest = [...filterAndFormat(open), ...restricted].sort();
+  const csv = ['*.gc.ca', '*.canada.ca', ...rest].join('\n');
 
   const outPath = path.join(__dirname, 'domains_for_programmable_search.csv');
   fs.writeFileSync(outPath, csv, 'utf8');

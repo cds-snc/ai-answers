@@ -1,6 +1,6 @@
 # Plan: Harden admin sign-up, sign-in, password reset and two-factor authentication
 
-Status (2026-10-30): Phase 1 merged (PR #1939; see "Phase 1 status" for open items). The Phase 1 follow-up clean-up PR is built on branch `auth-cleanup`, not yet merged. The F5 fix (own PR) is built on branch `auth-hardening-emails` (2026-10-23), not yet merged. Phase 2 PR A is built on branch `auth-hardening-phase2` (2026-10-26), not yet merged; Phase 2 PRs B and C and Phase 3 are not started. The F6 quick fix is PR #1978 (2026-10-28); the F6 token change is built on branch `auth-hardening-password-reset` (2026-10-30), not yet merged. 2FA is on in staging for testing and stays off in production until every item in "Before turning 2FA on in production" is done. Priority reduced by the VPN/firewall setup; see the deployment context section. Findings are from reading the code (not exploited against a
+Status (2026-11-25): Phase 1 merged (PR #1939; see "Phase 1 status" for open items). The Phase 1 follow-up clean-up PR is built on branch `auth-cleanup`, not yet merged. The F5 fix (own PR) is built on branch `auth-hardening-emails` (2026-10-23), not yet merged. Phase 2 PR A is built on branch `auth-hardening-phase2` (2026-10-26), not yet merged; Phase 2 PRs B and C and Phase 3 are not started. The F6 quick fix is PR #1978 (2026-10-28); the F6 token change is built on branch `auth-hardening-password-reset` (2026-10-30), not yet merged. The F7 quick fix (AIA-015) is built on branch `AIA-015-stale-session-role` (2026-11-25), not yet merged. 2FA is on in staging for testing and stays off in production until every item in "Before turning 2FA on in production" is done. Priority reduced by the VPN/firewall setup; see the deployment context section. Findings are from reading the code (not exploited against a
 running system). Read `docs/coding-agent-docs/admin-and-auth.md` for how auth works today.
 
 Standards this follows: OWASP ASVS v4 §2 (authentication) and §3 (sessions), OWASP
@@ -158,6 +158,24 @@ when the new password is submitted, not when the link is opened.
     (`docdb_instance_count`) is 1 and no environment overrides it, and with no replica every
     read goes to the primary. Ask infrastructure how many instances run. The reset handler
     reads from the primary either way.
+
+### F7. A role change doesn't reach sessions that are already signed in (Medium, AIA-015, found 2026-11-25)
+
+Reproduced on a running system, not just found by reading the code. A signed-in session kept its
+partner access after the account was demoted to user in the database. A new sign-in correctly
+got 403.
+
+- `deserializeUser` (`config/passport.js`) loads the user from the database on every request, but
+  only checks `active`. It then returned the session copy, which holds the role from sign-in.
+- `verifyAdmin` / `verifyPartner` (`middleware/auth.js`) trust that `req.user.role`. A demoted
+  admin keeps user management, settings, database export/import and every chat log.
+- The session is `rolling: true` (`middleware/express-session.js`), so using it keeps it alive.
+  The stale role can last for as long as the person keeps using it.
+- `UserService.adminUpdateUser` revokes trusted devices on a role change, but nothing touches
+  live sessions.
+- Needs a former admin with a live session, and an operator who changes the role instead of
+  deactivating. Deactivation is checked on every request, so it already works as the workaround.
+- Fix: the quick fix below, then Phase 3.1 for the full fix.
 
 ## Deployment context: admin behind the Akamai firewall and VPN
 
@@ -475,11 +493,23 @@ Split into three PRs (decided 2026-10-26):
    token single-use and expiring, no session after sign-up, identical response for existing
    email, rate limits, weak password rejected over the API.
 
+### F7 quick fix: take the role from the database (own PR, branch `AIA-015-stale-session-role`)
+
+1. `deserializeUser` builds `req.user` from the user it already loads: `{ userId, email, role }`,
+   the same minimal shape as before, never the full document. A role or email change takes
+   effect on the next request. No extra database read: the lookup already ran for the `active`
+   check.
+2. Tests (`__tests__/auth-passport-deserialize.test.js`): a demoted session gets the database
+   role, no other user fields reach `req.user`, and inactive or deleted users are signed out.
+3. This closes AIA-015 on its own. The old session stays signed in with the new role, which is
+   correct. Phase 3.1 still matters for password reset and for logging people out on purpose.
+
 ### Phase 3: Session and operations
 
 1. End all of a user's sessions on password reset, deactivation, role change and delete
    (delete from the session store by `passport.user.userId`; both mongo and redis stores).
-   Delete the user's "remember this device" tokens in the same place.
+   Delete the user's "remember this device" tokens in the same place. For role change this
+   goes beyond the F7 quick fix, which already makes a new role apply on the next request.
 2. Treat a session as signed in for the rate limiter only when `req.user` is set.
 3. Log auth events (failed password, failed 2FA, lockout, sign-up, verification) with account id
    rather than raw email, and alert on spikes. Fix the email-in-logs item from F4.

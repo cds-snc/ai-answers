@@ -160,7 +160,7 @@ export function buildReadableLocationLabel(url, lang = 'en') {
   const s = STRINGS[lang];
 
   // Normalise protocol-relative URLs (//canada.ca/...) so new URL() can parse
-  // them — safeHttpHref allows these through but new URL() requires a scheme.
+  // them — new URL() requires a scheme. (safeHttpHref blocks these as hrefs.)
   const normalized = typeof url === 'string' && url.startsWith('//') ? `https:${url}` : url;
 
   let parsed;

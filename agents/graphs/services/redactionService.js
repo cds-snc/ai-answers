@@ -180,8 +180,13 @@ class RedactionService {
       applyPattern(pattern, replacement, type);
     }
 
+    // AIA-014: log only types and counts, never item.match — that is the raw
+    // PII or blocked text this service exists to suppress, and stdout is
+    // shipped to the ops log store.
     if (redactedItems.length > 0) {
-      console.log(`[Server RedactionService] Redacted items detected:`, JSON.stringify(redactedItems));
+      const counts = {};
+      for (const { type } of redactedItems) counts[type] = (counts[type] || 0) + 1;
+      console.log(`[Server RedactionService] Redacted items detected:`, JSON.stringify(counts));
     }
 
     return { redactedText, redactedItems };

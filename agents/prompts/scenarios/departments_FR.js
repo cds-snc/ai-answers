@@ -2,6 +2,13 @@
 // Liste des ministères et organismes du gouvernement du Canada avec leurs URLs et abréviations
 // Généré le 2024-12-05T20:50:06.243Z
 // Updated with abbrKey for cross-language matching
+//
+// When you add, remove, or change a `url` here (or in departments_EN.js),
+// run `node scripts/extract_domains.js` and commit the regenerated
+// scripts/domains_for_programmable_search.csv, then sync the Google
+// Programmable Search Engine site list from it. The same urls also feed the
+// fetch/citation allowlist in api/util/govHost.js. See "Updating the search
+// engine site list" in docs/how-to/how-to-add-dept-partner.md.
 
 export const departments_FR = [
   {
@@ -41,7 +48,7 @@ export const departments_FR = [
   },
   {
     "name": "Affaires mondiales Canada",
-    "url": "https://www.international.gc.ca/global-affairs-affaires-mondiales/home-accueil.aspx?lang=fra",
+    "url": "https://international.canada.ca/fr/affaires-mondiales",
     "abbrKey": "GAC-AMC"
   },
   {
@@ -156,8 +163,13 @@ export const departments_FR = [
   },
   {
     "name": "Bibliothèque et Archives Canada",
-    "url": "https://bibliotheque-archives.canada.ca/fra/",
+    "url": "https://www.canada.ca/fr/bibliotheque-archives.html",
     "abbrKey": "BAC-LAC"
+  },
+  {
+    "name": "biodivcanada",
+    "url": "https://www.biodivcanada.ca/accueil",
+    "abbrKey": "BIODIV"
   },
   {
     "name": "Bureau de la concurrence Canada",
@@ -216,8 +228,13 @@ export const departments_FR = [
   },
   {
     "name": "Bureau du vérificateur général du Canada",
-    "url": "https://www.oag-bvg.gc.ca/internet/Francais/admin_f_41.html",
+    "url": "https://www.canada.ca/fr/verificateur-general.html",
     "abbrKey": "OAG-BVG"
+  },
+  {
+    "name": "Centre antifraude du Canada",
+    "url": "https://antifraudcentre-centreantifraude.ca/index-fra.htm",
+    "abbrKey": "CAFC-CAFC"
   },
   {
     "name": "Centre canadien d'hygiène et de sécurité au travail",
@@ -228,6 +245,11 @@ export const departments_FR = [
     "name": "Centre d'analyse des opérations et déclarations financières du Canada",
     "url": "https://fintrac-canafe.canada.ca/intro-fra",
     "abbrKey": "FINTRAC-CANAFE"
+  },
+  {
+    "name": "Centre d'information de la police canadienne",
+    "url": "https://cpic-cipc.ca/index-fra.htm",
+    "abbrKey": "CPIC-CIPC"
   },
   {
     "name": "Bureau du commissaire au renseignement",
@@ -258,6 +280,11 @@ export const departments_FR = [
     "name": "Centre des armes à feu Canada",
     "url": "https://grc.ca/fr/armes-feu",
     "abbrKey": "CAFC"
+  },
+  {
+    "name": "Centre mondial de données sur l'ozone et le rayonnement ultraviolet",
+    "url": "https://woudc.org/fr/a-propos",
+    "abbrKey": "WOUDC"
   },
   {
     "name": "Centre national des arts",
@@ -295,6 +322,11 @@ export const departments_FR = [
     "abbrKey": "CANSOFCOM-COMFOSCAN"
   },
   {
+    "name": "Commissaire aux élections fédérales",
+    "url": "https://cef-cce.ca/content.asp?document=home&lang=f",
+    "abbrKey": "CCE-CEF"
+  },
+  {
     "name": "Commissariat à la magistrature fédérale Canada",
     "url": "https://www.fja.gc.ca/home-accueil/index-fra.html",
     "abbrKey": "FJA-CMF"
@@ -321,7 +353,7 @@ export const departments_FR = [
   },
   {
     "name": "Commissariat aux conflits d'intérêts et à l'éthique",
-    "url": "https://ciec-ccie.parl.gc.ca/FR/Pages/default.aspx",
+    "url": "https://www.ethiquecanada.ca/fr/accueil",
     "abbrKey": "CIEC-CCIE"
   },
   {
@@ -336,7 +368,7 @@ export const departments_FR = [
   },
   {
     "name": "Commission canadienne de sûreté nucléaire",
-    "url": "https://www.nuclearsafety.gc.ca/fra/",
+    "url": "https://www.cnsc-ccsn.gc.ca/fra/",
     "abbrKey": "CNSC-CCSN"
   },
   {
@@ -371,7 +403,7 @@ export const departments_FR = [
   },
   {
     "name": "Commission de la capitale nationale",
-    "url": "https://www.ccn-ncc.gc.ca/",
+    "url": "https://ccn-ncc.gc.ca/",
     "abbrKey": "NCC-CCN"
   },
   {
@@ -476,12 +508,12 @@ export const departments_FR = [
   },
   {
     "name": "Conseil de recherches en sciences et en génie Canada",
-    "url": "https://www.nserc-crsng.gc.ca/index_fra.asp",
+    "url": "https://nserc-crsng.canada.ca/fr",
     "abbrKey": "NSERC-CRSNG"
   },
   {
     "name": "Conseil de recherches en sciences humaines du Canada",
-    "url": "https://www.canada.ca/fr/recherches-sciences-humaines.html",
+    "url": "https://sshrc-crsh.canada.ca/fr.aspx",
     "abbrKey": "SSHRC-CRSH"
   },
   {
@@ -525,8 +557,13 @@ export const departments_FR = [
     "abbrKey": "CDEV"
   },
   {
+    "name": "Corporation de financement d'urgence d'entreprises du Canada",
+    "url": "https://ceefc-cfuec.ca/fr/cfuec/",
+    "abbrKey": "CEEFC-CFUEC"
+  },
+  {
     "name": "Cour canadienne de l'impôt",
-    "url": "https://www.tcc-cci.gc.ca/fr/accueil",
+    "url": "https://www.tcc-cci.ca/fr/accueil",
     "abbrKey": "TCC-CCI"
   },
   {
@@ -541,7 +578,7 @@ export const departments_FR = [
   },
   {
     "name": "Cour fédérale",
-    "url": "https://www.fct-cf.gc.ca/fr/accueil",
+    "url": "https://www.fct-cf.ca/fr/accueil",
     "abbrKey": "FCT-CF"
   },
   {
@@ -566,8 +603,13 @@ export const departments_FR = [
   },
   {
     "name": "Développement économique Canada pour les régions du Québec",
-    "url": "https://dec.canada.ca/fr/accueil-dec",
+    "url": "https://www.canada.ca/fr/developpement-economique-regions-quebec.html",
     "abbrKey": "CED-QR"
+  },
+  {
+    "name": "Disparus-Canada",
+    "url": "https://canadasmissing.ca/index-fra.htm",
+    "abbrKey": "MISSING-DISPARUS"
   },
   {
     "name": "École de la fonction publique du Canada",
@@ -578,6 +620,11 @@ export const departments_FR = [
     "name": "Educanada",
     "url": "https://www.educanada.ca/index.aspx?lang=fra",
     "abbrKey": "EDU"
+  },
+  {
+    "name": "Élections & Démocratie",
+    "url": "https://electionsetdemocratie.ca/",
+    "abbrKey": "ED-ED"
   },
   {
     "name": "Élections Canada",
@@ -610,6 +657,11 @@ export const departments_FR = [
     "abbrKey": "EDC"
   },
   {
+    "name": "Faune et Flore du Pays",
+    "url": "https://www.hww.ca/fr/",
+    "abbrKey": "HWW-FFP"
+  },
+  {
     "name": "Financement agricole Canada",
     "url": "https://www.fcc-fac.ca/fr.html",
     "abbrKey": "FCC-FAC"
@@ -625,14 +677,24 @@ export const departments_FR = [
     "abbrKey": "CRRF-FCRR"
   },
   {
+    "name": "Fondation canadienne pour l'innovation",
+    "url": "https://www.innovation.ca/fr",
+    "abbrKey": "CFI-FCI"
+  },
+  {
     "name": "Forces armées canadiennes emplois",
     "url": "https://forces.ca/fr/",
     "abbrKey": "CAF-FAC"
   },
   {
     "name": "Garde côtière canadienne",
-    "url": "https://www.ccg-gcc.gc.ca/index-fra.html",
+    "url": "https://www.canada.ca/fr/garde-cotiere-canadienne.html",
     "abbrKey": "CCG-GCC"
+  },
+  {
+    "name": "GCSurplus",
+    "url": "https://gcsurplus.ca/mn-fra.cfm",
+    "abbrKey": "GCSURPLUS"
   },
   {
     "name": "Gendarmerie royale du Canada",
@@ -685,6 +747,11 @@ export const departments_FR = [
     "abbrKey": "CIHR-IRSC"
   },
   {
+    "name": "Investir au Canada",
+    "url": "https://www.investircanada.ca/",
+    "abbrKey": "IC-IC"
+  },
+  {
     "name": "Office d'investissement des régimes de pensions du secteur public",
     "url": "https://www.investpsp.com/fr/",
     "abbrKey": "INVESTPSP"
@@ -708,6 +775,11 @@ export const departments_FR = [
     "name": "Le cabinet du juge militaire en chef",
     "url": "https://www.canada.ca/fr/juge-militaire-chef.html",
     "abbrKey": "OCMJ-CJMC"
+  },
+  {
+    "name": "MARC 21 Formats",
+    "url": "https://marc21.ca/index-f.html",
+    "abbrKey": "MARC"
   },
   {
     "name": "Marine Atlantique",
@@ -761,12 +833,12 @@ export const departments_FR = [
   },
   {
     "name": "Musée de l'agriculture et de l'alimentation du Canada",
-    "url": "https://ingeniumcanada.org/fr/agriculture",
+    "url": "https://ingenium.ca/agriculture/fr/",
     "abbrKey": "INGEN-AG"
   },
   {
     "name": "Musée de l'aviation et de l'espace du Canada",
-    "url": "https://ingeniumcanada.org/fr/aviation",
+    "url": "https://ingenium.ca/aviation/fr/",
     "abbrKey": "INGEN-AV"
   },
   {
@@ -776,7 +848,7 @@ export const departments_FR = [
   },
   {
     "name": "Musée des sciences et de la technologie du Canada",
-    "url": "https://ingeniumcanada.org/fr/scitech",
+    "url": "https://ingenium.ca/scitech/fr/",
     "abbrKey": "INGENIUM"
   },
   {
@@ -830,8 +902,8 @@ export const departments_FR = [
     "abbrKey": "CER-REC"
   },
   {
-    "name": "Office national du film",
-    "url": "https://www.canada.ca/fr/office-national-film.html",
+    "name": "Office national du film du Canada",
+    "url": "https://www.onf.ca/",
     "abbrKey": "NFB-ONF"
   },
   {
@@ -870,6 +942,11 @@ export const departments_FR = [
     "abbrKey": "PGIC-IOGC"
   },
   {
+    "name": "Plan de surveillance générale du Nunavut",
+    "url": "https://ngmp.ca/fra/1363792048577/1363792058944",
+    "abbrKey": "NGMP-PSGN"
+  },
+  {
     "name": "Pont Blue Water Canada",
     "url": "https://pontbluewater.ca/",
     "abbrKey": "BWB-PBW"
@@ -900,6 +977,11 @@ export const departments_FR = [
     "abbrKey": "DRDC-RDDC"
   },
   {
+    "name": "RechercheNet",
+    "url": "https://www.researchnet-recherchenet.ca/rnetsso/ssologin?language=fr",
+    "abbrKey": "RN-RN"
+  },
+  {
     "name": "Relations Couronne-Autochtones et Affaires du Nord Canada",
     "url": "https://www.canada.ca/fr/relations-couronne-autochtones-affaires-nord.html",
     "abbrKey": "RCAANC-CIRNAC"
@@ -910,13 +992,18 @@ export const departments_FR = [
     "abbrKey": "CHIN-RCIP"
   },
   {
+    "name": "Réseau pancanadien de santé publique",
+    "url": "https://phn-rsp.ca/fr/index.html",
+    "abbrKey": "PHN-RSP"
+  },
+  {
     "name": "Ressources naturelles Canada",
     "url": "https://ressources-naturelles.canada.ca/accueil",
     "abbrKey": "NRCan-RNCan"
   },
   {
     "name": "Révision de la protection de l'environnement Canada",
-    "url": "https://www.eptc-tpec.gc.ca/fr/index.html",
+    "url": "https://www.canada.ca/fr/environnement-changement-climatique/services/registre-environnemental-loi-canadienne-protection/examen.html",
     "abbrKey": "EPRC-RPEC"
   },
   {
@@ -933,6 +1020,11 @@ export const departments_FR = [
     "name": "Savoir polaire Canada",
     "url": "https://www.canada.ca/fr/savoir-polaire.html",
     "abbrKey": "POLAR-POLAIRE"
+  },
+  {
+    "name": "Sceau Rouge",
+    "url": "https://red-seal.ca/fra/bienvenue.shtml",
+    "abbrKey": "RS-SR"
   },
   {
     "name": "Secrétariat des conférences intergouvernementales canadiennes",
@@ -1021,7 +1113,7 @@ export const departments_FR = [
   },
   {
     "name": "Société immobilière du Canada Limitée",
-    "url": "https://www.clc-sic.ca/francais",
+    "url": "https://www.clcl-sicl.ca/francais",
     "abbrKey": "CLC-SIC"
   },
   {
@@ -1035,9 +1127,19 @@ export const departments_FR = [
     "abbrKey": "TARIFF-TARIF"
   },
   {
+    "name": "Tableau Ellis",
+    "url": "https://ellischart.ca/fra/h.4m.2.shtml",
+    "abbrKey": "EC-TE"
+  },
+  {
     "name": "Téléfilm Canada",
     "url": "https://www.telefilm.ca/fr/?q=fr",
     "abbrKey": "TELEFILM"
+  },
+  {
+    "name": "Thésaurus des sujets de base du gouvernement du Canada",
+    "url": "https://canada.multites.net/tsb/index.htm",
+    "abbrKey": "GCCST-TSBGC"
   },
   {
     "name": "Transports Canada",

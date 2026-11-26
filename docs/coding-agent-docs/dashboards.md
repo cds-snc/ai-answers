@@ -95,7 +95,7 @@ End dates run through today (23:59:59); the picker allows today. There is **no**
 
 **Public section order**: KPI row (accuracy donut + questions asked, then expert-evaluated → content issues) → top institutions → conversation length + median response time → blocked queries. Expert-evaluated precedes content issues because the issues are identified by those evaluators.
 
-**Partner-only sections**: operations metrics (with tokens), top referral pages, top citation pages + answer types, question volume by program, satisfaction, content-issue, harmful and eval-informed chat lists (`ContentIssueChatsCard`; content-issue and harmful are linked from their `StatCard`s, eval-informed sits beside its card), and "Run eval analysis" (`EvalAnalysisSection`, enabled only with an institution filter).
+**Partner-only sections**: operations metrics (with tokens), top referral pages, top citation pages + answer types, question volume by program, satisfaction, content-issue, harmful and eval-informed chat lists (`ContentIssueChatsCard`; content-issue and harmful are linked from their `StatCard`s, eval-informed sits beside its card). "Run eval analysis" is no longer here: it's on the AI-assisted analysis page (`src/pages/AiAnalysisPage.js`), see below.
 
 ## Metric bundle shape
 
@@ -117,9 +117,13 @@ metrics.blockedQueries.<type>.{ total, en, fr } // tooShort, piStage1, piStage2,
                                                 //   manipulation, azureGuardrail, unsupportedLanguage, total
 metrics.topReferrals[]      // partner: [{ url, count }] top 20; count = CONVERSATIONS
 metrics.topPrograms[]       // partner: [{ program, count, en, fr, programFr }]; 'unknown' = unclassified
+metrics.evalCoverage        // partner: { programs: [{ program, programFr, questions,
+                            //   usableEvals, expiringEvals, informedAnswers, actions: [{ action, actionFr, count }] }],  // usable/expiring: all dates, dept only; null for 'unknown'
+                            //   recencyDays, expiringWindowDays }; top 10 by questions
 metrics.topCitations[]      // partner: [{ url, count }] top 20; count = QUESTIONS citing the page
 metrics.answerTypeBreakdown.{ normal, 'clarifying-question', 'pt-muni', 'not-gc' }
 metrics.contentIssueChats[] / harmfulChats[]   // partner: [{ chatId, interactionId, pageLanguage, createdAt, questionNumber, status? }]
+metrics.mostUsedEvals[]                         // partner: [{ chatId, interactionId, pageLanguage, questionNumber, program, programFr, totalScore, evaluatedAt, uses }]; top 20 (MOST_USED_EVALS_LIMIT) by uses in range
 metrics.evalInformedChats[]                     // partner: same shape, no status; one row per question, so a chat can repeat; 20 most recent (a sample, not all)
 ```
 
@@ -164,7 +168,9 @@ const chartA11y = {
 | `CitationPagesCard.js` | `CollapsibleCard` + `CountTable` of top citation pages. Partner only. |
 | `AnswerTypesCard.js` | `CollapsibleCard` + answer-type breakdown table (split out of `CitationPagesCard`). Partner only. |
 | `ContentIssueChatsCard.js` | Collapsible list of chats matching an expert-feedback flag, each linking to review mode in a new tab; optional per-row `status` pill. Partner only. |
-| `EvalAnalysisSection.js` / `EvalAnalysisReport.js` | "Run eval analysis" at the bottom of partner (see `useEvalAnalysis`). |
+| `EvalCoverageCard.js` | Evaluation coverage by service table (classes `.dashboard-data-table`, `.dashboard-table-scroll` in admin.css — no inline styles). Partner only. |
+| `MostUsedEvalsCard.js` | Collapsible table of the evaluations injected into the most answers, each linking to review mode. Same table classes as `EvalCoverageCard`. Partner only. |
+| `src/components/aiAnalysis/EvalAnalysisSection.js` / `EvalAnalysisReport.js` | "Run eval analysis" on the AI-assisted analysis page (`AiAnalysisPage.js`, own `FilterPanel`, enabled only with an institution filter; see `useEvalAnalysis`). One request (`eval-analysis-run`): stats over every human eval in scope, no volume limit, then one insights call sent at most `MAX_INSIGHT_ROWS` (150) non-perfect rows and as many content-issue rows, errors (harmful, answer and citation errors) first then most recent (`selectInsightRows` in `services/evalAnalysisStats.js`); the report header says when either list was cut. Evaluations count by interaction date; chats are pre-filtered from one day before the start. Past runs still `running` show "In progress" for 10 minutes, then "Did not finish". The report still renders a v1 doc's scores-by-service table; new runs have none. |
 
 ## Pure data helpers (`src/utils/dashboard/feedbackBreakdown.js`)
 
@@ -220,6 +226,27 @@ Ranked bar of `context.program`, directly under the accuracy row.
 - **Bars are % of all *classified* questions**; top-N bars intentionally don't sum to 100%. Raw count + EN/FR split ride in the tooltip. The subtitle count reads lower than "Questions asked" because only `normal` answers are classified.
 - **Endpoint:** `api/metrics/metrics-programs.js` → `metrics.topPrograms`, grouped by `$program` with an `en`/`fr` split by `pageLanguage`; `programFr` is the curated French name (empty → English). `'unknown'` is pulled out of the bars into the subtitle.
 - Subtitle is terse at partner request. Tests: `__tests__/api.metrics-programs.test.js`.
+
+## Evaluation coverage by service (partner only)
+
+Table in the eval-informed section, collapsed by default: per program, questions, the expert evaluations eval-informed answering can use, answers that used past evaluations, and evaluations expiring soon.
+
+- **One evaluation count, and it ignores the date range.** The "Expert evaluations" column is `usableEvals`. A date-range count of evaluations (dropped 2026-11-18) was near zero under the 7-day default and told partners nothing about what answering can draw on.
+
+- **Same scope as the volume chart.** `metrics-eval-coverage.js` reuses `buildProgramScopeStages` from `metrics-programs.js` (normal answers, all filters), so the two can't count different questions.
+- **"Expert evaluations" / "Expiring soon" ignore the date range and every filter except department** — a second query (`buildUsableEvalsPipeline`) over all human evaluations, because retrieval uses any of them whenever the question was asked. It mirrors retrieval's conditions: not `type: 'ai'`, has a `totalScore` (the "Never stale" toggle creates blank, unscored docs on unevaluated questions — not evaluations), evaluated within `EVAL_INFORMED_RECENCY_DAYS` (`src/config/workflows.js`, also passed by `GenericWithQAGraph`) or `neverStale` (`true` or `'true'`). "Expiring soon" = will cross that line within `EXPIRING_WINDOW_DAYS` (60). Not mirrored: whether the embedding has synced. The unclassified row gets `null` for both.
+- **"Answers using evaluations"** = same definition as the eval-informed rate (`EVAL_INFORMED_WORKFLOW` + non-empty `qaMatches`), so it only counts from late August 2026.
+- **Actions** exclude `''`, `'unknown'` and `'Other'`; most frequent first. The card shows at most 3, skipping actions asked only once unless that's all there is, then "and N more" (`pickActions` in `EvalCoverageCard.js`).
+- Presence-gated: hidden when no row. Tests: `__tests__/integration.metrics-eval-coverage.test.js` (in-memory Mongo), `src/components/admin/__tests__/EvalCoverageCard.test.js` (a11y contract).
+
+## Most-used evaluations (partner only)
+
+Below the coverage table: the human evaluations eval-informed answering injected into the most answers in the period.
+
+- **Same answers and filters as the eval-informed chats list** — both build on `evalInformedAnswerStages` (`metrics-eval-informed-chats.js`): `EVAL_INFORMED_WORKFLOW` + `qaMatches`, filtered by date range, user/URL filters and department. Don't `$project` the chat down before those stages: userType and reviewer filters read the chat-level `user` field.
+- **Two steps** (`metrics-eval-reuse.js`): the aggregation ranks `qaMatches.interactionId` and keeps twice `MOST_USED_EVALS_LIMIT` (20, `src/config/workflows.js`) as candidates; details (score, evaluation date, service, chat, question number) come from indexed finds in JS. Evaluations deleted since use are dropped, then the list is cut to 20.
+- Links go to the **evaluated** question in review mode, in that chat's language. A chat can hold two evaluated questions, so each link has a sr-only question number.
+- Tests: `__tests__/integration.metrics-eval-reuse.test.js`, `src/components/admin/__tests__/MostUsedEvalsCard.test.js`.
 
 ## Satisfaction section (partner only)
 

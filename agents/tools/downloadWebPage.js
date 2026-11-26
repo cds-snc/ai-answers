@@ -1,6 +1,6 @@
 import { tool } from "@langchain/core/tools";
 import axios from "axios";
-import { Agent } from "https";
+import { guardedRequestOptions, logTlsVerificationFailure } from "../../api/util/fetchGuard.js";
 import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
 import TurndownService from "turndown";
@@ -330,9 +330,9 @@ function htmlToLeanMarkdown(html, baseUrl) {
 }
 
 async function downloadWebPage(url) {
-  const httpsAgent = new Agent({ rejectUnauthorized: false });
   const config = {
-    httpsAgent,
+    // Resolved-IP and redirect checks (AIA-010); see api/util/fetchGuard.js.
+    ...guardedRequestOptions(),
     maxRedirects: 10,
     timeout: REQUEST_TIMEOUT_MS,
     headers: { "User-Agent": process.env.USER_AGENT || "ai-answers" },
@@ -441,6 +441,7 @@ const downloadWebPageTool = tool(
         status: error.response?.status,
         data: error.response?.data
       });
+      logTlsVerificationFailure(error, url, "downloadWebPage");
 
       if (error.code === "ECONNREFUSED") throw new Error(`Connection refused: ${url}`);
       if (error.response?.status === 403) throw new Error(`Access forbidden (403): ${url}`);
