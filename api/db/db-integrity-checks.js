@@ -132,8 +132,13 @@ async function countOrphanPublicFeedback(limit = 0) {
   const Interaction = mongoose.models.Interaction;
   if (!PublicFeedback) return { count: 0, samples: [] };
 
-  const used = Interaction ? await Interaction.distinct('publicFeedback') : [];
-  const filter = used && used.length ? { _id: { $nin: used } } : {};
+  // publicFeedbackRecover names the same document while publicFeedback is
+  // null. Counting only the live pointer would mark that document as an
+  // orphan, and a cleanup based on this check would delete the only copy.
+  const usedLive = Interaction ? await Interaction.distinct('publicFeedback') : [];
+  const usedRecover = Interaction ? await Interaction.distinct('publicFeedbackRecover') : [];
+  const used = [...(usedLive || []), ...(usedRecover || [])].filter(Boolean);
+  const filter = used.length ? { _id: { $nin: used } } : {};
   const count = await PublicFeedback.countDocuments(filter);
   const samples = limit ? await PublicFeedback.find(filter).limit(limit).lean().select('_id feedback publicFeedbackScore') : [];
   return { count, samples };
@@ -305,6 +310,9 @@ async function countInteractionMissingChildren(limit = 0) {
   const optionalMissingLookups = [
     { field: 'expertFeedback', docField: 'expertFeedbackDoc' },
     { field: 'publicFeedback', docField: 'publicFeedbackDoc' },
+    // Holds the same id while publicFeedback is null. A set value still
+    // has to name a stored document.
+    { field: 'publicFeedbackRecover', docField: 'publicFeedbackRecoverDoc' },
     { field: 'autoEval', docField: 'evalDoc' }
   ];
 
@@ -313,6 +321,7 @@ async function countInteractionMissingChildren(limit = 0) {
   pipeline.push({ $lookup: { from: 'questions', localField: 'question', foreignField: '_id', as: 'questionDoc' } });
   pipeline.push({ $lookup: { from: 'expertfeedbacks', localField: 'expertFeedback', foreignField: '_id', as: 'expertFeedbackDoc' } });
   pipeline.push({ $lookup: { from: 'publicfeedbacks', localField: 'publicFeedback', foreignField: '_id', as: 'publicFeedbackDoc' } });
+  pipeline.push({ $lookup: { from: 'publicfeedbacks', localField: 'publicFeedbackRecover', foreignField: '_id', as: 'publicFeedbackRecoverDoc' } });
   pipeline.push({ $lookup: { from: 'evals', localField: 'autoEval', foreignField: '_id', as: 'evalDoc' } });
   pipeline.push({ $lookup: { from: 'contexts', localField: 'context', foreignField: '_id', as: 'contextDoc' } });
 
@@ -344,7 +353,7 @@ async function countInteractionMissingChildren(limit = 0) {
   let samples = [];
   if (limit && count > 0) {
     const samplePipeline = pipeline.slice(0, -1);
-    samplePipeline.push({ $project: { _id: 1, interactionId: 1, answer: 1, question: 1, expertFeedback: 1, publicFeedback: 1, autoEval: 1, context: 1 } });
+    samplePipeline.push({ $project: { _id: 1, interactionId: 1, answer: 1, question: 1, expertFeedback: 1, publicFeedback: 1, publicFeedbackRecover: 1, autoEval: 1, context: 1 } });
     samplePipeline.push({ $limit: limit });
     samples = await Interaction.aggregate(samplePipeline).allowDiskUse(true).exec();
   }

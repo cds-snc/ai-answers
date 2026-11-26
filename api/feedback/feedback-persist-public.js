@@ -4,7 +4,7 @@ import { Interaction } from '../../models/interaction.js';
 import { PublicFeedback } from '../../models/publicFeedback.js';
 import { requireString } from '../util/db-query.js';
 import { chatIdBelongsToSession } from '../../middleware/chat-session.js';
-import { FEEDBACK_OPTIONS } from '../../src/constants/UserFeedbackOptions.js';
+import { FEEDBACK_OPTIONS, SCORE_TO_KEY } from '../../src/constants/UserFeedbackOptions.js';
 
 // Metrics count `$eq: 'yes'` / `'no'`. A padded "yes " would pass a non-empty
 // check and then be counted as no, so the stored value is the trimmed one.
@@ -20,12 +20,16 @@ const SCORES_FOR_ANSWER = {
 };
 
 // Translated option labels are short (the longest is well under 100
-// characters). The cap is what stops an arbitrary essay from landing on
-// the review panel and in the log export. The body limit is much larger.
+// characters). The cap rejects an essay in the request. The stored reason
+// is the option id for the score, so that text never reaches the review
+// panel or the log export. The body limit is much larger.
 const PUBLIC_FEEDBACK_REASON_MAX_LENGTH = 300;
 
 // The public form only collects these three. Building the document from
 // them keeps a client-supplied id, timestamp, or extra key off the record.
+// The reason field on the form is the translated label. The record stores
+// the option id for the score, which is the key the review panel and the
+// reason charts resolve.
 function publicFeedbackFields(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) return null;
   const feedback = typeof input.feedback === 'string' ? input.feedback.trim() : '';
@@ -41,10 +45,12 @@ function publicFeedbackFields(input) {
   if (!Number.isInteger(publicFeedbackScore) || !SCORES_FOR_ANSWER[feedback].has(publicFeedbackScore)) {
     return null;
   }
+  const reasonKey = SCORE_TO_KEY[publicFeedbackScore];
+  if (!reasonKey) return null;
 
   return {
     feedback,
-    publicFeedbackReason: typeof publicFeedbackReason === 'string' ? publicFeedbackReason.trim() : '',
+    publicFeedbackReason: reasonKey,
     publicFeedbackScore,
   };
 }
@@ -55,6 +61,39 @@ function publicFeedbackFields(input) {
 function interactionIdString(value) {
   if (typeof value === 'number' && Number.isFinite(value)) return String(value);
   return value;
+}
+
+// 409 only when the pointer names a stored document. The other save can
+// still fail. A 409 would close the form, and the retry that drops a
+// dangling pointer would never run. This read does not change the pointer.
+async function respondFromPointer(res, interactionObjectId) {
+  const current = await Interaction.findOne(
+    { _id: interactionObjectId },
+    { publicFeedback: 1 }
+  ).lean();
+  if (!current) {
+    return res.status(404).json({ message: 'Interaction not found' });
+  }
+  if (current.publicFeedback && await PublicFeedback.exists({ _id: current.publicFeedback })) {
+    return res.status(409).json({ message: 'Public feedback already recorded' });
+  }
+  return res.status(500).json({ message: 'Failed to log public feedback' });
+}
+
+// 409 only when this update linked the stored document. The filter is
+// publicFeedback: null, so another request can claim that slot between
+// the exists() check and this write. A miss is re-read: 409 only when
+// the pointer that remains names a stored document, otherwise 500 so
+// the form stays open. The claimer's save can still throw.
+async function linkStoredFeedback(res, interactionObjectId, pointerId) {
+  const restored = await Interaction.updateOne(
+    { _id: interactionObjectId, publicFeedback: null },
+    { $set: { publicFeedback: pointerId, publicFeedbackRecover: null } }
+  );
+  if (restored.matchedCount > 0) {
+    return res.status(409).json({ message: 'Public feedback already recorded' });
+  }
+  return respondFromPointer(res, interactionObjectId);
 }
 
 async function feedbackPersistPublicHandler(req, res) {
@@ -105,7 +144,20 @@ async function feedbackPersistPublicHandler(req, res) {
     // and save this request, so a retry does not report the feedback as
     // already recorded. The other request's insert can commit after the
     // check and before the clear. Put the same id back when the document
-    // is there, and do not insert another one.
+    // is there, and do not insert another one. The clear keeps that id
+    // across the second read: a stop before the put-back still has it.
+    // Once that read shows no document, the id is dropped. A recovery
+    // pointer names a stored document, or it is empty.
+    if (!existingInteraction.publicFeedback && existingInteraction.publicFeedbackRecover) {
+      const recoverId = existingInteraction.publicFeedbackRecover;
+      if (await PublicFeedback.exists({ _id: recoverId })) {
+        return linkStoredFeedback(res, existingInteraction._id, recoverId);
+      }
+      await Interaction.updateOne(
+        { _id: existingInteraction._id, publicFeedback: null, publicFeedbackRecover: recoverId },
+        { $set: { publicFeedbackRecover: null } }
+      );
+    }
     if (existingInteraction.publicFeedback) {
       const pointerId = existingInteraction.publicFeedback;
       const saved = await PublicFeedback.exists({ _id: pointerId });
@@ -114,15 +166,15 @@ async function feedbackPersistPublicHandler(req, res) {
       }
       await Interaction.updateOne(
         { _id: existingInteraction._id, publicFeedback: pointerId },
-        { $set: { publicFeedback: null } }
+        { $set: { publicFeedback: null, publicFeedbackRecover: pointerId } }
       );
       if (await PublicFeedback.exists({ _id: pointerId })) {
-        await Interaction.updateOne(
-          { _id: existingInteraction._id, publicFeedback: null },
-          { $set: { publicFeedback: pointerId } }
-        );
-        return res.status(409).json({ message: 'Public feedback already recorded' });
+        return linkStoredFeedback(res, existingInteraction._id, pointerId);
       }
+      await Interaction.updateOne(
+        { _id: existingInteraction._id, publicFeedback: null, publicFeedbackRecover: pointerId },
+        { $set: { publicFeedbackRecover: null } }
+      );
     }
 
     // The id exists as soon as the document is constructed, so the interaction
@@ -134,48 +186,55 @@ async function feedbackPersistPublicHandler(req, res) {
     const publicFeedbackDoc = new PublicFeedback(fields);
     const claimed = await Interaction.findOneAndUpdate(
       { _id: existingInteraction._id, publicFeedback: null },
-      { $set: { publicFeedback: publicFeedbackDoc._id } },
+      { $set: { publicFeedback: publicFeedbackDoc._id, publicFeedbackRecover: null } },
       { new: true }
     );
     if (!claimed) {
-      const current = await Interaction.findOne(
-        { _id: existingInteraction._id },
-        { publicFeedback: 1 }
-      ).lean();
-      if (!current) {
-        return res.status(404).json({ message: 'Interaction not found' });
-      }
-      // The other request claimed the pointer. Its save can still fail, so
-      // 409 only when that pointer names a stored document. This request
-      // did not claim the id, so it leaves the pointer alone. The claimer
-      // clears it when its own save throws. A 409 would close the form,
-      // and the retry that drops a dangling pointer would never run.
-      if (current.publicFeedback && await PublicFeedback.exists({ _id: current.publicFeedback })) {
-        return res.status(409).json({ message: 'Public feedback already recorded' });
-      }
-      return res.status(500).json({ message: 'Failed to log public feedback' });
+      // This request did not claim the id. The other request clears the
+      // pointer when its own save throws.
+      return respondFromPointer(res, existingInteraction._id);
     }
     try {
       await publicFeedbackDoc.save();
     } catch (saveError) {
       try {
+        // save() can throw after the insert is acknowledged (duplicate key,
+        // connection drop). Keep the id only when that document is stored.
+        // A throw before the insert clears both pointers, so the recovery
+        // field does not name an id that was never written.
+        const stored = await PublicFeedback.exists({ _id: publicFeedbackDoc._id });
         await Interaction.updateOne(
           { _id: existingInteraction._id, publicFeedback: publicFeedbackDoc._id },
-          { $set: { publicFeedback: null } }
+          { $set: { publicFeedback: null, publicFeedbackRecover: stored ? publicFeedbackDoc._id : null } }
         );
       } catch (clearError) {
         console.error('Error clearing public feedback after a failed save:', clearError);
       }
       throw saveError;
     }
-    // The cleanup above clears a pointer that does not name a document
-    // yet, which overlaps this insert. Attach the document that was just
-    // stored when the interaction is still empty. An id already set is
-    // left as it is.
-    await Interaction.updateOne(
-      { _id: existingInteraction._id, publicFeedback: null },
-      { $set: { publicFeedback: publicFeedbackDoc._id } }
+    // The cleanup above can clear this claim while the insert is in
+    // flight: it saw no document yet, dropped the pointer, and claimed
+    // its own id. Keep this document only when the interaction names it.
+    // An empty pointer is that clear landing before the other claim, so
+    // attach this document there. A different id stays as it is; this
+    // document is removed and the answer follows the pointer that remains.
+    // Linking clears the recovery id the clear wrote, so the next request
+    // does not treat this document as still unlinked.
+    const linked = await Interaction.findOneAndUpdate(
+      {
+        _id: existingInteraction._id,
+        $or: [
+          { publicFeedback: publicFeedbackDoc._id },
+          { publicFeedback: null },
+        ],
+      },
+      { $set: { publicFeedback: publicFeedbackDoc._id, publicFeedbackRecover: null } },
+      { new: true }
     );
+    if (!linked) {
+      await PublicFeedback.deleteOne({ _id: publicFeedbackDoc._id });
+      return respondFromPointer(res, existingInteraction._id);
+    }
 
     res.status(200).json({ message: 'Public feedback logged successfully' });
   } catch (error) {

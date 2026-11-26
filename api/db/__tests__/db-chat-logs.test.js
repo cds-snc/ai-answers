@@ -7,6 +7,7 @@ import { Interaction } from '../../../models/interaction.js';
 import { BatchItem } from '../../../models/batchItem.js';
 import { Batch } from '../../../models/batch.js';
 import { User } from '../../../models/user.js';
+import { PublicFeedback } from '../../../models/publicFeedback.js';
 
 // db-chat-logs serves the Batches page's CSV/Excel export only
 // (BatchService.retrieveBatchChats). Real in-memory database.
@@ -67,6 +68,28 @@ describe('db-chat-logs (batch export)', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.payload.logs.map(chat => chat.chatId)).toEqual(['old-batch-chat']);
+  });
+
+  it('returns feedback that is only on the recovery pointer', async () => {
+    await dbConnect();
+    const batchId = await ownBatch();
+    const chat = await chatInBatch(batchId, 'recovered-feedback');
+    const doc = await PublicFeedback.create({
+      feedback: 'yes',
+      publicFeedbackReason: 'Saved me time',
+      publicFeedbackScore: 3,
+    });
+    await Interaction.updateOne(
+      { _id: chat.interactions[0] },
+      { $set: { publicFeedbackRecover: doc._id } }
+    );
+
+    const res = await getLogs({ batchId: batchId.toString() });
+
+    const returned = res.payload.logs[0].interactions[0];
+    expect(returned.publicFeedback.feedback).toBe('yes');
+    expect(returned.publicFeedback.publicFeedbackScore).toBe(3);
+    expect(returned.publicFeedbackRecover).toBeUndefined();
   });
 
   it('returns only the chats of that batch', async () => {

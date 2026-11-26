@@ -2,6 +2,7 @@ import dbConnect from '../db/db-connect.js';
 import { Interaction } from '../../models/interaction.js';
 import { PublicFeedback } from '../../models/publicFeedback.js';
 import { requireObjectIdString } from '../util/db-query.js';
+import { publicFeedbackPointer } from '../util/public-feedback-ref.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
 
 async function feedbackGetPublicHandler(req, res) {
@@ -15,8 +16,9 @@ async function feedbackGetPublicHandler(req, res) {
     await dbConnect();
     const interaction = await Interaction.findById(interactionId).lean();
     if (!interaction) return res.status(404).json({ message: 'Interaction not found' });
-    if (!interaction.publicFeedback) return res.status(200).json({ message: 'No public feedback', sentences: [] });
-    const pf = await PublicFeedback.findById(interaction.publicFeedback).lean();
+    const feedbackId = publicFeedbackPointer(interaction);
+    if (!feedbackId) return res.status(200).json({ message: 'No public feedback', sentences: [] });
+    const pf = await PublicFeedback.findById(feedbackId).lean();
     if (!pf) return res.status(200).json({ message: 'No public feedback', sentences: [] });
     // If public feedback contained sentence-level comments store them under sentences array, else return feedback as single item
     const sentences = pf.sentences || [];

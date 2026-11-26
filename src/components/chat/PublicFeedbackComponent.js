@@ -9,11 +9,16 @@ import { FEEDBACK_OPTIONS } from '../../constants/UserFeedbackOptions.js';
 // 409 means this interaction already has feedback. 403 means the session
 // that opened the chat is gone (it expires after inactivity, and signing
 // in replaces it); reloading starts a new session that does not own this
-// chat, so the feedback cannot be saved. Other 4xx responses are final
-// too. Only a 5xx, or a request that never got a status, is worth retrying.
+// chat, so the feedback cannot be saved. 400 and 404 are final too. 429
+// is the shared API limit, including the one that applies while another
+// chat response is still streaming, so the same answer can be sent again.
+// A 429, a 5xx, or a request that never got a status is worth retrying.
 function saveFailureFor(err) {
   if (err?.status === 403) {
     return { key: 'homepage.publicFeedback.sessionEnded', retryable: false };
+  }
+  if (err?.status === 429) {
+    return { key: 'homepage.publicFeedback.saveError', retryable: true };
   }
   if (typeof err?.status === 'number' && err.status < 500) {
     return { key: 'homepage.publicFeedback.saveFailed', retryable: false };

@@ -14,6 +14,7 @@ import { Chat } from '../../models/chat.js';
 import { BatchItem } from '../../models/batchItem.js';
 import { findAccessibleBatch } from '../util/batch-access.js';
 import { requireObjectIdString } from '../util/db-query.js';
+import { foldPublicFeedbackRecover } from '../util/public-feedback-ref.js';
 import {
   authMiddleware,
   partnerOrAdminMiddleware,
@@ -35,6 +36,7 @@ const chatPopulate = [
       { path: 'context' },
       { path: 'expertFeedback', model: 'ExpertFeedback', select: '-__v' },
       { path: 'publicFeedback', model: 'PublicFeedback', select: '-__v' },
+      { path: 'publicFeedbackRecover', model: 'PublicFeedback', select: '-__v' },
       { path: 'question', select: '-embedding' },
       {
         path: 'answer',
@@ -99,6 +101,11 @@ async function chatLogsHandler(req, res) {
         .populate(chatPopulate)
         .lean()
       : [];
+    for (const chat of chats) {
+      for (const interaction of chat.interactions || []) {
+        foldPublicFeedbackRecover(interaction);
+      }
+    }
 
     return res.status(200).json({ success: true, logs: chats });
   } catch (error) {

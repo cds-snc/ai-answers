@@ -5,6 +5,7 @@ import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../
 import { getChatFilterConditions, getPartnerEvalAggregationExpressionWithoutCitation, getAiEvalAggregationExpressionWithoutCitation, getPartnerContentIssueAggregationExpression, getHasCitationErrorAggregationExpression, getFeedbackDataProjection, getEvalInformedAggregationExpression } from '../util/chat-filters.js';
 import { frForProgram, frForAction } from '../util/programActionFr.js';
 import { escapeRegex } from '../util/db-query.js';
+import { publicFeedbackIdStage } from '../util/public-feedback-ref.js';
 
 const HOURS_IN_DAY = 24;
 
@@ -307,7 +308,9 @@ async function evalDashboardHandler(req, res) {
       }
     });
 
-    // Lookup public feedback - only need whether feedback string is non-empty
+    // Lookup public feedback - only need whether feedback string is non-empty.
+    // The recovery id is the same document while the live pointer is null.
+    pipeline.push(publicFeedbackIdStage('interactions'));
     pipeline.push({
       $lookup: {
         from: 'publicfeedbacks',

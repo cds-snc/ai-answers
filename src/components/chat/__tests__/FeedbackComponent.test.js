@@ -289,6 +289,46 @@ describe('FeedbackComponent — public feedback', () => {
     errorSpy.mockRestore();
   });
 
+  it('asks for another try when the save is rate limited', async () => {
+    mockUseHasAnyRole.mockReturnValue(false);
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const rateLimited = new Error('Too many requests');
+    rateLimited.status = 429;
+    mockPersistPublicFeedback.mockRejectedValue(rateLimited);
+    renderComponent();
+
+    fireEvent.click(screen.getByText('common.yes'));
+    fireEvent.click(screen.getByLabelText('homepage.publicFeedback.yes.options.noCall'));
+    await act(async () => {
+      fireEvent.click(screen.getByText('homepage.publicFeedback.send'));
+    });
+
+    expect(screen.getByText('homepage.publicFeedback.saveError')).toBeTruthy();
+    expect(screen.queryByText('homepage.publicFeedback.saveFailed')).toBeNull();
+    expect(screen.getByText('homepage.publicFeedback.send').closest('button').disabled).toBe(false);
+    errorSpy.mockRestore();
+  });
+
+  it('does not ask for another try when the interaction is gone', async () => {
+    mockUseHasAnyRole.mockReturnValue(false);
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const missing = new Error('Interaction not found');
+    missing.status = 404;
+    mockPersistPublicFeedback.mockRejectedValue(missing);
+    renderComponent();
+
+    fireEvent.click(screen.getByText('common.yes'));
+    fireEvent.click(screen.getByLabelText('homepage.publicFeedback.yes.options.noCall'));
+    await act(async () => {
+      fireEvent.click(screen.getByText('homepage.publicFeedback.send'));
+    });
+
+    expect(screen.getByText('homepage.publicFeedback.saveFailed')).toBeTruthy();
+    expect(screen.queryByText('homepage.publicFeedback.saveError')).toBeNull();
+    expect(screen.getByText('homepage.publicFeedback.send').closest('button').disabled).toBe(true);
+    errorSpy.mockRestore();
+  });
+
   it('does not ask for another try when the session no longer owns the chat', async () => {
     mockUseHasAnyRole.mockReturnValue(false);
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
