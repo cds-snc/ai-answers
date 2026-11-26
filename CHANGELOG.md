@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.214.3](https://github.com/cds-snc/ai-answers/compare/v1.214.2...v1.214.3) (2026-11-26)
+
+
+### Bug Fixes
+
+* AIA-015 take the user's role from the database on each request ([4e55281](https://github.com/cds-snc/ai-answers/commit/4e55281846cccfc4adece10820649167b0fd3112))
+* allowlist the context agent's department and URL before they rea… ([fc1f8e0](https://github.com/cds-snc/ai-answers/commit/fc1f8e089ae557d49440650ffc029f7de409f29c))
+* allowlist the context agent's department and URL before they reach the answer prompt ([e76cd15](https://github.com/cds-snc/ai-answers/commit/e76cd15809998977989c4245345274649f628ebc))
+* load department scenarios from a static allowlist (AIA-017) ([4b2511a](https://github.com/cds-snc/ai-answers/commit/4b2511adb10441bc148bf4abb309ce376f4e32c2))
+* load department scenarios from a static allowlist (AIA-017) ([2dd5250](https://github.com/cds-snc/ai-answers/commit/2dd52500837f173111f0580479484869c91e00cb))
+* take the user's role from the database on each request, not the sign-in session ([f66f56a](https://github.com/cds-snc/ai-answers/commit/f66f56a2a4ee58ceb27ca9b878d6f7f9895efd7a))
+
 ## [1.214.2](https://github.com/cds-snc/ai-answers/compare/v1.214.1...v1.214.2) (2026-11-25)
 
 
