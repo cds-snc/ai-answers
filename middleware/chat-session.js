@@ -2,9 +2,6 @@ import ChatSessionService from '../services/ChatSessionService.js';
 import ChatSessionMetricsService from '../services/ChatSessionMetricsService.js';
 import { v4 as uuidv4 } from 'uuid';
 import ConversationIntegrityService from '../services/ConversationIntegrityService.js';
-import crypto from 'crypto';
-
-const fingerprintPepper = process.env.FP_PEPPER || 'dev-pepper';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper: Check if the user is authenticated

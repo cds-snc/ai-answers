@@ -1,9 +1,7 @@
 // Ensures a hashed visitorId is present in the express session.
 // If absent but present in request body, hashes and stores it (lazy init).
 // Then validates presence; if still absent, responds with 403 (botDetected).
-import crypto from 'crypto';
-
-const fingerprintPepper = process.env.FP_PEPPER || 'dev-pepper';
+import { hashVisitorId } from './fingerprint-pepper.js';
 
 // Explicit list of routes that require fingerprint verification for anonymous users.
 // These are the chat flow endpoints called during user interactions.
@@ -20,11 +18,6 @@ const FINGERPRINT_EXEMPT_PATHS = [];
  */
 function matchesPath(url, paths) {
   return paths.some(path => url.includes(path));
-}
-
-function hashVisitorId(visitorId) {
-  return crypto.createHmac('sha256', fingerprintPepper)
-    .update(String(visitorId)).digest('hex');
 }
 
 function saveSession(req, reason) {

@@ -16,7 +16,7 @@ echo "Deploying AI Answers function: $FULL_FUNCTION_NAME"
 echo "Fetching environment variables from SSM Parameter Store..."
 # The parameter names to fetch
 PARAMETER_NAMES1="docdb_uri azure_openai_api_key azure_openai_endpoint azure_openai_api_version canada_ca_search_uri canada_ca_search_api_key jwt_secret_key user_agent google_api_key"
-PARAMETER_NAMES2="gc_notify_api_key google_search_engine_id cross_account_bedrock_role bedrock_region conversation_integrity_secret session_secret s3_bucket_name"
+PARAMETER_NAMES2="gc_notify_api_key google_search_engine_id cross_account_bedrock_role bedrock_region conversation_integrity_secret session_secret fp_pepper s3_bucket_name"
 
 # Fetch all parameters in two batches due to AWS limit of 10 per request
 PARAMETERS_JSON1=$(aws ssm get-parameters --names $PARAMETER_NAMES1 --with-decryption --query 'Parameters' --output json)
@@ -47,13 +47,14 @@ CROSS_ACCOUNT_BEDROCK_ROLE=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name
 BEDROCK_REGION=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name=="bedrock_region") | .Value')
 CONVERSATION_INTEGRITY_SECRET=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name=="conversation_integrity_secret") | .Value')
 SESSION_SECRET=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name=="session_secret") | .Value')
+FP_PEPPER=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name=="fp_pepper") | .Value')
 S3_BUCKET_NAME=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name=="s3_bucket_name") | .Value')
 
 # Fetch optional redis_url parameter (may not exist yet)
 REDIS_URL=$(aws ssm get-parameter --name redis_url --with-decryption --query 'Parameter.Value' --output text 2>/dev/null || echo "")
 
 # Build base environment variables
-ENV_VARS="NODE_ENV=production,PORT=3001,AWS_LAMBDA_EXEC_WRAPPER=/opt/extensions/lambda-adapter,RUST_LOG=info,READINESS_CHECK_PATH=/health,READINESS_CHECK_PORT=3001,READINESS_CHECK_PROTOCOL=http,READINESS_CHECK_MAX_WAIT=60,READINESS_CHECK_INTERVAL=1,DOCDB_URI=$DOCDB_URI,AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY,AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT,AZURE_OPENAI_API_VERSION=$AZURE_OPENAI_API_VERSION,CANADA_CA_SEARCH_URI=$CANADA_CA_SEARCH_URI,CANADA_CA_SEARCH_API_KEY=$CANADA_CA_SEARCH_API_KEY,JWT_SECRET_KEY=$JWT_SECRET_KEY,USER_AGENT=$USER_AGENT,GOOGLE_API_KEY=$GOOGLE_API_KEY,GC_NOTIFY_API_KEY=$GC_NOTIFY_API_KEY,GOOGLE_SEARCH_ENGINE_ID=$GOOGLE_SEARCH_ENGINE_ID,BEDROCK_ROLE_ARN=$CROSS_ACCOUNT_BEDROCK_ROLE,BEDROCK_REGION=$BEDROCK_REGION,CONVERSATION_INTEGRITY_SECRET=$CONVERSATION_INTEGRITY_SECRET,SESSION_SECRET=$SESSION_SECRET,S3_BUCKET_NAME=$S3_BUCKET_NAME,AWS_LWA_INVOKE_MODE=response_stream"
+ENV_VARS="NODE_ENV=production,PORT=3001,AWS_LAMBDA_EXEC_WRAPPER=/opt/extensions/lambda-adapter,RUST_LOG=info,READINESS_CHECK_PATH=/health,READINESS_CHECK_PORT=3001,READINESS_CHECK_PROTOCOL=http,READINESS_CHECK_MAX_WAIT=60,READINESS_CHECK_INTERVAL=1,DOCDB_URI=$DOCDB_URI,AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY,AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT,AZURE_OPENAI_API_VERSION=$AZURE_OPENAI_API_VERSION,CANADA_CA_SEARCH_URI=$CANADA_CA_SEARCH_URI,CANADA_CA_SEARCH_API_KEY=$CANADA_CA_SEARCH_API_KEY,JWT_SECRET_KEY=$JWT_SECRET_KEY,USER_AGENT=$USER_AGENT,GOOGLE_API_KEY=$GOOGLE_API_KEY,GC_NOTIFY_API_KEY=$GC_NOTIFY_API_KEY,GOOGLE_SEARCH_ENGINE_ID=$GOOGLE_SEARCH_ENGINE_ID,BEDROCK_ROLE_ARN=$CROSS_ACCOUNT_BEDROCK_ROLE,BEDROCK_REGION=$BEDROCK_REGION,CONVERSATION_INTEGRITY_SECRET=$CONVERSATION_INTEGRITY_SECRET,SESSION_SECRET=$SESSION_SECRET,FP_PEPPER=$FP_PEPPER,S3_BUCKET_NAME=$S3_BUCKET_NAME,AWS_LWA_INVOKE_MODE=response_stream"
 
 # Add REDIS_URL only if it has a value (parameter exists in SSM)
 if [ -n "$REDIS_URL" ]; then
@@ -61,13 +62,14 @@ if [ -n "$REDIS_URL" ]; then
 fi
 
 # Validate that all required parameters were extracted
-if [ -z "$DOCDB_URI" ] || [ -z "$AZURE_OPENAI_API_KEY" ] || [ -z "$AZURE_OPENAI_ENDPOINT" ] || [ -z "$JWT_SECRET_KEY" ] || [ -z "$SESSION_SECRET" ]; then
+if [ -z "$DOCDB_URI" ] || [ -z "$AZURE_OPENAI_API_KEY" ] || [ -z "$AZURE_OPENAI_ENDPOINT" ] || [ -z "$JWT_SECRET_KEY" ] || [ -z "$SESSION_SECRET" ] || [ -z "$FP_PEPPER" ]; then
   echo "Error: One or more required parameters are empty after extraction"
   echo "DOCDB_URI: ${DOCDB_URI:+SET}"
   echo "AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:+SET}"
   echo "AZURE_OPENAI_ENDPOINT: ${AZURE_OPENAI_ENDPOINT:+SET}"
   echo "JWT_SECRET_KEY: ${JWT_SECRET_KEY:+SET}"
   echo "SESSION_SECRET: ${SESSION_SECRET:+SET}"
+  echo "FP_PEPPER: ${FP_PEPPER:+SET}"
   exit 1
 fi
 

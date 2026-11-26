@@ -4,6 +4,7 @@ import sessionMiddleware, { validateConversationIntegrity } from '../chat-sessio
 import ConversationIntegrityService from '../../services/ConversationIntegrityService.js';
 import ChatSessionMetricsService from '../../services/ChatSessionMetricsService.js';
 import crypto from 'crypto';
+import { hashVisitorId } from '../fingerprint-pepper.js';
 
 vi.mock('../../services/ChatSessionService.js', () => ({
     default: {
@@ -45,7 +46,6 @@ describe('Middleware Session Logic', () => {
             json: vi.fn().mockReturnThis(),
         };
         next = vi.fn();
-        process.env.FP_PEPPER = 'test-pepper';
     });
 
     describe('botFingerprintPresence', () => {
@@ -68,9 +68,7 @@ describe('Middleware Session Logic', () => {
         });
 
         it('allows requests when the provided fingerprint does not match the session visitorId', async () => {
-            req.session.visitorId = crypto.createHmac('sha256', 'dev-pepper')
-                .update('browser123')
-                .digest('hex');
+            req.session.visitorId = hashVisitorId('browser123');
             req.body.visitorId = 'different-browser';
             handlerCalled = false;
             const nextFn = () => { handlerCalled = true; };
@@ -80,6 +78,33 @@ describe('Middleware Session Logic', () => {
             expect(res.statusCode).toBe(200);
             expect(res.end).not.toHaveBeenCalled();
             expect(handlerCalled).toBe(true);
+        });
+
+        it('stores the visitorId hashed with the process pepper', async () => {
+            req.body.visitorId = 'browser123';
+            await botFingerprintPresence(req, res, () => {});
+            expect(req.session.visitorId).toBe(hashVisitorId('browser123'));
+            expect(req.session.visitorId).not.toContain('browser123');
+        });
+
+        it('warns and allows a session hashed with a previous pepper (rotation)', async () => {
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            // Hash made before rotation, with pepper A. The request is hashed with the current pepper.
+            req.session.visitorId = crypto.createHmac('sha256', 'pepper-a')
+                .update('browser123')
+                .digest('hex');
+            req.body.visitorId = 'browser123';
+            handlerCalled = false;
+
+            await botFingerprintPresence(req, res, () => { handlerCalled = true; });
+
+            expect(warn).toHaveBeenCalledWith(
+                expect.stringContaining('visitorId mismatch'),
+                expect.any(Object),
+            );
+            expect(res.statusCode).toBe(200);
+            expect(handlerCalled).toBe(true);
+            warn.mockRestore();
         });
     });
 

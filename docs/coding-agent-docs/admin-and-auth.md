@@ -161,7 +161,12 @@ would otherwise keep the anonymous length. Admins can view/manage sessions on th
 Rate limiting (`middleware/rate-limiter.js`) is applied to all `/api` routes (only
 `/api/chat/chat-session-availability` is registered ahead of it). Every API call uses one point,
 not just questions. Signed-in users and anonymous visitors have separate limits. Anonymous
-visitors are keyed by `visitorId`, then session id, then IP.
+visitors are keyed by `visitorId`, then session id, then IP. The `visitorId` is the client's
+fingerprint after HMAC with `FP_PEPPER` (`middleware/fingerprint-pepper.js`). Like
+`SESSION_SECRET`, it is required unless `NODE_ENV` is development or test, and the server
+refuses to start without it. After it changes, existing sessions keep their old hash. They log a
+"visitorId mismatch" warning on every chat request until the session expires. The requests
+still go through.
 
 The settings are named like a token bucket, but the limiter (`rate-limiter-flexible`) uses a
 **fixed window**: `points = capacity`, `duration = ceil(capacity / refill × 60)` seconds

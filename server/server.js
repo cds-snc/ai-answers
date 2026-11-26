@@ -141,6 +141,7 @@ import botFingerprintPresence from '../middleware/bot-fingerprint-presence.js';
 import passport from '../config/passport.js';
 import systemHealthMonitor from '../services/SystemHealthMonitor.js';
 import ConversationIntegrityService from '../services/ConversationIntegrityService.js';
+import { assertFingerprintPepperConfigured } from '../middleware/fingerprint-pepper.js';
 
 
 
@@ -151,6 +152,8 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 // Refuse to start without the conversation-integrity secret (AIA-019).
 ConversationIntegrityService.assertConfigured();
+// Same for the visitor-fingerprint pepper (AIA-019).
+assertFingerprintPepperConfigured();
 
 const app = express();
 
