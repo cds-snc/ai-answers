@@ -36,7 +36,12 @@ class FeedbackService {
   }
 
   static async persistPublicFeedback({ chatId, interactionId, publicFeedback }) {
-    if (!chatId || !interactionId || !publicFeedback) {
+    // The chat page's message id is a counter. The interaction stores it
+    // as a string, and the feedback endpoint only accepts a string.
+    const persistedInteractionId = typeof interactionId === 'number' && Number.isFinite(interactionId)
+      ? String(interactionId)
+      : interactionId;
+    if (!chatId || !persistedInteractionId || !publicFeedback) {
       throw new Error('Missing required fields');
     }
     // Format public feedback fields as in DataStoreService
@@ -52,13 +57,21 @@ class FeedbackService {
       },
       body: JSON.stringify({
         chatId,
-        interactionId,
+        interactionId: persistedInteractionId,
         publicFeedback: formattedPublicFeedback
       })
     });
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to persist public feedback');
+      // The form treats 409 as a saved answer: a public feedback document
+      // is already stored. The message alone cannot tell that from a failed save.
+      let message = 'Failed to persist public feedback';
+      try {
+        const body = await response.json();
+        if (body && body.message) message = body.message;
+      } catch { /* non-JSON body */ }
+      const error = new Error(message);
+      error.status = response.status;
+      throw error;
     }
     return await response.json();
   }

@@ -1,9 +1,34 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useInlineFormError } from '../../hooks/useInlineFormError.js';
+import { useFocusOnChange } from '../../hooks/useFocusOnChange.js';
 import FeedbackInlineError from './FeedbackInlineError.js';
 import FeedbackService from '../../services/FeedbackService.js';
 import { FEEDBACK_OPTIONS } from '../../constants/UserFeedbackOptions.js';
+
+// 409 means this interaction already has feedback. 403 means the session
+// that opened the chat is gone (it expires after inactivity, and signing
+// in replaces it); reloading starts a new session that does not own this
+// chat, so the feedback cannot be saved. 400 is a rejected payload and
+// stays final. 404 is not: chat-graph-run sends the result from verifyNode
+// before persistNode stores the chat, so "Chat not found" and "Interaction
+// not found" happen while that save is still running, and the same request
+// succeeds once it finishes. 429 is the shared API limit, including the
+// one that applies while another chat response is still streaming, so the
+// same answer can be sent again. A 404, a 429, a 5xx, or a request that
+// never got a status is worth retrying.
+function saveFailureFor(err) {
+  if (err?.status === 403) {
+    return { key: 'homepage.publicFeedback.sessionEnded', retryable: false };
+  }
+  if (err?.status === 429 || err?.status === 404) {
+    return { key: 'homepage.publicFeedback.saveError', retryable: true };
+  }
+  if (typeof err?.status === 'number' && err.status < 500) {
+    return { key: 'homepage.publicFeedback.saveFailed', retryable: false };
+  }
+  return { key: 'homepage.publicFeedback.saveError', retryable: true };
+}
 
 
 const PublicFeedbackComponent = ({
@@ -17,6 +42,11 @@ const PublicFeedbackComponent = ({
 }) => {
   const { t } = useTranslations(lang);
   const [selected, setSelected] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveFailure, setSaveFailure] = useState(null);
+  const [saveErrorNonce, setSaveErrorNonce] = useState(0);
+  const savingRef = useRef(false);
+  const saveErrorRef = useFocusOnChange(saveErrorNonce);
   const { hasError, errorCount, errorRef, triggerError, clearError } = useInlineFormError();
 
   const options = (isPositive ? FEEDBACK_OPTIONS.YES : FEEDBACK_OPTIONS.NO).map(opt => ({
@@ -29,9 +59,11 @@ const PublicFeedbackComponent = ({
   const handleOptionChange = (id) => {
     setSelected(id);
     clearError();
+    if (saveFailure?.retryable) setSaveFailure(null);
   };
 
   const handleSend = async () => {
+    if (savingRef.current || saveFailure?.retryable === false) return;
     if (!selected) {
       triggerError();
       return;
@@ -44,11 +76,30 @@ const PublicFeedbackComponent = ({
       publicFeedbackReason: option.label,   // Use the option's label
       publicFeedbackScore: option.score,    // Use the option's score
     };
+    savingRef.current = true;
+    setSaving(true);
+    if (saveFailure?.retryable) setSaveFailure(null);
     try {
       await FeedbackService.persistPublicFeedback({ chatId, interactionId: userMessageId, publicFeedback: feedbackPayload });
     } catch (err) {
+      // 409 means a public feedback document is already stored (the earlier
+      // request saved it and this response was lost). Show the thank-you.
+      // It does not name the reason. After a retryable error the radios stay
+      // editable, so the selection on screen can be a later one than the
+      // reason that was stored, and a second write is refused. Leave the
+      // thank-you as it is. Confirming the selection on screen would claim
+      // a reason that was not recorded.
+      if (err.status === 409) {
+        onSubmit(feedbackPayload);
+        return;
+      }
       console.error('Failed to persist public feedback', err);
-      // parent still shows its own thank-you message even if logging fails
+      setSaveFailure(saveFailureFor(err));
+      setSaveErrorNonce((n) => n + 1);
+      return;
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
     }
     onSubmit(feedbackPayload);
   };
@@ -111,10 +162,18 @@ const PublicFeedbackComponent = ({
               </li>
             ))}
           </ul>
-          <button type="submit" className="btn-primary mt-150">
+          <button type="submit" className="btn-primary mt-150" disabled={saving || saveFailure?.retryable === false}>
             {t('homepage.publicFeedback.send')}
           </button>
         </fieldset>
+        {saveFailure && (
+          <FeedbackInlineError
+            id="public-feedback-save-error"
+            message={t(saveFailure.key)}
+            errorCount={saveErrorNonce}
+            inputRef={saveErrorRef}
+          />
+        )}
       </div>
     </form>
   );

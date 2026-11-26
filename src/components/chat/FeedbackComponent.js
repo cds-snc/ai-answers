@@ -220,12 +220,9 @@ const FeedbackComponent = ({
     };
   }, [pendingExpertFeedback, onExpertFeedbackChange]);
 
-  const handlePublicFeedback = (publicFeedback) => {
-    FeedbackService.persistPublicFeedback({
-      chatId,
-      interactionId: userMessageId,
-      publicFeedback,
-    });
+  // PublicFeedbackComponent persists before it calls this. A second save
+  // would find feedback already recorded and be rejected.
+  const handlePublicFeedback = () => {
     setFeedbackGiven(true);
     setShowPublicRating(false);
   };
