@@ -6,8 +6,8 @@ import { QA_GROUP } from '../../src/constants/partnerGroups.js';
 // QA group. The single source of this rule - feedback-get-expert sends the
 // result to the screen as `canEdit`, feedback-update-expert enforces it.
 //
-// Reads the user from the database. The session has no group and only the role
-// and email from login, and a change to any of them must apply straight away.
+// Reads the user from the database because req.user has no group, so a group
+// change applies straight away. Role and email come back in the same read.
 export async function canEditExpertFeedback(user, expertFeedback) {
   if (!user?.userId || !expertFeedback) return false;
   // Auto-evals are never edited - see AGENTS.md "Never let AI evaluations

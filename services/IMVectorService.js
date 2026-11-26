@@ -387,11 +387,10 @@ class IMVectorService {
       return;
     }
 
-    // TODO (out of scope for the edit feature): expertFeedbackCreatedAt isn't
-    // refreshed here. An entry loaded without one (older rows) stays excluded
-    // by the recency filter in search() once never-stale is turned off, while
-    // the Embedding metadata (EmbeddingMetadataService.syncForInteraction)
-    // has the date - so the in-memory and DocDB backends disagree.
+    // TODO (own PR, not caused by editing): older entries were loaded without
+    // expertFeedbackCreatedAt, and this doesn't fill it in. Turn never-stale
+    // off on one and search() treats it as too old and skips it, while the
+    // Embedding metadata has the date, so DocDB search still uses it.
     for (const id of [...qaIds, ...questionIds]) {
       const meta = this.qaMeta.get(id);
       if (!meta) continue;
