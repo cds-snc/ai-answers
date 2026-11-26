@@ -342,9 +342,11 @@ As of 2026-11-26, on branch `login-assist-flow` unless noted.
 **Next:**
 1. ~~Commit the cleanup undo, merge PR #1994, merge `main` into this branch.~~ Done.
 2. ~~Optional, before (b): one shared graph-state definition for the 5 graphs.~~ Done on
-   `login-assist-graph-state` (see table). To finish: review, commit, merge `main`
-   (brings AIA-018), rerun `npx vitest run agents/graphs`, open the PR against
-   `login-assist-flow` or against `main` once PR (a) merges.
+   `login-assist-graph-state` (see table). Committed, with `login-assist-flow` and
+   `main` (AIA-018) merged in; tests pass (323). To finish: merge PR (a), then open this
+   PR against `main`. Preview builds only for PRs into `main` or `feature/*`, not for a
+   PR stacked on `login-assist-flow`. Preview test: one question per workflow, one
+   experimental batch, one batches-page batch.
 3. PR (b): the `canadalogin` profile, the portal registry and the `Chat.mode`/`portal` fields.
    This needs the portal help-page URLs, or demo-page URLs to start with.
 4. PR (c): the client reads the cap from the server. Must ship before any profile has a
