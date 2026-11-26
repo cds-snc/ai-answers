@@ -187,8 +187,11 @@ async function handler(req, res) {
   // Every chat is `default` until another profile exists.
   input.serviceProfileId = DEFAULT_SERVICE_PROFILE_ID;
 
-  // Enforce the turn cap here, not only in the client. The history is signed
-  // (withChatSession checks it), so a client can't pad or forge it.
+  // Turn cap. withChatSession has checked the history's signature, so a client
+  // can't pad or forge it: no request ever carries more than maxTurns - 1
+  // answered turns. This bounds the cost of each request, not the number of
+  // requests per chat. A client can resend an older signed history, or none,
+  // and keep asking. Nothing ties a signature to the chat's latest turn.
   const { maxTurns } = getServiceProfile(input.serviceProfileId);
   if (countCompletedTurns(input.conversationHistory) >= maxTurns) {
     return res.status(409).json({ error: 'turn_limit_reached', message: 'Conversation turn limit reached' });

@@ -174,7 +174,18 @@ of a literal "3", with an assistant-mode variant that points to the call centre.
 
 **Server-side cap: done on this branch (2026-11-09).** Before, only the client stopped at
 3, and the server answered turn 4 and beyond. `chat-graph-run.js` now returns 409
-`turn_limit_reached` once the signed history holds `maxTurns` answers. Also measure token growth over 10 turns. `conversationHistory` is sent in full,
+`turn_limit_reached` once the signed history holds `maxTurns` answers.
+
+What the server cap guarantees (code review, 2026-11-26): no request carries more than
+`maxTurns − 1` answered turns of history, because a longer history needs a signature the
+server never issues. So it bounds the cost of each request. It does **not** limit requests
+per chat: a client can resend an older signed history, or none, and keep asking. That is
+no worse than opening new chats, which anyone can do, so it's accepted for now. Revisit
+if the `canadalogin` cap ever needs to be a hard limit per chat. That would need the
+server to track each chat's latest turn count (e.g. in `ChatSessionService`) and reject
+an older signature.
+
+Also measure token growth over 10 turns. `conversationHistory` is sent in full,
 so the context and answer costs on turn 10 may need history trimming.
 
 ### 3. Prompt and scenario content (prompt-maintainer work)
@@ -333,7 +344,12 @@ As of 2026-11-26, on branch `login-assist-flow` unless noted.
 3. PR (b): the `canadalogin` profile, the portal registry and the `Chat.mode`/`portal` fields.
    This needs the portal help-page URLs, or demo-page URLs to start with.
 4. PR (c): the client reads the cap from the server. Must ship before any profile has a
-   cap other than 3.
+   cap other than 3. Also make the client count turns the way the server does. The
+   server counts answered turns (`countCompletedTurns`). A chat restored on the client
+   counts user messages (`ChatAppContainer.js`, `initialMessages` filtered on
+   `sender === 'user'`). So a question that errored counts on the client but not on the
+   server, and a user can be shown the limit while the server would still answer
+   (found in code review 2026-11-26; already true before this branch).
 
 ## Phases
 
