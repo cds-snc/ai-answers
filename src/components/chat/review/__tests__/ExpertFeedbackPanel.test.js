@@ -258,6 +258,21 @@ describe('ExpertFeedbackPanel edit', () => {
     fireEvent.change(screen.getAllByRole('textbox')[0], { target: { name: 'sentence1Explanation', value: 'Wrong program' } });
   };
 
+  // Saved answers store 4 sentence slots, blank past the last real sentence.
+  it('rates only the real sentences, not the blank slots, in the edit form', async () => {
+    const message = buildMessage({ language: 'eng', redactedQuestion: 'Q?', englishQuestion: 'Q?' });
+    message.interaction.answer = { ...answer, sentences: ['One.', 'Two.', '', ''], sentencesEnglish: undefined };
+    message.interaction.expertFeedback = ownedFeedback;
+    vi.mocked(FeedbackService.getExpertFeedback).mockResolvedValue({ expertFeedback: ownedFeedback, sentences: [], canEdit: true });
+    const { container } = render(<ExpertFeedbackPanel message={message} extractSentences={extractSentences} t={mockT} lang="en" />);
+    fireEvent.click(container.querySelector('summary'));
+    fireEvent.click(await findEditButton());
+
+    expect(container.querySelectorAll('input[name="sentence2Score"]').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('input[name="sentence3Score"]').length).toBe(0);
+    expect(container.querySelectorAll('input[name="sentence4Score"]').length).toBe(0);
+  });
+
   it('shows Edit when the server says this person can edit', async () => {
     renderOpen({ canEdit: true });
     expect(await findEditButton()).toBeTruthy();

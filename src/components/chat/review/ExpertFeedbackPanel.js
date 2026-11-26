@@ -182,7 +182,8 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
     if (Array.isArray(answer.paragraphs) && answer.paragraphs.length > 0) {
         sentences = answer.paragraphs.flatMap(p => extractSentences(p));
     } else if (Array.isArray(answer.sentences) && answer.sentences.length > 0) {
-        sentences = answer.sentences;
+        // Saved answers store 4 slots, blank past the last real sentence.
+        sentences = answer.sentences.filter((s) => String(s || '').trim());
     }
 
     // Build english sentences array (falling back to several common locations)
