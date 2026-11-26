@@ -64,3 +64,6 @@ model_stress_test.txt
 # Local-only dev scaffolding, not meant for the repo - see chat history for
 # context if this needs regenerating.
 scripts/seed-chat-dashboard-mock-data.js
+
+# Local output of the check-urls skill
+url-report.md
