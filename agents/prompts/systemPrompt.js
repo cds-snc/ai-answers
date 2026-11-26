@@ -3,6 +3,7 @@ import { SAFETY_INSTRUCTIONS } from './safety.js';
 import { CITATION_INSTRUCTIONS } from './citationInstructions.js';
 import { SCENARIOS } from './scenarios/scenarios-all.js';
 import { resolveScenarioKey } from './scenarios/scenario-aliases.js';
+import { findScenarioLoader } from './scenarios/scenario-loaders.js';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 
 export async function buildAnswerSystemPrompt(language = 'en', options = {}) {
@@ -32,13 +33,17 @@ export async function buildAnswerSystemPrompt(language = 'en', options = {}) {
       await ServerLoggingService.info('systemPrompt.build', '', { note: 'scenario-override-used', department });
     } else if (department) {
       try {
-        const deptKey = resolveScenarioKey(String(department || ''));
-        const deptLower = deptKey.toLowerCase();
-        const deptDashed = deptLower.replace(/\s+/g, '-');
-        const mod = await import(`./scenarios/context-${deptDashed}/${deptDashed}-scenarios.js`);
-        content.scenarios = Object.values(mod).find(v => typeof v === 'string') || '';
+        // Static lookup, never a path built from `department` — it comes from
+        // LLM output / client-held context (AIA-017). Unknown key → no scenarios.
+        const loader = findScenarioLoader(resolveScenarioKey(String(department)));
+        if (loader) {
+          content.scenarios = await loader();
+        } else {
+          await ServerLoggingService.debug('systemPrompt.build', '', { note: 'no-department-scenarios', department });
+        }
       } catch (err) {
-        await ServerLoggingService.debug('systemPrompt.build', '', { note: 'no-department-scenarios', department });
+        // A registered scenario file failed to load — a real bug, not a miss.
+        await ServerLoggingService.error('systemPrompt.build', '', { note: 'department-scenarios-load-failed', department, error: err?.message });
       }
     }
 

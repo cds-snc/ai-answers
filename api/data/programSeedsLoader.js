@@ -14,17 +14,30 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 import { PROGRAM_SEEDS_BY_DEPARTMENT } from './programActionSeeds.js';
 import { resolveScenarioKey } from '../../agents/prompts/scenarios/scenario-aliases.js';
+import { findScenarioKey } from '../../agents/prompts/scenarios/scenario-loaders.js';
 
 const SCENARIOS_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../agents/prompts/scenarios');
 
-// abbrKey -> { programs: [{ en, fr }], enToFr: Map<string,string> }
+// registered scenario key -> { programs: [{ en, fr }], enToFr: Map<string,string> }
 const cache = new Map();
 
 // Merged English→French map across every department's .md (built once, lazily).
 let mergedMapCache = null;
 
-const deptDashed = (abbrKey) =>
-  resolveScenarioKey(String(abbrKey || '')).toLowerCase().replace(/\s+/g, '-');
+// The registered scenario key for abbrKey, or null. abbrKey comes from the
+// interaction's context (LLM output / client-held), so it is looked up in the
+// static scenario registry and never used to build a file path (AIA-017).
+const registeredKey = (abbrKey) => findScenarioKey(resolveScenarioKey(String(abbrKey || '')));
+
+// Own-property only: '__proto__' / 'constructor' must not reach Object.prototype.
+const legacySeeds = (key) =>
+  (typeof key === 'string' && Object.hasOwn(PROGRAM_SEEDS_BY_DEPARTMENT, key)) ? PROGRAM_SEEDS_BY_DEPARTMENT[key] : null;
+
+function fallbackEntry(abbrKey) {
+  const programs = (legacySeeds(resolveScenarioKey(abbrKey)) || legacySeeds(abbrKey) || [])
+    .map((en) => ({ en, fr: '' }));
+  return { programs, enToFr: new Map() };
+}
 
 // Parse a GitHub-flavoured Markdown table with two columns (English | Français).
 // Skips the header row and the |---|---| separator; ignores non-table lines.
@@ -46,9 +59,13 @@ export function parseProgramsMarkdown(text) {
 }
 
 function load(abbrKey) {
-  if (cache.has(abbrKey)) return cache.get(abbrKey);
+  // Cached under the registered key, never the raw input: abbrKey is untrusted,
+  // and junk values or case variants must not grow the cache.
+  const scenarioKey = registeredKey(abbrKey);
+  if (!scenarioKey) return fallbackEntry(abbrKey);
+  if (cache.has(scenarioKey)) return cache.get(scenarioKey);
 
-  const dashed = deptDashed(abbrKey);
+  const dashed = scenarioKey.toLowerCase();
   const file = path.join(SCENARIOS_DIR, `context-${dashed}`, `${dashed}-services.md`);
 
   let programs = null;
@@ -65,12 +82,10 @@ function load(abbrKey) {
     // for any consumer that localizes a program name.
     entry = { programs, enToFr: new Map(programs.filter((p) => p.fr).map((p) => [p.en, p.fr])) };
   } else {
-    const fallback = (PROGRAM_SEEDS_BY_DEPARTMENT[resolveScenarioKey(abbrKey)] || PROGRAM_SEEDS_BY_DEPARTMENT[abbrKey] || [])
-      .map((en) => ({ en, fr: '' }));
-    entry = { programs: fallback, enToFr: new Map() };
+    entry = fallbackEntry(abbrKey);
   }
 
-  cache.set(abbrKey, entry);
+  cache.set(scenarioKey, entry);
   return entry;
 }
 
