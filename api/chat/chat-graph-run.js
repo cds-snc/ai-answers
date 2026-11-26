@@ -8,9 +8,10 @@ import { SEARCH_PROVIDER_VALUES, resolveSearchProvider } from '../../src/config/
 import BlockedQueryService from '../../services/BlockedQueryService.js';
 import ChatSessionService from '../../services/ChatSessionService.js';
 import ConversationIntegrityService from '../../services/ConversationIntegrityService.js';
-import { extractCompletedTurns } from '../util/conversation-turns.js';
+import { countCompletedTurns, extractCompletedTurns } from '../util/conversation-turns.js';
 import dbConnect from '../db/db-connect.js';
 import { normalizeObjectIdString } from '../util/db-query.js';
+import { DEFAULT_SERVICE_PROFILE_ID, getServiceProfile } from '../../config/service-profiles.js';
 import { findAccessibleBatch } from '../util/batch-access.js';
 import { normalizeReferringUrl } from '../util/referring-url.js';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
@@ -182,6 +183,19 @@ async function handler(req, res) {
   // Scenario overrides (GraphWorkflowHelper.applyScenarioOverride) belong to
   // the signed-in user - never trust a client-sent user ID.
   input.overrideUserId = req.user?.userId ?? null;
+  // The server picks the service profile; never trust a client-sent one.
+  // Every chat is `default` until another profile exists.
+  input.serviceProfileId = DEFAULT_SERVICE_PROFILE_ID;
+
+  // Turn cap. withChatSession has checked the history's signature, so a client
+  // can't pad or forge it: no request ever carries more than maxTurns - 1
+  // answered turns. This bounds the cost of each request, not the number of
+  // requests per chat. A client can resend an older signed history, or none,
+  // and keep asking. Nothing ties a signature to the chat's latest turn.
+  const { maxTurns } = getServiceProfile(input.serviceProfileId);
+  if (countCompletedTurns(input.conversationHistory) >= maxTurns) {
+    return res.status(409).json({ error: 'turn_limit_reached', message: 'Conversation turn limit reached' });
+  }
   const requestStartedAt = Date.now();
 
   // Server-side Workflow Resolution
