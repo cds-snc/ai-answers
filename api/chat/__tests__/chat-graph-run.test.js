@@ -388,8 +388,8 @@ describe('chatGraphRunHandler transport setting', () => {
       expect(res.statusCode).toBe(409);
       expect(res.jsonPayload).toEqual(expect.objectContaining({ error: 'turn_limit_reached' }));
       expect(mocks.streamInput).toBeNull();
-      });
     });
+  });
 
   // AIA-006: referringUrl is client-supplied and reaches LLM prompts, logs and the DB.
   describe('referring URL', () => {
