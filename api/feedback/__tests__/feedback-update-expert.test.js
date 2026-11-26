@@ -242,6 +242,19 @@ describe('feedback-update-expert API', () => {
     expect(res.json.mock.calls[0][0].expertFeedback.totalScore).toBe(62.5);
   });
 
+  // Real answers store 4 slots, blank past the last sentence (parseSentences).
+  it('counts only the filled sentence slots, like the form does', async () => {
+    const doc = buildFeedbackDoc({ _id: interaction.expertFeedback, type: '', expertEmail: 'author@canada.ca' });
+    mockFeedbackFindById.mockResolvedValue(doc);
+    updateLike(doc);
+    mockAnswerFindById.mockReturnValue({ lean: async () => ({ sentences: ['One.', 'Two.', '', ''] }) });
+    req.body.expertFeedback = { ...fullForm(), sentence1Score: 0 };
+
+    await handler(req, res);
+
+    expect(res.json.mock.calls[0][0].expertFeedback.totalScore).toBe(62.5);
+  });
+
   it.each([
     ['sentence1Score', -5],
     ['sentence1Score', 50],

@@ -43,7 +43,9 @@ export function feedbackLabel(totalScore) {
 // How many sentences an answer was rated on, 1 to 4.
 export async function getAnswerSentenceCount(answerId) {
   const answer = answerId ? await Answer.findById(answerId, { sentences: 1, content: 1 }).lean() : null;
-  const stored = answer?.sentences?.length || 0;
+  // Answers store 4 sentence slots, blank past the last real sentence
+  // (parseSentences), so count only the filled ones - the same count the form uses.
+  const stored = (answer?.sentences || []).filter((s) => String(s || '').trim()).length;
   const tagged = String(answer?.content || '').match(/<s-?\d+>/g)?.length || 0;
   return Math.min(4, Math.max(1, stored || tagged));
 }
