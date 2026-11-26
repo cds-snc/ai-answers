@@ -44,6 +44,10 @@ async function feedbackDeleteExpertHandler(req, res) {
     // ExpertFeedback document is left orphaned with nothing pointing at it,
     // and a retry can't find it to clean it up. Deleting first means a
     // failure leaves everything linked, and a retry finishes the job.
+    // TODO: review how deleted and edited evaluations are backed up for
+    // recovery. The app keeps no copy of a deleted evaluation, and
+    // ExpertFeedbackRevision only holds older values from edits, so recovery
+    // relies on production database backups.
     // Unset the expertFeedback reference on the interaction
     interaction.expertFeedback = undefined;
     await interaction.save();
