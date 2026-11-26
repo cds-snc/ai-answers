@@ -13,6 +13,7 @@ import { useReturnFocusOnClose } from '../../../hooks/useReturnFocusOnClose.js';
 
 const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answerNumber, citationUrl, department, onDeleted, onUpdated }) => {
     const [loading, setLoading] = useState(false);
+    // null, 'load' or 'delete' - which translated message to show.
     const [error, setError] = useState(null);
     const [data, setData] = useState(null);
     const [deleting, setDeleting] = useState(false);
@@ -57,7 +58,9 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
             setData(result);
 
         } catch (err) {
-            setError(err.message || String(err));
+            // Detail to the console only - the person gets a translated message.
+            console.error('Expert feedback load failed:', err);
+            setError('load');
         } finally {
             setLoading(false);
         }
@@ -94,7 +97,9 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
             // no page refresh needed.
             onDeleted?.();
         } catch (err) {
-            setError(err.message || String(err));
+            // Detail to the console only - the person gets a translated message.
+            console.error('Expert feedback delete failed:', err);
+            setError('delete');
         } finally {
             setDeleting(false);
         }
@@ -299,9 +304,12 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
             <div className="review-panel expert-feedback-panel">
                 {loading && <StatusMessage loading message={t('common.loading')} />}
                 {error && (
-                  <StatusMessage variant="error">
-                    {t('common.error')} <code lang="en">{error}</code>
-                  </StatusMessage>
+                  <StatusMessage
+                    variant="error"
+                    message={error === 'delete'
+                      ? t('reviewPanels.expertFeedbackDeleteFailed')
+                      : t('admin.common.fetchFailed')}
+                  />
                 )}
                 {editing ? (
                     <ExpertFeedbackComponent
@@ -317,7 +325,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                         department={department}
                         titleRef={editTitleRef}
                         initialFeedback={(data && data.expertFeedback) || expert}
-                        submitLabel={saving ? t('reviewPanels.savingExpertFeedback') : t('reviewPanels.saveExpertFeedback')}
+                        submitLabel={saving ? t('admin.common.saving') : t('reviewPanels.saveExpertFeedback')}
                         submitBusy={saving}
                         cancelLabel={t('reviewPanels.cancelExpertFeedbackEdits')}
                         submitStatus={saveFailure && (
@@ -381,7 +389,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                                     const value = editor && editor !== author
                                         ? t('reviewPanels.lastEditedDateBy').replace('{date}', () => editedAt).replace('{email}', () => efSource.lastEditedBy)
                                         : editedAt;
-                                    return <div><strong>{t('reviewPanels.lastEdited')}</strong> {value}</div>;
+                                    return <div><b>{t('reviewPanels.lastEdited')}</b> {value}</div>;
                                 })() : null}
                                 {/* (moved) Never Stale checkbox is rendered beside the Delete button */}
                             </div>

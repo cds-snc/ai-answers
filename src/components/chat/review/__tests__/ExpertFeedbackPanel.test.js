@@ -205,6 +205,32 @@ describe('ExpertFeedbackPanel delete', () => {
 
     await waitFor(() => expect(onDeleted).toHaveBeenCalledTimes(1));
   });
+
+  it('shows a translated message, not the raw error, when delete fails', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(FeedbackService.deleteExpertFeedback).mockRejectedValue(new Error('raw server detail'));
+    const message = buildMessage({ language: 'eng', redactedQuestion: 'Q', englishQuestion: 'Q' });
+
+    const { container } = render(<ExpertFeedbackPanel message={message} extractSentences={extractSentences} t={mockT} lang="en" />);
+    fireEvent.click(container.querySelector('summary'));
+    fireEvent.click(await screen.findByText(/reviewPanels.deleteExpertFeedback/));
+
+    await waitForAnnouncement('reviewPanels.expertFeedbackDeleteFailed', 'assertive');
+    expect(container.textContent).not.toContain('raw server detail');
+  });
+
+  it('shows a translated message, not the raw error, when loading fails', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(FeedbackService.getExpertFeedback).mockRejectedValue(new Error('raw server detail'));
+    const message = buildMessage({ language: 'eng', redactedQuestion: 'Q', englishQuestion: 'Q' });
+
+    const { container } = render(<ExpertFeedbackPanel message={message} extractSentences={extractSentences} t={mockT} lang="en" />);
+    fireEvent.click(container.querySelector('summary'));
+
+    await waitForAnnouncement('admin.common.fetchFailed', 'assertive');
+    expect(container.textContent).not.toContain('raw server detail');
+  });
 });
 
 describe('ExpertFeedbackPanel edit', () => {
@@ -226,7 +252,7 @@ describe('ExpertFeedbackPanel edit', () => {
     return utils;
   };
   const findEditButton = () => screen.findByRole('button', { name: 'reviewPanels.editExpertFeedback' });
-  const saveButton = () => screen.getByRole('button', { name: /reviewPanels.saveExpertFeedback|reviewPanels.savingExpertFeedback/ });
+  const saveButton = () => screen.getByRole('button', { name: /reviewPanels.saveExpertFeedback|admin.common.saving/ });
   const changeSentenceOne = () => {
     fireEvent.click(screen.getAllByLabelText(/homepage.expertRating.options.incorrect/)[0]);
     fireEvent.change(screen.getAllByRole('textbox')[0], { target: { name: 'sentence1Explanation', value: 'Wrong program' } });
@@ -301,7 +327,7 @@ describe('ExpertFeedbackPanel edit', () => {
     fireEvent.click(await findEditButton());
     changeSentenceOne();
     fireEvent.click(saveButton());
-    await waitFor(() => expect(saveButton().textContent).toContain('reviewPanels.savingExpertFeedback'));
+    await waitFor(() => expect(saveButton().textContent).toContain('admin.common.saving'));
     expect(saveButton().getAttribute('aria-disabled')).toBe('true');
     fireEvent.click(saveButton());
 

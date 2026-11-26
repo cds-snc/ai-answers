@@ -283,7 +283,7 @@ const FeedbackComponent = ({
         citationUrl={citationUrl}
         department={department}
         titleRef={expertRatingTitleRef}
-        submitLabel={saving ? t("reviewPanels.savingExpertFeedback") : undefined}
+        submitLabel={saving ? t("admin.common.saving") : undefined}
         submitBusy={saving}
         submitStatus={saveFailureStatus}
       />
