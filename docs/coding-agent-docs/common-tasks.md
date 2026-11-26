@@ -143,7 +143,7 @@ Model selection is decoupled from workflow: graphs define the pipeline, the
 
 - Node flow: `init → validate → redact → translate → context → answer → verify → persist` (`similarQuestions` between context and answer on the QA graphs).
 - Graphs live in `agents/graphs/` (LangChain `StateGraph`); shared node logic in `agents/graphs/workflows/GraphWorkflowHelper.js`; `registry.js` lazy-loads by name via `getGraphApp(name)`.
-- State flows through annotations — check existing fields before adding one.
+- State flows through one shared definition, `agents/graphs/graphState.js`, used by all five graphs. Check existing fields before adding one, and add it there: LangGraph silently drops undeclared keys.
 - Five graph variants (the four in the table plus `DefaultWithLocalModel.js`) share the helper (see [architecture-quick-ref.md](architecture-quick-ref.md#graph-variants-in-agentsgraphs)) — a change to shared logic must hold for all of them.
 
 ## Adding an API Route

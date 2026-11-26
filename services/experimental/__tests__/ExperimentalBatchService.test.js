@@ -9,6 +9,7 @@ import ExperimentalQueueService from '../ExperimentalQueueService.js';
 import ExperimentalAnalyzerRegistry from '../ExperimentalAnalyzerRegistry.js';
 import { getGraphApp } from '../../../agents/graphs/registry.js';
 import { graphRequestContext } from '../../../agents/graphs/requestContext.js';
+import { GraphState } from '../../../agents/graphs/graphState.js';
 
 // Mock dependencies
 vi.mock('../ExperimentalQueueService.js', () => ({
@@ -708,6 +709,12 @@ describe('ExperimentalBatchService', () => {
                 }),
                 expect.any(Object)
             );
+            // LangGraph silently drops an input key with no state channel
+            // (agents/graphs/graphState.js).
+            const channels = Object.keys(GraphState.spec);
+            for (const key of Object.keys(mockApp.stream.mock.calls[0][0])) {
+                expect(channels, `input field "${key}"`).toContain(key);
+            }
             expect(runSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
                     user: null

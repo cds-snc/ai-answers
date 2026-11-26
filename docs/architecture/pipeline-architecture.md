@@ -156,7 +156,14 @@ it is held back.
 
 ### State Annotations
 
-The graph maintains state across all nodes with these key fields:
+All five graphs use one state definition, `GraphState` in `agents/graphs/graphState.js`.
+Add a new field there, not in a graph. LangGraph silently drops any input or node output
+key that isn't declared, so a field missing from a graph just disappears.
+`agents/graphs/__tests__/graphState.test.js` fails if a graph uses any other state. The
+`chat-graph-run`, `ExperimentalBatchService` and `GraphClient` tests fail if a field the
+server, the batch runner or the browser puts in the graph input has no channel.
+
+The fields:
 
 ```javascript
 {
@@ -171,6 +178,8 @@ The graph maintains state across all nodes with these key fields:
                                  //   by api/util/referring-url.js (http(s) only, query
                                  //   stripped, anchor kept only if section-like,
                                  //   ≤500 chars) or '' (AIA-006)
+  serviceProfileId: string,      // Service profile (config/service-profiles.js). Set by
+                                 //   the server, never the client; always 'default' today
   selectedAI: string,            // AI provider (openai, azure, anthropic)
   translationF: boolean,         // Translation function enabled
   searchProvider: string,        // Search provider (canadaCa, google)
@@ -193,9 +202,9 @@ The graph maintains state across all nodes with these key fields:
 The `similarQuestions` node writes back into `context` rather than adding a state field —
 it returns `{ ...state.context, similarQuestions, qaMatches }`.
 
-Short-circuit graphs add two more fields: `shortCircuitPayload` (the reused answer, when a
-match is found) and `shortCircuitDebugPayload` (candidates and reason, for ChatViewer).
-`GenericWithQAGraph` declares neither.
+Two more fields are written only by the short-circuit graphs: `shortCircuitPayload` (the
+reused answer, when a match is found) and `shortCircuitDebugPayload` (candidates and
+reason, for ChatViewer). The other graphs have the channels but never set them.
 
 ---
 
@@ -905,7 +914,7 @@ filter is applied).
 
 **2. State not persisting between nodes**
 - Ensure node returns complete state object
-- Check state annotation definitions
+- Check the field is declared in `agents/graphs/graphState.js`: undeclared keys are dropped silently
 - Verify field names match
 
 **3. AI service timeouts**
