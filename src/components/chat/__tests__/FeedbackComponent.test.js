@@ -17,10 +17,11 @@ vi.mock('../../RoleBasedUI.js', () => ({
 }));
 
 const mockPersistExpertFeedback = vi.fn();
+const mockPersistPublicFeedback = vi.fn();
 vi.mock('../../../services/FeedbackService.js', () => ({
   default: {
     persistExpertFeedback: (...args) => mockPersistExpertFeedback(...args),
-    persistPublicFeedback: vi.fn(),
+    persistPublicFeedback: (...args) => mockPersistPublicFeedback(...args),
   },
 }));
 
@@ -29,6 +30,7 @@ import FeedbackComponent from '../FeedbackComponent.js';
 afterEach(() => {
   cleanup();
   mockPersistExpertFeedback.mockClear();
+  mockPersistPublicFeedback.mockClear();
 });
 
 const renderComponent = (props = {}) => {
@@ -182,5 +184,188 @@ describe('FeedbackComponent — expert eval submit hands off on next click', () 
     expect(onExpertFeedbackChange).toHaveBeenCalledWith(
       expect.objectContaining({ feedback: 'positive', totalScore: 100, type: 'expert' })
     );
+  });
+});
+
+describe('FeedbackComponent — public feedback', () => {
+  it('saves public feedback once', async () => {
+    mockUseHasAnyRole.mockReturnValue(false);
+    mockPersistPublicFeedback.mockResolvedValue({ message: 'Public feedback logged successfully' });
+    renderComponent();
+
+    fireEvent.click(screen.getByText('common.yes'));
+    fireEvent.click(screen.getByLabelText('homepage.publicFeedback.yes.options.noCall'));
+    await act(async () => {
+      fireEvent.click(screen.getByText('homepage.publicFeedback.send'));
+    });
+
+    expect(mockPersistPublicFeedback).toHaveBeenCalledTimes(1);
+    expect(mockPersistPublicFeedback).toHaveBeenCalledWith({
+      chatId: 'chat-1',
+      interactionId: 'msg-1',
+      publicFeedback: expect.objectContaining({ feedback: 'yes', publicFeedbackScore: 1 }),
+    });
+    expect(screen.getByText('homepage.feedback.thankYou')).toBeTruthy();
+  });
+
+  it('keeps the form up and shows an error when the save fails', async () => {
+    mockUseHasAnyRole.mockReturnValue(false);
+    mockPersistPublicFeedback.mockRejectedValue(new Error('Failed to persist public feedback'));
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    renderComponent();
+
+    fireEvent.click(screen.getByText('common.yes'));
+    fireEvent.click(screen.getByLabelText('homepage.publicFeedback.yes.options.noCall'));
+    await act(async () => {
+      fireEvent.click(screen.getByText('homepage.publicFeedback.send'));
+    });
+
+    expect(mockPersistPublicFeedback).toHaveBeenCalledTimes(1);
+    const saveError = screen.getByText('homepage.publicFeedback.saveError');
+    expect(saveError.className).toContain('form-error-message');
+    expect(saveError.getAttribute('tabindex')).toBe('-1');
+    expect(document.activeElement).toBe(saveError);
+    expect(document.querySelector('.status-message--error-box')).toBeNull();
+    expect(screen.queryByText('homepage.feedback.thankYou')).toBeNull();
+    expect(screen.getByText('homepage.publicFeedback.send')).toBeTruthy();
+    errorSpy.mockRestore();
+  });
+
+  it('shows the thank-you when feedback was already recorded', async () => {
+    mockUseHasAnyRole.mockReturnValue(false);
+    const alreadyRecorded = new Error('Public feedback already recorded');
+    alreadyRecorded.status = 409;
+    mockPersistPublicFeedback.mockRejectedValue(alreadyRecorded);
+    renderComponent();
+
+    fireEvent.click(screen.getByText('common.yes'));
+    fireEvent.click(screen.getByLabelText('homepage.publicFeedback.yes.options.noCall'));
+    await act(async () => {
+      fireEvent.click(screen.getByText('homepage.publicFeedback.send'));
+    });
+
+    expect(mockPersistPublicFeedback).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('homepage.feedback.thankYou')).toBeTruthy();
+    expect(screen.queryByText('homepage.publicFeedback.saveError')).toBeNull();
+    expect(screen.queryByText('homepage.publicFeedback.send')).toBeNull();
+  });
+
+  it('sends once when Send is clicked twice before the first request finishes', async () => {
+    mockUseHasAnyRole.mockReturnValue(false);
+    let resolveSave;
+    mockPersistPublicFeedback.mockReturnValue(new Promise((resolve) => {
+      resolveSave = resolve;
+    }));
+    renderComponent();
+
+    fireEvent.click(screen.getByText('common.yes'));
+    fireEvent.click(screen.getByLabelText('homepage.publicFeedback.yes.options.noCall'));
+    const send = screen.getByText('homepage.publicFeedback.send');
+    fireEvent.click(send);
+    fireEvent.click(send);
+
+    expect(mockPersistPublicFeedback).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      resolveSave({ message: 'Public feedback logged successfully' });
+    });
+  });
+
+  it('asks for another try only when the save can still succeed', async () => {
+    mockUseHasAnyRole.mockReturnValue(false);
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const serverError = new Error('Failed to log public feedback');
+    serverError.status = 500;
+    mockPersistPublicFeedback.mockRejectedValue(serverError);
+    renderComponent();
+
+    fireEvent.click(screen.getByText('common.yes'));
+    fireEvent.click(screen.getByLabelText('homepage.publicFeedback.yes.options.noCall'));
+    await act(async () => {
+      fireEvent.click(screen.getByText('homepage.publicFeedback.send'));
+    });
+
+    expect(screen.getByText('homepage.publicFeedback.saveError')).toBeTruthy();
+    expect(screen.getByText('homepage.publicFeedback.send').closest('button').disabled).toBe(false);
+    errorSpy.mockRestore();
+  });
+
+  it('asks for another try when the save is rate limited', async () => {
+    mockUseHasAnyRole.mockReturnValue(false);
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const rateLimited = new Error('Too many requests');
+    rateLimited.status = 429;
+    mockPersistPublicFeedback.mockRejectedValue(rateLimited);
+    renderComponent();
+
+    fireEvent.click(screen.getByText('common.yes'));
+    fireEvent.click(screen.getByLabelText('homepage.publicFeedback.yes.options.noCall'));
+    await act(async () => {
+      fireEvent.click(screen.getByText('homepage.publicFeedback.send'));
+    });
+
+    expect(screen.getByText('homepage.publicFeedback.saveError')).toBeTruthy();
+    expect(screen.queryByText('homepage.publicFeedback.saveFailed')).toBeNull();
+    expect(screen.getByText('homepage.publicFeedback.send').closest('button').disabled).toBe(false);
+    errorSpy.mockRestore();
+  });
+
+  it('asks for another try when the chat is not stored yet', async () => {
+    mockUseHasAnyRole.mockReturnValue(false);
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const missing = new Error('Interaction not found');
+    missing.status = 404;
+    mockPersistPublicFeedback.mockRejectedValue(missing);
+    renderComponent();
+
+    fireEvent.click(screen.getByText('common.yes'));
+    fireEvent.click(screen.getByLabelText('homepage.publicFeedback.yes.options.noCall'));
+    await act(async () => {
+      fireEvent.click(screen.getByText('homepage.publicFeedback.send'));
+    });
+
+    expect(screen.getByText('homepage.publicFeedback.saveError')).toBeTruthy();
+    expect(screen.queryByText('homepage.publicFeedback.saveFailed')).toBeNull();
+    expect(screen.getByText('homepage.publicFeedback.send').closest('button').disabled).toBe(false);
+    errorSpy.mockRestore();
+  });
+
+  it('does not ask for another try when the session no longer owns the chat', async () => {
+    mockUseHasAnyRole.mockReturnValue(false);
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const sessionError = new Error('ChatId does not belong to session');
+    sessionError.status = 403;
+    mockPersistPublicFeedback.mockRejectedValue(sessionError);
+    renderComponent();
+
+    fireEvent.click(screen.getByText('common.yes'));
+    fireEvent.click(screen.getByLabelText('homepage.publicFeedback.yes.options.noCall'));
+    await act(async () => {
+      fireEvent.click(screen.getByText('homepage.publicFeedback.send'));
+    });
+
+    expect(screen.getByText('homepage.publicFeedback.sessionEnded')).toBeTruthy();
+    expect(screen.queryByText('homepage.publicFeedback.saveError')).toBeNull();
+    expect(screen.getByText('homepage.publicFeedback.send').closest('button').disabled).toBe(true);
+    errorSpy.mockRestore();
+  });
+
+  it('does not ask for another try when the feedback was rejected', async () => {
+    mockUseHasAnyRole.mockReturnValue(false);
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const rejected = new Error('Invalid public feedback');
+    rejected.status = 400;
+    mockPersistPublicFeedback.mockRejectedValue(rejected);
+    renderComponent();
+
+    fireEvent.click(screen.getByText('common.yes'));
+    fireEvent.click(screen.getByLabelText('homepage.publicFeedback.yes.options.noCall'));
+    await act(async () => {
+      fireEvent.click(screen.getByText('homepage.publicFeedback.send'));
+    });
+
+    expect(screen.getByText('homepage.publicFeedback.saveFailed')).toBeTruthy();
+    expect(screen.queryByText('homepage.publicFeedback.saveError')).toBeNull();
+    expect(screen.getByText('homepage.publicFeedback.send').closest('button').disabled).toBe(true);
+    errorSpy.mockRestore();
   });
 });

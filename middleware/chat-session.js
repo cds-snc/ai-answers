@@ -69,7 +69,7 @@ async function saveChatIdToSession(req, chatId) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper: Check if a chatId already belongs to this session
 // ─────────────────────────────────────────────────────────────────────────────
-function chatIdBelongsToSession(req, chatId) {
+export function chatIdBelongsToSession(req, chatId) {
   return Boolean(
     chatId &&
     req.session &&
