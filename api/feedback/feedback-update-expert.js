@@ -96,11 +96,16 @@ async function feedbackUpdateExpertHandler(req, res) {
     updates.feedback = feedbackLabel(updates.totalScore);
     updates.lastEditedBy = req.user.email || '';
     updates.lastEditedAt = new Date();
-    // null also matches evaluations saved before lastEditedAt existed.
+    // Never edited: empty or missing (saved before lastEditedAt existed).
+    // Both spelled out, as in feedback-persist-expert.js - DocumentDB may not
+    // treat null as matching a missing field the way MongoDB does.
+    const notEditedSince = expectedDate
+      ? { lastEditedAt: expectedDate }
+      : { $or: [{ lastEditedAt: null }, { lastEditedAt: { $exists: false } }] };
     // Returns the document as it was, so the history can't miss a change made
     // since `ef` was read.
     const before = await ExpertFeedback.findOneAndUpdate(
-      { _id: ef._id, lastEditedAt: expectedDate },
+      { _id: ef._id, ...notEditedSince },
       { $set: updates },
       { new: false, lean: true }
     );
