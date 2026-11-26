@@ -216,6 +216,9 @@ describe('every graph is registered, so every graph is tested', () => {
 
   it('registers every graph module in agents/graphs', () => {
     // Subfolders too, so a graph added under e.g. agents/graphs/variants/ is caught.
+    // Assumes each graph is registered under its file name (registry.js key ===
+    // basename). A graph registered under another name will fail this test: keep
+    // the names matching, or map file to key here.
     const compiled = readdirSync(graphsDir, { recursive: true })
       .filter((file) => file.endsWith('.js') && !file.split(path.sep).includes('__tests__'))
       .filter((file) => /\.compile\(/.test(readFileSync(path.join(graphsDir, file), 'utf8')))

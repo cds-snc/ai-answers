@@ -33,8 +33,10 @@ export function createTranslateNode(workflow, { status } = {}) {
     const translationContext = workflow.buildTranslationContext(state.conversationHistory);
     // Safe to log before the guard only because callers pass verified history:
     // the chat route's withChatSession replaces conversationHistory with the
-    // server's completed turns, and batch runs pass []. A new entry point that
-    // passes client-supplied history would break AIA-018 here.
+    // server's completed turns. Batch runs pass their earlier completed turns as
+    // 'ai' entries only, which buildTranslationContext drops (it keeps 'user'
+    // entries), so their context is empty. A new entry point that passes
+    // client-supplied history would break AIA-018 here.
     logGraphEvent('info', 'node:translate input', state.chatId, {
       translationContext,
       selectedAI: state.selectedAI,
