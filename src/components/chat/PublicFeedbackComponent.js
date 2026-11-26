@@ -3,7 +3,6 @@ import { useTranslations } from '../../hooks/useTranslations.js';
 import { useInlineFormError } from '../../hooks/useInlineFormError.js';
 import { useFocusOnChange } from '../../hooks/useFocusOnChange.js';
 import FeedbackInlineError from './FeedbackInlineError.js';
-import StatusMessage from '../admin/StatusMessage.js';
 import FeedbackService from '../../services/FeedbackService.js';
 import { FEEDBACK_OPTIONS } from '../../constants/UserFeedbackOptions.js';
 
@@ -74,8 +73,13 @@ const PublicFeedbackComponent = ({
     try {
       await FeedbackService.persistPublicFeedback({ chatId, interactionId: userMessageId, publicFeedback: feedbackPayload });
     } catch (err) {
-      // 409 means this interaction already has feedback: the first request
-      // stored it and the response was lost. Show the thank-you.
+      // 409 means a public feedback document is already stored (the earlier
+      // request saved it and this response was lost). Show the thank-you.
+      // It does not name the reason. After a retryable error the radios stay
+      // editable, so the selection on screen can be a later one than the
+      // reason that was stored, and a second write is refused. Leave the
+      // thank-you as it is. Confirming the selection on screen would claim
+      // a reason that was not recorded.
       if (err.status === 409) {
         onSubmit(feedbackPayload);
         return;
@@ -154,14 +158,11 @@ const PublicFeedbackComponent = ({
           </button>
         </fieldset>
         {saveFailure && (
-          <StatusMessage
-            variant="error"
+          <FeedbackInlineError
+            id="public-feedback-save-error"
             message={t(saveFailure.key)}
-            nonce={saveErrorNonce}
-            announce={false}
-            announcedVia="focus"
-            tabIndex={-1}
-            ref={saveErrorRef}
+            errorCount={saveErrorNonce}
+            inputRef={saveErrorRef}
           />
         )}
       </div>

@@ -60,8 +60,8 @@ class FeedbackService {
       })
     });
     if (!response.ok) {
-      // The form treats 409 as a saved answer (the first request already
-      // stored it). The message alone cannot tell that from a failed save.
+      // The form treats 409 as a saved answer: a public feedback document
+      // is already stored. The message alone cannot tell that from a failed save.
       let message = 'Failed to persist public feedback';
       try {
         const body = await response.json();

@@ -221,7 +221,11 @@ describe('FeedbackComponent — public feedback', () => {
     });
 
     expect(mockPersistPublicFeedback).toHaveBeenCalledTimes(1);
-    expect(screen.getByText('homepage.publicFeedback.saveError')).toBeTruthy();
+    const saveError = screen.getByText('homepage.publicFeedback.saveError');
+    expect(saveError.className).toContain('form-error-message');
+    expect(saveError.getAttribute('tabindex')).toBe('-1');
+    expect(document.activeElement).toBe(saveError);
+    expect(document.querySelector('.status-message--error-box')).toBeNull();
     expect(screen.queryByText('homepage.feedback.thankYou')).toBeNull();
     expect(screen.getByText('homepage.publicFeedback.send')).toBeTruthy();
     errorSpy.mockRestore();

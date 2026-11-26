@@ -103,16 +103,26 @@ async function feedbackPersistPublicHandler(req, res) {
     // pointer failed too, or the process stopped between the two writes.
     // The pointer then names a document that was never stored. Drop it
     // and save this request, so a retry does not report the feedback as
-    // already recorded.
+    // already recorded. The other request's insert can commit after the
+    // check and before the clear. Put the same id back when the document
+    // is there, and do not insert another one.
     if (existingInteraction.publicFeedback) {
-      const saved = await PublicFeedback.exists({ _id: existingInteraction.publicFeedback });
+      const pointerId = existingInteraction.publicFeedback;
+      const saved = await PublicFeedback.exists({ _id: pointerId });
       if (saved) {
         return res.status(409).json({ message: 'Public feedback already recorded' });
       }
       await Interaction.updateOne(
-        { _id: existingInteraction._id, publicFeedback: existingInteraction.publicFeedback },
+        { _id: existingInteraction._id, publicFeedback: pointerId },
         { $set: { publicFeedback: null } }
       );
+      if (await PublicFeedback.exists({ _id: pointerId })) {
+        await Interaction.updateOne(
+          { _id: existingInteraction._id, publicFeedback: null },
+          { $set: { publicFeedback: pointerId } }
+        );
+        return res.status(409).json({ message: 'Public feedback already recorded' });
+      }
     }
 
     // The id exists as soon as the document is constructed, so the interaction
@@ -128,11 +138,22 @@ async function feedbackPersistPublicHandler(req, res) {
       { new: true }
     );
     if (!claimed) {
-      const stillThere = await Interaction.findOne({ _id: existingInteraction._id }, { _id: 1 }).lean();
-      if (!stillThere) {
+      const current = await Interaction.findOne(
+        { _id: existingInteraction._id },
+        { publicFeedback: 1 }
+      ).lean();
+      if (!current) {
         return res.status(404).json({ message: 'Interaction not found' });
       }
-      return res.status(409).json({ message: 'Public feedback already recorded' });
+      // The other request claimed the pointer. Its save can still fail, so
+      // 409 only when that pointer names a stored document. This request
+      // did not claim the id, so it leaves the pointer alone. The claimer
+      // clears it when its own save throws. A 409 would close the form,
+      // and the retry that drops a dangling pointer would never run.
+      if (current.publicFeedback && await PublicFeedback.exists({ _id: current.publicFeedback })) {
+        return res.status(409).json({ message: 'Public feedback already recorded' });
+      }
+      return res.status(500).json({ message: 'Failed to log public feedback' });
     }
     try {
       await publicFeedbackDoc.save();
@@ -147,6 +168,14 @@ async function feedbackPersistPublicHandler(req, res) {
       }
       throw saveError;
     }
+    // The cleanup above clears a pointer that does not name a document
+    // yet, which overlaps this insert. Attach the document that was just
+    // stored when the interaction is still empty. An id already set is
+    // left as it is.
+    await Interaction.updateOne(
+      { _id: existingInteraction._id, publicFeedback: null },
+      { $set: { publicFeedback: publicFeedbackDoc._id } }
+    );
 
     res.status(200).json({ message: 'Public feedback logged successfully' });
   } catch (error) {

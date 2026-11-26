@@ -150,11 +150,126 @@ describe('feedback-persist-public', () => {
 
     const [a, b] = await Promise.all([run(body), run(body)]);
 
-    expect([a.statusCode, b.statusCode].sort()).toEqual([200, 409]);
+    // The loser can observe the pointer before the insert is visible and
+    // get 500. Either way one stored document is the one linked.
+    expect([[200, 409], [200, 500]]).toContainEqual([a.statusCode, b.statusCode].sort());
     const saved = await PublicFeedback.find();
     expect(saved).toHaveLength(1);
     const interaction = await Interaction.findOne({ interactionId: INTERACTION_ID });
     expect(interaction.publicFeedback.toString()).toBe(saved[0]._id.toString());
+  });
+
+  it('keeps the saved document when the other request already saw an empty pointer', async () => {
+    await seedChat();
+    let savesStarted = 0;
+    let releaseSave = () => {};
+    const saveGate = new Promise((resolve) => {
+      releaseSave = resolve;
+    });
+    const originalSave = PublicFeedback.prototype.save;
+    const save = vi.spyOn(PublicFeedback.prototype, 'save').mockImplementation(function () {
+      savesStarted += 1;
+      const doc = this;
+      const write = () => originalSave.call(doc);
+      if (savesStarted === 1) return saveGate.then(write);
+      return write();
+    });
+
+    let existsCalls = 0;
+    let releaseLoser = () => {};
+    const loserGate = new Promise((resolve) => {
+      releaseLoser = resolve;
+    });
+    const originalExists = PublicFeedback.exists;
+    const exists = vi.spyOn(PublicFeedback, 'exists').mockImplementation(function (filter) {
+      existsCalls += 1;
+      // The first check is the other request observing the pointer before
+      // the insert is visible. Keep that result empty until the winning
+      // save commits, then let the request continue.
+      if (existsCalls === 1) {
+        return loserGate.then(() => null);
+      }
+      return originalExists.call(PublicFeedback, filter);
+    });
+
+    // Claim first, then let the other request load that pointer and observe
+    // it empty. The save commits before that request continues.
+    const first = run(validBody());
+    let second;
+    try {
+      await vi.waitFor(() => {
+        expect(savesStarted).toBe(1);
+      });
+      second = run(validBody());
+      await vi.waitFor(() => {
+        expect(existsCalls).toBe(1);
+      });
+      releaseSave();
+      const winner = await first;
+      expect(winner.statusCode).toBe(200);
+      const savedBeforeLoserContinues = await PublicFeedback.find();
+      expect(savedBeforeLoserContinues).toHaveLength(1);
+      const winnerId = savedBeforeLoserContinues[0]._id.toString();
+
+      releaseLoser();
+      const loser = await second;
+      expect(loser.statusCode).toBe(409);
+      const saved = await PublicFeedback.find();
+      expect(saved).toHaveLength(1);
+      expect(saved[0]._id.toString()).toBe(winnerId);
+      const interaction = await Interaction.findOne({ interactionId: INTERACTION_ID });
+      expect(interaction.publicFeedback.toString()).toBe(winnerId);
+    } finally {
+      releaseSave();
+      releaseLoser();
+      save.mockRestore();
+      exists.mockRestore();
+      await Promise.allSettled([first, second].filter(Boolean));
+    }
+  });
+
+  it('does not report feedback as recorded when the winning save throws', async () => {
+    await seedChat();
+    let started = 0;
+    let releaseSave = () => {};
+    const gate = new Promise((resolve) => {
+      releaseSave = resolve;
+    });
+    // Hold the winning insert so the other request observes a pointer with
+    // no document. It must not be told the feedback was recorded.
+    const save = vi.spyOn(PublicFeedback.prototype, 'save').mockImplementation(() => {
+      started += 1;
+      return gate.then(() => Promise.reject(new Error('E11000 duplicate key secret')));
+    });
+    const first = run(validBody());
+    const second = run(validBody());
+    try {
+      await vi.waitFor(() => {
+        expect(started).toBe(1);
+      });
+      const loser = await Promise.race([first, second]);
+      expect(loser.statusCode).toBe(500);
+      expect(loser.payload).toEqual({ message: 'Failed to log public feedback' });
+      releaseSave();
+      const [a, b] = await Promise.all([first, second]);
+      expect(a.statusCode).not.toBe(409);
+      expect(b.statusCode).not.toBe(409);
+      expect(await PublicFeedback.countDocuments()).toBe(0);
+      const interaction = await Interaction.findOne({ interactionId: INTERACTION_ID });
+      expect(interaction.publicFeedback).toBeFalsy();
+      save.mockRestore();
+
+      const retry = await run(validBody());
+      expect(retry.statusCode).toBe(200);
+      const saved = await PublicFeedback.find();
+      expect(saved).toHaveLength(1);
+      const afterRetry = await Interaction.findOne({ interactionId: INTERACTION_ID });
+      expect(afterRetry.publicFeedback.toString()).toBe(saved[0]._id.toString());
+    } finally {
+      releaseSave();
+      save.mockRestore();
+      await Promise.allSettled([first, second]);
+    }
   });
 
   it('rejects a non-string score without writing', async () => {
