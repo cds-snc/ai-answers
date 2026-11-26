@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.214.4](https://github.com/cds-snc/ai-answers/compare/v1.214.3...v1.214.4) (2026-11-26)
+
+
+### Bug Fixes
+
+* harden public feedback save races and inline save errors ([1eea5a2](https://github.com/cds-snc/ai-answers/commit/1eea5a2f6c5279b640fee0ead2641df80acb45cb))
+* link public feedback with a conditional update ([64cd558](https://github.com/cds-snc/ai-answers/commit/64cd558bbb9787656e85f45bc20a85d0c4d1dcb7))
+* record public feedback once, only for the chat session (AIA-023) ([73fb51b](https://github.com/cds-snc/ai-answers/commit/73fb51bf657367ef64bcc379669eb6f0c8a1d899))
+* retry public feedback save when chat is not stored yet ([7908a33](https://github.com/cds-snc/ai-answers/commit/7908a33e45b40a4135405413c8f0e9f99c8ec258))
+* store public feedback reason keys and recover dangling save pointers ([2ffa348](https://github.com/cds-snc/ai-answers/commit/2ffa348eb01719d14f6adbe063e6721c6c263c43))
+
+
+### Documentation
+
+* correct the batch-history and registry-name comments ([e315973](https://github.com/cds-snc/ai-answers/commit/e31597347bf36f5f1c5ad83688339fc4de9ae6de))
+
+
+### Code Refactoring
+
+* share the redact and translate nodes across all graphs (AIA-018) ([5a41ac5](https://github.com/cds-snc/ai-answers/commit/5a41ac54563a69154d3e7c3807e681d8ac53739f)), closes [#2056](https://github.com/cds-snc/ai-answers/issues/2056)
+* share the redact and translate nodes across all graphs (AIA… ([35a8334](https://github.com/cds-snc/ai-answers/commit/35a833467c17f416bdfcb1780876943f44b9c49c))
+
 ## [1.214.3](https://github.com/cds-snc/ai-answers/compare/v1.214.2...v1.214.3) (2026-11-26)
 
 
