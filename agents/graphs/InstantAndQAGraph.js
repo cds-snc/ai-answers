@@ -1,9 +1,10 @@
 import { StateGraph, START, END, Annotation } from '@langchain/langgraph';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 import { logGraphEvent } from './GraphEventLogger.js';
-import { GraphWorkflowHelper, RedactionError, ShortQueryValidation } from './workflows/GraphWorkflowHelper.js';
+import { GraphWorkflowHelper, ShortQueryValidation } from './workflows/GraphWorkflowHelper.js';
 import QuestionAnswerService from '../../services/QuestionAnswerService.js';
 import { graphRequestContext } from './requestContext.js';
+import { createRedactNode, createTranslateNode } from './nodes/questionNodes.js';
 
 const WorkflowStatus = {
   MODERATING_QUESTION: 'moderatingQuestion',
@@ -82,41 +83,9 @@ graph.addNode('validate', async (state) => {
   }
 });
 
-graph.addNode('redact', async (state) => {
-  try {
-    logGraphEvent('info', 'node:redact input', state.chatId, {
-      lang: state.lang,
-      selectedAI: state.selectedAI,
-    });
+graph.addNode('redact', createRedactNode(workflow));
 
-    const { redactedText } = await workflow.processRedaction(state.userMessage, state.lang, state.chatId, state.selectedAI);
-
-    const out = { redactedText };
-    // Never log the question text before postTranslateGuard: it may still be blocked (AIA-018).
-    logGraphEvent('info', 'node:redact output', state.chatId, {});
-    return out;
-  } catch (error) {
-    if (error instanceof RedactionError) {
-      throw error;
-    }
-    throw error;
-  }
-});
-
-graph.addNode('translate', async (state) => {
-  const translationContext = workflow.buildTranslationContext(state.conversationHistory);
-  logGraphEvent('info', 'node:translate input', state.chatId, {
-    translationContext,
-    selectedAI: state.selectedAI,
-  });
-
-  const translationData = await workflow.translateQuestion({ text: state.redactedText, lang: 'en', selectedAI: state.selectedAI, translationContext, chatId: state.chatId });
-  await workflow.postTranslateGuard(translationData, state.chatId, state.selectedAI);
-
-  const out = { translationData };
-  logGraphEvent('info', 'node:translate output', state.chatId, out);
-  return out;
-});
+graph.addNode('translate', createTranslateNode(workflow));
 
 graph.addNode('contextNode', async (state) => {
   logGraphEvent('info', 'node:context input', state.chatId, {
@@ -399,7 +368,3 @@ graph.addEdge('verifyNode', 'persistNode');
 graph.addEdge('persistNode', END);
 
 export const instantAndQAGraphApp = graph.compile();
-
-export async function runInstantAndQAGraph(input) {
-  return instantAndQAGraphApp.invoke(input);
-}
