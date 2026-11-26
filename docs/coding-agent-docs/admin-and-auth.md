@@ -48,6 +48,9 @@ The role lives in three places that must agree when you add a page or endpoint:
 - **Inactive accounts** are blocked at login (`config/passport.js` local strategy) and on every
   request (`deserializeUser` returns no user if `active` is false), so deactivating an admin
   action takes effect on the user's next request, not at session expiry.
+- **Role changes** also take effect on the next request: `deserializeUser` builds `req.user`
+  from the database, not from the session copy saved at sign-in (AIA-015). Don't change it
+  back to returning the session object.
 - **User management** (`api/user/user-users.js` → `services/UserService.js`): admins list,
   activate/deactivate, change role, set institution/group, delete. Admin-only.
 - **Institution and group** (`institution`, `group` on the user): drive the dashboard
@@ -56,7 +59,8 @@ The role lives in three places that must agree when you add a page or endpoint:
   once on the Account page (`api/user/user-me.js` then locks it); admins can change it any time.
   Not collected at signup.
 - Passwords are bcrypt-hashed in a `pre('save')` hook. The session stores only
-  `{ userId, email, role }`.
+  `{ userId, email, role }`. After sign-in, `req.user`'s role and email come from the
+  database; the session copy only says who is signed in.
 
 ## Login and two-factor authentication
 

@@ -21,8 +21,10 @@ passport.deserializeUser(async (sessionUser, done) => {
     if (!user || !user.active) {
       return done(null, false);
     }
-    // Return the session user object (not the full DB user)
-    done(null, sessionUser);
+    // Build req.user from the database, not the copy saved at sign-in, so a role
+    // change takes effect on the user's next request (AIA-015). Same minimal
+    // { userId, email, role } shape as the session, never the full DB user.
+    done(null, { userId: user._id.toString(), email: user.email, role: user.role });
   } catch (err) {
     done(err);
   }
