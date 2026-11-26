@@ -237,6 +237,14 @@
   },
   "batch": {
     "title": "Batches",
+    "scope": {
+      "label": "Show batches from",
+      "mine": "My batches",
+      "institutions": "Institutions",
+      "groups": "Groups",
+      "allBatches": "All batches",
+      "allUsers": "All users"
+    },
     "sections": {
       "evaluator": {
         "title": "Run a batch"
@@ -427,11 +435,12 @@
       "database": "Manage the database",
       "eval": "Evaluation administration",
       "experimental": "Experimental",
-      "dataAnalysis": "Data Analysis",
+      "dataAnalysis": "Data analysis",
       "evalDashboard": "Evaluation dashboard",
       "metrics": "View performance metrics",
       "publicDashboard": "Public dashboard",
       "partnerDashboard": "Partner dashboard",
+      "aiAnalysis": "Run AI-assisted analysis",
       "technicalMetrics": "View technical metrics",
       "sessions": "Active sessions",
       "chatDashboard": "View chats",
@@ -563,6 +572,14 @@
       "repairQaMatchScoresConfirm": "Populate missing QA match scores now?",
       "repairQaMatchScoresSuccess": "QA match scores repaired. Updated: {updated}; matches checked: {matches}.",
       "repairQaMatchScoresError": "Repair QA match scores failed: {error}",
+      "removeRetiredFieldsTitle": "Remove retired fields",
+      "removeRetiredFieldsDescription": "Remove fields that the app no longer uses from stored records, so they no longer appear in exports. The list of fields is set in the code. You'll see how many records have each field before anything changes. This can't be undone.",
+      "removeRetiredFieldsButton": "Remove retired fields",
+      "removeRetiredFieldsConfirm": "These retired fields will be removed. Number of records:\n\n{list}\n\nThis can't be undone. Continue?",
+      "removeRetiredFieldsNone": "No retired fields found. Nothing was changed.",
+      "removeRetiredFieldsChanged": "The list of retired fields has changed since the counts were checked. Nothing was removed. Try again to see the new counts.",
+      "removeRetiredFieldsSuccess": "Retired fields removed. Records changed: {list}.",
+      "removeRetiredFieldsError": "Remove retired fields failed: {error}",
       "migratePublicFeedbackTitle": "Migrate public feedback",
       "migratePublicFeedbackDescription": "Move all public feedback from the expert feedback collection to the new public feedback collection.",
       "migratePublicFeedbackButton": "Migrate public feedback",
@@ -618,11 +635,21 @@
       }
     },
     "notifications": {
-      "title": "User notifications",
-      "ariaLabel": "User notifications",
-      "newInactive": "new user(s) awaiting activation (last 7 days)",
-      "totalInactive": "total inactive user(s)",
-      "viewUsers": "View and manage users"
+      "ariaLabel": "Notifications",
+      "assignedHeading": "Questions to review",
+      "accountsHeading": "Inactive user accounts",
+      "pendingAssignedOne": "{count} question is waiting for your review",
+      "pendingAssignedOther": "{count} questions are waiting for your review",
+      "newInactiveOne": "{count} new account request in the last 7 days",
+      "newInactiveOther": "{count} new account requests in the last 7 days",
+      "totalInactiveOne": "{count} inactive account in total",
+      "totalInactiveOther": "{count} inactive accounts in total"
+    },
+    "footer": {
+      "heading": "Admin and partner resources",
+      "contactTeam": "Contact AI Answers",
+      "termsAndConditions": "Terms and conditions",
+      "privacy": "Privacy"
     },
     "howTo": {
       "title": "How to guides",
@@ -836,6 +863,75 @@
       "rpm": "Requests / minute",
       "errorLoading": "Failed to load sessions: {error}"
     },
+    "aiAnalysis": {
+      "title": "AI-assisted analysis",
+      "intro": "Use AI to find patterns in the evaluations and questions for one institution.",
+      "selectInstitution": "Select an institution in the filters to run an analysis.",
+      "evalAnalysis": {
+        "title": "Eval analysis",
+        "description": "Analyze the expert evaluations matching the current filters to surface patterns: what the explanations indicate, content issues, English vs French differences, and per-evaluator scores.",
+        "runButton": "Run eval analysis",
+        "error": "The analysis failed. Try again.",
+        "running": "Analyzing the evaluations. This can take a minute.",
+        "status": {
+          "inProgress": "In progress",
+          "incomplete": "Did not finish",
+          "complete": "Complete",
+          "error": "Failed"
+        },
+        "pastRuns": {
+          "title": "Past analyses",
+          "colDate": "Run date",
+          "colRange": "Date range",
+          "colCount": "Evaluations",
+          "colStatus": "Status",
+          "colBy": "Run by",
+          "colActions": "Actions",
+          "view": "View",
+          "none": "No past analyses for this institution."
+        },
+        "report": {
+          "title": "Analysis report",
+          "header": "{count} expert evaluations · {department} · {start} – {end}",
+          "runOn": "Run on {date}",
+          "runBy": "by {email}",
+          "excluded": "{count} without a score excluded from score statistics",
+          "unclassified": "{count} could not be classified by service",
+          "partial": "This analysis did not finish — the results below are partial.",
+          "incomplete": "This analysis was interrupted before it finished and has no report to display. Run a new analysis.",
+          "inProgress": "This analysis is still running. Check back in a few minutes.",
+          "programActionsTitle": "Scores by service and action",
+          "colProgramAction": "Service — action",
+          "singlesSkipped": "{groups} groups with only one evaluation are not shown ({count} evaluations).",
+          "colCount": "Evaluations",
+          "colNonPerfect": "Non-perfect",
+          "colPctNonPerfect": "% non-perfect",
+          "colExample": "Example",
+          "allPerfect": "All perfect",
+          "themesTitle": "What the explanations say",
+          "themeCount": "{count} evaluations",
+          "basedOn": "The findings use {sent} of {total} evaluations scored below perfect: errors first, then the most recent.",
+          "basedOnContentIssues": "The content issue findings use {sent} of {total} flagged evaluations: errors first, then the most recent.",
+          "contentIssuesTitle": "Content issues",
+          "contentIssuesCount": "{count} evaluations flagged a content issue.",
+          "languageTitle": "English vs French",
+          "colLanguage": "Language",
+          "colMeanScore": "Mean score",
+          "colPctPerfect": "% perfect",
+          "lang": {
+            "en": "English",
+            "fr": "French"
+          },
+          "evaluatorsTitle": "Evaluators",
+          "colEvaluator": "Evaluator",
+          "flagged": "Review"
+        }
+      },
+      "questionAnalysis": {
+        "title": "Question analysis",
+        "comingSoon": "Question analysis is coming soon."
+      }
+    },
     "common": {
       "searchLabel": "Search:",
       "searchPlaceholder": "e.g. tax, contact, account",
@@ -862,6 +958,8 @@
       "chatNoLongerFound": "This chat can no longer be found.",
       "fetchFailed": "Failed to load data. Please try again.",
       "fetchError": "Failed to load data: {error}",
+      "evalInformedAnswers": "Eval-informed answers",
+      "evalInformedFrom": "From {date} only",
       "searchResultsAnnouncement": "{count} results found.",
       "searchResultsUpdatedAnnouncement": "Search results updated.",
       "metricsLoading": "Loading metrics...",
@@ -934,7 +1032,8 @@
         "unknownAccount": "Unknown account",
         "unassignConfirm": "Are you sure you want to remove this assignment?",
         "unassigned": "Assignment removed.",
-        "unassignError": "Failed to remove the assignment."
+        "unassignError": "Failed to remove the assignment.",
+        "unassignErrorChanged": "This assignment changed while you were removing it. The list is now up to date."
       }
     },
     "evalDashboard": {
@@ -1030,7 +1129,9 @@
     "email": "Email",
     "password": "Password",
     "submit": "Sign in",
-    "invalidCredentials": "Invalid email or password.",
+    "invalidCredentials": "Invalid email or password. After 10 failed attempts, sign-in is paused for 15 minutes.",
+    "serverError": "We couldn't sign you in. Try again in a few minutes.",
+    "networkError": "We couldn't reach the server. Check your connection, then try again.",
     "sessionExpired": {
       "title": "Session expired",
       "message": "Your session has expired. Please sign in again to continue."
@@ -1048,13 +1149,21 @@
       "resend": "Resend code",
       "sentToEmail": "A verification code has been sent to your email.",
       "send": "Send verification code",
-      "sendError": "Failed to send verification code.",
-      "invalidCode": "Invalid verification code."
+      "sendError": "We couldn't send your verification code. Try again in a few minutes.",
+      "invalidCode": "Invalid verification code.",
+      "codeFormat": "Enter the six-digit code from your email.",
+      "codeHint": "Six digits",
+      "resent": "New code sent.",
+      "cooldown": "Wait a minute before asking for a new code.",
+      "locked": "Too many incorrect codes. Wait 30 minutes, then sign in again.",
+      "expired": "Your sign-in timed out. Enter your email and password again to get a new code.",
+      "rememberDevice": "Remember this device for 12 hours"
     },
     "showPassword": "Show password",
     "hidePassword": "Hide password"
   },
   "auth": {
+    "passwordHint": "At least 8 characters",
     "sessionWarning": {
       "title": "Session expiring soon",
       "message": "Your session will expire in 1 minute. You will be signed out automatically if you remain idle."
@@ -1089,11 +1198,11 @@
       "submitting": "Submitting...",
       "success": "We've updated your password.",
       "error": "Failed to reset password.",
-      "invalid": "Invalid reset link.",
+      "invalid": "This reset link is incomplete. Copy the full link from your email, or get a new reset link.",
       "passwordTooShort": "Password must be at least 8 characters.",
       "passwordMismatch": "Passwords do not match.",
-      "lockedOut": "Too many failed attempts. Please try again later.",
-      "invalidCode": "Invalid or expired code. Please try again."
+      "invalidCode": "This reset link no longer works. It may have expired or been used already. Get a new reset link.",
+      "requestNewLink": "Get a new reset link"
     }
   },
   "signup": {
@@ -1138,6 +1247,13 @@
         "partnerNotes": "Notes",
         "evaluated": "Evaluated"
       },
+      "filtered": {
+        "pendingOne": "Showing {count} question waiting for your review.",
+        "pendingOther": "Showing {count} questions waiting for your review.",
+        "pendingNoCount": "Showing questions waiting for your review.",
+        "showAll": "Show all assigned questions",
+        "showingAll": "Showing all assigned questions."
+      },
       "evalStatus": {
         "completed": "Completed",
         "pending": "Pending"
@@ -1173,6 +1289,14 @@
     "groupClearedAnnouncement": "Group cleared.",
     "groupRestoredAnnouncement": "Group set back to {group}.",
     "filterLabel": "Filter users",
+    "filtered": {
+      "newOne": "Showing {count} new account request from the last 7 days.",
+      "newOther": "Showing {count} new account requests from the last 7 days.",
+      "inactiveOne": "Showing {count} inactive account.",
+      "inactiveOther": "Showing {count} inactive accounts.",
+      "showAll": "Show all users",
+      "showingAll": "Showing all users."
+    },
     "columns": {
       "email": "Email",
       "role": "Role",
@@ -1331,7 +1455,10 @@
         "settingUpdated": "Setting updated",
         "cacheRefreshed": "Settings cache refreshed",
         "downloadWebPageCacheCleared": "Downloaded web page cache cleared",
-        "searchCacheCleared": "Search cache cleared"
+        "searchCacheCleared": "Search cache cleared",
+        "databaseExported": "Database exported",
+        "retiredFieldsRemoved": "Retired fields removed",
+        "retiredFieldsRemovalFailed": "Retired field removal failed"
       }
     },
     "baseUrlLabel": "Base URL (e.g. https://example.com)",
@@ -1369,14 +1496,15 @@
     "rateLimiting": {
       "title": "Rate limiting",
       "saveLabel": "Save rate limiting",
+      "description": "Each visitor can make a set number of requests per time window. The window length is the request limit divided by the refill rate. For example, a limit of 20 with a refill rate of 10 per minute allows 20 requests every 2 minutes. Every API call counts, not just questions, so one question can use more than one request.",
       "persistence": {
         "label": "Rate-limiter persistence (memory | Redis)"
       },
       "singleAnonymousChatRunEnabled": "Limit anonymous users to one active answer at a time",
-      "rateLimitCapacity": "Rate limit capacity (requests)",
-      "rateLimitRefill": "Rate limit refill (requests per min)",
-      "authenticatedRateLimitCapacity": "Authenticated-user rate limit capacity (requests)",
-      "authenticatedRateLimitRefill": "Authenticated-user rate limit refill (requests per min)"
+      "rateLimitCapacity": "Request limit per window (anonymous users)",
+      "rateLimitRefill": "Refill rate in requests per minute (anonymous users)",
+      "authenticatedRateLimitCapacity": "Request limit per window (signed-in users)",
+      "authenticatedRateLimitRefill": "Refill rate in requests per minute (signed-in users)"
     },
     "redaction": {
       "title": "Redaction settings",
@@ -1527,6 +1655,13 @@
     "searchQuery": "Search query:",
     "searchResultsCached": "Served from cache",
     "searchResultsDownloaded": "Fetched from search",
+    "searchResultNumber": "Result {number}",
+    "searchResultFields": {
+      "title": "Title",
+      "organization": "Organization",
+      "link": "Link",
+      "summary": "Summary"
+    },
     "downloadPartial": "Partial",
     "details": "Details",
     "fallbackSourceChatId": "Fallback source chatId",
@@ -1640,6 +1775,7 @@
   "partnerDashboard": {
     "title": "Partner dashboard",
     "overviewTitle": "Overview",
+    "evalInformedTitle": "Evaluation informed metrics",
     "error": "Failed to load data. Please try again.",
     "kpi": {
       "questionsAsked": "Questions asked",
@@ -1649,7 +1785,8 @@
       "harmful": "Harmful",
       "harmfulSub": "EN: {en} · FR: {fr}",
       "contentIssues": "Content issues",
-      "contentIssuesSub": "Needs improvement: {ni} · Error: {error}"
+      "contentIssuesSub": "Needs improvement: {ni} · Error: {error}",
+      "evalInformedSub": "{n} of {total} eligible questions"
     },
     "charts": {
       "accuracyTitle": "Answer quality (expert + AI evaluation)",
@@ -1731,82 +1868,38 @@
       "trigger": "See all harmful chats by ID",
       "noData": "No harmful chats flagged in this period."
     },
-    "evalAnalysis": {
-      "title": "Eval analysis",
-      "description": "Analyze the expert evaluations matching the current filters to surface patterns: score differences by service, what the explanations indicate, content issues, English vs French differences, and per-evaluator scores.",
-      "selectInstitution": "Select an institution in the filters above to enable analysis.",
-      "checkingEligibility": "Checking eligibility…",
-      "precheckCount": "{count} expert evaluations match the current filters.",
-      "tooFew": "Not enough evaluations to analyze — at least {min} are needed ({count} match the current filters).",
-      "tooMany": "Too many evaluations for one analysis — narrow the date range until {max} or fewer match ({count} currently match).",
-      "runButton": "Run eval analysis",
-      "viewRunning": "View current results",
-      "exportRunning": "Export current results",
-      "error": "The analysis failed. Partial results may be shown below.",
-      "running": {
-        "preparing": "Preparing analysis…",
-        "classifying": "Classifying services… {done} of {total}",
-        "synthesizing": "Writing findings…"
+    "evalCoverage": {
+      "title": "Evaluation coverage by service",
+      "subtitle": "Up to 10 services with the most questions. Counts questions that got a direct answer.",
+      "trigger": "Top services by evaluation coverage",
+      "colActions": "Actions asked about",
+      "colQuestions": "Questions",
+      "colEvaluations": "Expert evaluations",
+      "colExpiring": "Expiring soon",
+      "colInformed": "Answers using evaluations",
+      "unclassified": "Not yet classified",
+      "notApplicable": "Not applicable",
+      "noActions": "No actions recorded",
+      "moreActions": {
+        "one": "and {count} more",
+        "other": "and {count} more"
       },
-      "status": {
-        "running": "Preparing",
-        "classifying": "Classifying",
-        "synthesizing": "Synthesizing",
-        "complete": "Complete",
-        "error": "Failed"
-      },
-      "pastRuns": {
-        "title": "Past analyses",
-        "colDate": "Run date",
-        "colRange": "Date range",
-        "colCount": "Evaluations",
-        "colStatus": "Status",
-        "colBy": "Run by",
-        "colActions": "Actions",
-        "view": "View"
-      },
-      "report": {
-        "title": "Analysis report",
-        "header": "{count} expert evaluations · {department} · {start} – {end}",
-        "runOn": "Run on {date}",
-        "runBy": "by {email}",
-        "excluded": "{count} without a score excluded from score statistics",
-        "unclassified": "{count} could not be classified by service",
-        "partial": "This analysis did not finish — the results below are partial.",
-        "running": "This analysis is still running ({status}). The results below are partial.",
-        "incomplete": "This analysis was interrupted before it finished and has no report to display. Run a new analysis.",
-        "rowsTitle": "Evaluation details",
-        "viewRowData": "View all row data",
-        "noValue": "Not available",
-        "programActionsTitle": "Scores by service and action",
-        "colProgramAction": "Service — action",
-        "singlesSkipped": "{groups} groups with only one evaluation are not shown ({count} evaluations).",
-        "colCount": "Evaluations",
-        "colNonPerfect": "Non-perfect",
-        "colPctNonPerfect": "% non-perfect",
-        "colExample": "Example",
-        "allPerfect": "All perfect",
-        "themesTitle": "What the explanations say",
-        "themeCount": "{count} evaluations",
-        "contentIssuesTitle": "Content issues",
-        "contentIssuesCount": "{count} evaluations flagged a content issue.",
-        "languageTitle": "English vs French",
-        "colLanguage": "Language",
-        "colMeanScore": "Mean score",
-        "colPctPerfect": "% perfect",
-        "lang": {
-          "en": "English",
-          "fr": "French"
-        },
-        "evaluatorsTitle": "Evaluators",
-        "colEvaluator": "Evaluator",
-        "colQuestion": "Question",
-        "colScore": "Score",
-        "colProgram": "Service",
-        "colAction": "Action",
-        "colDetails": "Details",
-        "flagged": "Review"
-      }
+      "noteEvaluations": "Evaluations the AI can use as examples for new answers: those from the last {days} days, or marked to never expire. Counts every evaluation for the service, whatever the date range. Services near the top of the table with few evaluations are the ones to evaluate next.",
+      "noteExpiring": "Evaluations that will stop being used within {days} days, whatever the date range. Evaluate new questions for these services to keep examples available.",
+      "noteInformed": "Answers where the AI was given past expert evaluations as examples."
+    },
+    "mostUsedEvals": {
+      "title": "Most-used evaluations",
+      "subtitle": "Up to {n} expert evaluations given to the AI most often as examples in this period",
+      "trigger": "See the most-used evaluations",
+      "colUses": "Times used",
+      "colEvaluated": "Date evaluated"
+    },
+    "evalInformedChats": {
+      "title": "Eval-informed answers by chat ID",
+      "subtitle": "Shows up to the {n} most recent",
+      "trigger": "Recent eval-informed chats by ID",
+      "noData": "No eval-informed answers in this period."
     }
   },
   "metrics": {
@@ -1821,6 +1914,7 @@
         "notGc": "Not in GC scope answers"
       },
       "metric": "Metric",
+      "markedAs": "Marked as",
       "count": "Count",
       "percentage": "%",
       "enCount": "EN count",
@@ -1834,18 +1928,14 @@
         "correct": "Correct",
         "needsImprovement": "Needs improvement",
         "hasError": "Has answer error",
-        "hasCitationError": "Citation issue",
-        "harmful": "Coded as harmful",
-        "hasContentIssue": "Content issue flagged"
+        "flaggedTitle": "Flagged (already counted above)"
       },
       "aiScored": {
         "title": "AI evaluations",
         "description": "Automated AI evaluations for questions without a partner evaluation",
         "total": "Total questions evaluated",
         "correct": "Correct",
-        "needsImprovement": "Needs improvement",
-        "hasError": "Has answer error",
-        "hasCitationError": "Citation issue"
+        "hasError": "Has answer error"
       },
       "qualityBar": {
         "correct": "Correct",
@@ -1892,6 +1982,11 @@
       },
       "questionTypes": {
         "title": "Question types"
+      },
+      "evalInformed": {
+        "eligible": "Eligible questions",
+        "from": "Earliest eligible question found: {date}. Earlier questions aren't counted.",
+        "note": "Eligible questions are those answered by the eval-informed workflow. Older and other workflows don't look up past evaluations, so their questions aren't counted."
       },
       "tokens": {
         "title": "Tokens",
@@ -2063,6 +2158,25 @@
       "recordsRequiringMetadata": "Records requiring metadata",
       "recordsWithMetadata": "Records with metadata",
       "recordsMissingMetadata": "Records missing metadata"
+    },
+    "duplicateEmbeddings": {
+      "title": "Duplicate embeddings",
+      "description": "Check whether any interaction has more than one embedding. This check only reads data.",
+      "check": "Check for duplicates",
+      "loading": "Checking for duplicates...",
+      "failed": "Failed to check for duplicate embeddings.",
+      "none": "No duplicate embeddings found.",
+      "found": "Some interactions have more than one embedding.",
+      "duplicateInteractions": "Interactions with duplicates",
+      "duplicatesWithExpertFeedback": "Interactions with duplicates and expert feedback",
+      "extraEmbeddings": "Extra embeddings",
+      "maxCopies": "Most embeddings for one interaction",
+      "removeDescription": "Remove the extra embeddings so each interaction keeps one. If a copy has expert feedback metadata, that copy is kept. You can run this again if it stops part-way.",
+      "remove": "Remove duplicates",
+      "removeConfirm": "This permanently deletes the extra embeddings. You can't undo this. Do you want to continue?",
+      "removing": "Removing duplicates...",
+      "removeSuccess": "Removed {embeddings} extra embeddings from {interactions} interactions, and {sentences} sentence embeddings.",
+      "removeFailed": "Failed to remove duplicate embeddings."
     },
     "metadataLookup": {
       "title": "Embedding metadata lookup",
@@ -2289,11 +2403,15 @@
     "title": "About",
     "loadError": "Unable to load content."
   },
+  "systemCard": {
+    "title": "AI Answers system card",
+    "loadError": "Unable to load the system card."
+  },
   "experimental": {
     "datasets": {
-      "title": "Experimental Datasets",
+      "title": "Experimental datasets",
       "analyze": "Analyze",
-      "uploadNew": "Upload New Dataset",
+      "uploadNew": "Upload new dataset",
       "uploadButton": "Upload",
       "createButton": "Create",
       "createDatasetTitle": "Create dataset",
@@ -2319,29 +2437,32 @@
       "instantAnswerQueued": "Instant answer dataset creation has been queued. You can monitor its status on the datasets page.",
       "instantAnswerFailed": "Failed to create instant answer test dataset.",
       "hideUpload": "Hide upload",
-      "upload": "Upload Dataset",
+      "upload": "Upload dataset",
       "uploading": "Uploading...",
-      "uploadSuccess": "Dataset uploaded successfully!",
+      "uploadSuccess": "Dataset \"{name}\" uploaded.",
       "uploadFailed": "Upload failed",
       "readFailed": "Failed to read file",
-      "delete": "Delete Dataset",
+      "delete": "Delete dataset",
       "export": "Export",
       "exporting": "Exporting...",
-      "exportFailed": "Failed to export dataset",
-      "view": "View Data",
-      "viewing": "Viewing Data: {name}",
-      "backToList": "Back to Datasets",
+      "exportFailed": "Failed to export dataset \"{name}\".",
+      "view": "View data",
+      "viewing": "Viewing data: {name}",
+      "backToList": "Back to datasets",
       "errorLoadingRows": "Failed to load rows.",
       "confirmDelete": "Are you sure you want to delete this dataset? This action cannot be undone.",
-      "inUse": "This dataset is in use by active batches and cannot be deleted.",
-      "deleteFailed": "Failed to delete dataset.",
-      "nameLabel": "Dataset Name",
+      "inUse": "Dataset \"{name}\" is in use by active batches and cannot be deleted.",
+      "deleteFailed": "Failed to delete dataset \"{name}\".",
+      "deleteSuccess": "Dataset \"{name}\" deleted.",
+      "dateRangeLegend": "Date range",
+      "filterLabel": "Filter datasets",
+      "nameLabel": "Dataset name",
       "descLabel": "Description",
-      "typeLabel": "Dataset Type",
+      "typeLabel": "Dataset type",
       "uploadedBy": "Uploaded by",
       "fileLabel": "XLSX / CSV file",
       "categoryLabel": "Category (optional)",
-      "categoryPlaceholder": "e.g. cra, ircc, bias, pii, red-team",
+      "categoryPlaceholder": "Up to 100 characters. For example: cra, ircc, bias, pii, red-team",
       "suiteView": "Suite grid",
       "runCountLabel": "Runs",
       "requiredColumns": "Columns:",
@@ -2373,11 +2494,11 @@
         "failed": "Failed",
         "skippedSourceRows": "{count} source questions were skipped because question variations could not be generated."
       },
-      "startAgain": "Start processing again",
-      "processing": "Starting...",
-      "processFailed": "Failed to restart dataset processing.",
+      "resume": "Resume",
+      "processing": "Processing…",
+      "processFailed": "Failed to restart processing for dataset \"{name}\".",
       "created": "Created",
-      "existing": "Existing Datasets",
+      "existing": "Existing datasets",
       "loading": "Loading datasets...",
       "empty": "No datasets found.",
       "actions": "Actions",
@@ -2396,10 +2517,22 @@
       "analyzerDetailsTitle": "Analyzer details",
       "analyzerPrefix": "Analyzer:",
       "workflowLabel": "Workflow",
+      "filterBatchesLabel": "Filter batches",
+      "filterComparisonsLabel": "Filter comparisons",
+      "details": {
+        "name": "Batch name",
+        "createdBy": "Run by"
+      },
+      "results": {
+        "completed": "{completed} of {total} completed",
+        "failedFlagged": "{failed} failed · {flagged} flagged",
+        "failed": "{failed} failed"
+      },
       "analysisMode": {
         "label": "Analysis mode",
-        "reference": "Compare a newly generated answer with the dataset reference answer",
-        "generated": "Analyze a newly generated answer without using the dataset answer",
+        "hint": "A new answer is generated for each question.",
+        "reference": "Compare with the reference answer",
+        "generated": "Analyze without the reference answer",
         "generatedOnly": "This dataset has no reference answer. A newly generated answer will be analyzed."
       },
       "tabs": {
@@ -2468,14 +2601,13 @@
         "candidate": "Compare against",
         "selectBaseline": "-- Select a baseline batch --",
         "selectCandidate": "-- Select a batch to compare --",
+        "noCandidates": "No other completed batches use this analyzer.",
+        "noCandidatesTitle": "No batches to compare",
         "create": "Create comparison",
         "columns": {
           "name": "Comparison name",
           "analyzer": "Analyzer",
           "status": "Status",
-          "completed": "Completed",
-          "failed": "Failed",
-          "total": "Total items",
           "date": "Date",
           "actions": "Actions",
           "previousComparisons": "Previous comparisons"
@@ -2569,7 +2701,7 @@
       },
       "runLabelLabel": "Batch label (optional)",
       "runLabelPlaceholder": "e.g. v2 – tightened citation instructions",
-      "suiteView": "Suite grid",
+      "suiteViewForDataset": "View the suite grid for this dataset",
       "trialsLabel": "Trials per question",
       "trialsCostHint": "{rows} questions × {trials} trials = {total} pipeline executions",
       "noBaseline": "-- No reference batch (standalone evaluation) --",
@@ -2580,7 +2712,7 @@
       "uploadInstead": "-- Upload a new file instead --",
       "orUpload": "Or upload new data:",
       "inputFile": "Input File (Excel/CSV)",
-      "comparisonFile": "Comparison File (Optional)",
+      "comparisonFile": "Comparison file (optional)",
       "run": "Create batch",
       "starting": "Starting...",
       "startingRun": "Starting batch...",
@@ -2591,24 +2723,20 @@
       "batchPrefix": "Batch",
       "progressSummary": "Completed: {completed} | Failed: {failed} | Total: {total}",
       "columns": {
-        "name": "Batch name",
+        "setup": "Setup",
+        "results": "Results",
+        "name": "Batch details",
         "analyzer": "Analyzer",
         "workflow": "Workflow",
-        "modelFamily": "Model family",
         "appVersion": "App version",
         "status": "Status",
-        "completed": "Completed",
-        "failed": "Failed",
-        "totalQuestions": "Total questions",
-        "createdBy": "Created by",
         "issues": "Issues",
-        "flagged": "Flagged",
-        "date": "Date",
+        "date": "Date run",
         "actions": "Actions"
       },
       "baseline": "REFERENCE",
       "viewResults": "View results",
-      "export": "Export",
+      "export": "Export results",
       "exportChatLogs": "Export chat logs",
       "useAsBaseline": "Use as reference",
       "baselineSelected": "Reference selected",
@@ -2631,17 +2759,18 @@
         "comparisonRequired": "Comparison analysis requires a second file or a specific dataset type.",
         "startingRun": "Starting your analysis batch. Please wait a moment.",
         "startedCount": "Started {count} analysis batches.",
-        "resumeStarted": "Resume requested.",
+        "resumeStarted": "Resume requested for \"{name}\".",
         "confirmDelete": "Are you sure you want to delete this batch?",
         "processingStarted": "Processing started.",
         "startProcessingError": "Failed to start processing.",
         "startAnalysisFailed": "Failed to start analysis.",
-        "resumeFailed": "Failed to resume batch.",
-        "deleteFailed": "Failed to delete batch.",
-        "exportFailed": "Failed to export batch.",
+        "resumeFailed": "Failed to resume batch \"{name}\".",
+        "deleteFailed": "Failed to delete batch \"{name}\".",
+        "deleteSuccess": "Batch \"{name}\" deleted.",
+        "exportFailed": "Failed to export batch \"{name}\".",
         "deleteError": "Failed to delete batch",
         "exportError": "Failed to export batch",
-        "exportChatLogsError": "Failed to export chat logs",
+        "exportChatLogsError": "Failed to export chat logs for \"{name}\".",
       "error.NO_REFERENCE": "This analyzer requires a reference answer: use a dataset with a referenceAnswer column, or select a comparison run.",
       "error.NO_REFERENCE_EXPERT_SCORER": "Expert scorer requires a reference answer to judge against: use a dataset with a referenceAnswer column, or select a comparison run.",
       "error.NO_REFERENCE_INSTANT_ANSWER": "Instant-answer validation requires a golden reference answer: use a dataset with an answer or referenceAnswer column.",
@@ -2691,6 +2820,7 @@
     "results": {
       "title": "Batch results",
       "backToRuns": "Back to analysis batches",
+      "backToSuiteGrid": "Back to this suite grid",
       "loading": "Loading results...",
       "loadError": "Failed to load batch results.",
       "summary": {
@@ -2764,7 +2894,7 @@
       }
     },
     "suite": {
-      "title": "Test suite",
+      "title": "Suite grid",
       "loading": "Loading suite grid...",
       "loadError": "Failed to load suite grid.",
       "noRuns": "No analysis batches yet for this dataset. Start one from the analysis page.",
@@ -2774,6 +2904,7 @@
       "scoreAny": "any trial",
       "captureRun": "Reference batch — not scored against a reference",
       "newRun": "New analysis batch",
+      "descriptionLabel": "Description:",
       "categoryLabel": "Category:",
       "columnsHint": "Column names come from an optional testName column in the dataset. Tag rows with a caseType column (control, edge, boundary) to describe each test's role. Click a cell to open that answer.",
       "caseType": {

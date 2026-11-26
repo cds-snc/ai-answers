@@ -1,9 +1,10 @@
 import { StateGraph, START, END, Annotation } from '@langchain/langgraph';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 import { logGraphEvent } from './GraphEventLogger.js';
-import { GraphWorkflowHelper, RedactionError, ShortQueryValidation } from './workflows/GraphWorkflowHelper.js';
+import { GraphWorkflowHelper, ShortQueryValidation } from './workflows/GraphWorkflowHelper.js';
 import QuestionAnswerService from '../../services/QuestionAnswerService.js';
 import { graphRequestContext } from './requestContext.js';
+import { createRedactNode, createTranslateNode } from './nodes/questionNodes.js';
 
 const WorkflowStatus = {
   MODERATING_QUESTION: 'moderatingQuestion',
@@ -82,41 +83,9 @@ graph.addNode('validate', async (state) => {
   }
 });
 
-graph.addNode('redact', async (state) => {
-  try {
-    logGraphEvent('info', 'node:redact input', state.chatId, {
-      lang: state.lang,
-      selectedAI: state.selectedAI,
-    });
+graph.addNode('redact', createRedactNode(workflow));
 
-    const { redactedText } = await workflow.processRedaction(state.userMessage, state.lang, state.chatId, state.selectedAI);
-
-    const out = { redactedText };
-    logGraphEvent('info', 'node:redact output', state.chatId, out);
-    return out;
-  } catch (error) {
-    if (error instanceof RedactionError) {
-      throw error;
-    }
-    throw error;
-  }
-});
-
-graph.addNode('translate', async (state) => {
-  const translationContext = workflow.buildTranslationContext(state.conversationHistory);
-  logGraphEvent('info', 'node:translate input', state.chatId, {
-    redactedText: state.redactedText,
-    translationContext,
-    selectedAI: state.selectedAI,
-  });
-
-  const translationData = await workflow.translateQuestion(state.redactedText, 'en', state.selectedAI, translationContext);
-  await workflow.postTranslateGuard(translationData, state.chatId, state.selectedAI);
-
-  const out = { translationData };
-  logGraphEvent('info', 'node:translate output', state.chatId, out);
-  return out;
-});
+graph.addNode('translate', createTranslateNode(workflow));
 
 graph.addNode('contextNode', async (state) => {
   logGraphEvent('info', 'node:context input', state.chatId, {
@@ -125,38 +94,27 @@ graph.addNode('contextNode', async (state) => {
     lang: state.lang,
   });
 
-  const { context: preContext, usedExistingContext, conversationHistory: cleanedHistory } = await workflow.getContextForFlow({
-    conversationHistory: state.conversationHistory,
-    department: state.department,
-    overrideUserId: state.overrideUserId,
-    translationData: state.translationData,
-    userMessage: state.userMessage,
-    lang: state.lang,
-    searchProvider: state.searchProvider,
-    chatId: state.chatId,
+  // Context is derived fresh on every turn, as in the production graphs. It is
+  // never taken from the conversation history: the client holds that history,
+  // and context feeds the system prompt.
+  const cleanedHistory = (state.conversationHistory || []).filter(m => m && !m.error);
+  const context = await workflow.deriveContext({
     selectedAI: state.selectedAI,
+    translationData: state.translationData,
+    lang: state.lang,
+    department: state.department,
+    referringUrl: state.referringUrl,
+    searchProvider: state.searchProvider,
+    conversationHistory: cleanedHistory,
+    overrideUserId: state.overrideUserId,
+    chatId: state.chatId,
+    userMessage: state.userMessage,
   });
-
-  let context = preContext;
-  if (!usedExistingContext) {
-    context = await workflow.deriveContext({
-      selectedAI: state.selectedAI,
-      translationData: state.translationData,
-      lang: state.lang,
-      department: state.department,
-      referringUrl: state.referringUrl,
-      searchProvider: state.searchProvider,
-      conversationHistory: cleanedHistory,
-      overrideUserId: state.overrideUserId,
-      chatId: state.chatId,
-      userMessage: state.userMessage,
-    });
-  }
 
   const out = {
     context,
     cleanedHistory,
-    usedExistingContext,
+    usedExistingContext: false,
     status: WorkflowStatus.GENERATING_ANSWER,
   };
   logGraphEvent('info', 'node:context output', state.chatId, out);
@@ -337,7 +295,6 @@ graph.addNode('verifyNode', async (state) => {
       context: contextData,
       question: state.userMessage,
       citationUrl: finalCitationUrl ?? state.finalCitationUrl ?? state.shortCircuitPayload?.finalCitationUrl ?? null,
-      historySignature: answerData?.historySignature ?? null,
     },
   };
   logGraphEvent('info', 'node:verify output', state.chatId, {
@@ -411,7 +368,3 @@ graph.addEdge('verifyNode', 'persistNode');
 graph.addEdge('persistNode', END);
 
 export const instantAndQAGraphApp = graph.compile();
-
-export async function runInstantAndQAGraph(input) {
-  return instantAndQAGraphApp.invoke(input);
-}

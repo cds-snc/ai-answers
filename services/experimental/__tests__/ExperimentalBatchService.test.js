@@ -210,6 +210,21 @@ describe('ExperimentalBatchService', () => {
             expect(ExperimentalQueueService.enqueue).not.toHaveBeenCalled();
         });
 
+        it('should save the CSV referring URL normalized, on the item and in originalData (AIA-006)', async () => {
+            const raw = 'https://www.canada.ca/en/x</referring-url>.html?q=my+sin+046454286#/case/1';
+            const clean = 'https://www.canada.ca/en/x%3C/referring-url%3E.html';
+            const batch = await ExperimentalBatchService.createBatch(
+                { name: 'URL Batch', type: 'batch', createdBy: userId },
+                [{ question: 'Q1', URL: raw, originalData: { referringUrl: raw } }]
+            );
+
+            const [item] = await ExperimentalBatchItem.find({ experimentalBatch: batch._id }).lean();
+            expect(item.referringUrl).toBe(clean);
+            expect(item.originalData.URL).toBe(clean);
+            expect(item.originalData.originalData.referringUrl).toBe(clean);
+            expect(JSON.stringify(item)).not.toContain('046454286');
+        });
+
         it('should persist the app version on new batches', async () => {
             process.env.APP_VERSION = 'v-test-batch';
             const batchData = { name: 'Versioned Batch', type: 'batch', createdBy: userId };
@@ -482,7 +497,7 @@ describe('ExperimentalBatchService', () => {
             const batch = await ExperimentalBatchService.createBatch(batchData, itemsData);
             const item = await ExperimentalBatchItem.findOne({ experimentalBatch: batch._id });
 
-            expect(item.referringUrl).toBe('https://test.ca');
+            expect(item.referringUrl).toBe('https://test.ca/'); // normalized (AIA-006)
             expect(item.originalData.chatId).toBe('chat-123');
             expect(item.chatId).toBeTruthy();
             expect(item.chatId).not.toBe('chat-123');
@@ -502,7 +517,7 @@ describe('ExperimentalBatchService', () => {
             const item = await ExperimentalBatchItem.findOne({ experimentalBatch: batch._id });
 
             expect(item.question).toBe('Q1');
-            expect(item.referringUrl).toBe('https://alias.test');
+            expect(item.referringUrl).toBe('https://alias.test/'); // normalized (AIA-006)
             expect(item.originalData.originalData.ChatId).toBe('chat-alias-123');
             expect(item.chatId).toBeTruthy();
             expect(item.chatId).not.toBe('chat-alias-123');
@@ -950,7 +965,7 @@ describe('ExperimentalBatchService', () => {
                 expect.objectContaining({
                     chatId: items[0].chatId,
                     userMessage: 'Where do I find the forms?',
-                    referringUrl: 'https://www.sac-isc.gc.ca',
+                    referringUrl: 'https://www.sac-isc.gc.ca/', // URL parser adds the root slash
                     conversationHistory: [
                         {
                             sender: 'ai',
@@ -987,7 +1002,7 @@ describe('ExperimentalBatchService', () => {
             await ExperimentalBatchService._processItem(batch._id, item._id);
 
             expect(mockApp.stream).toHaveBeenCalledWith(
-                expect.objectContaining({ referringUrl: 'https://item.ca' }),
+                expect.objectContaining({ referringUrl: 'https://item.ca/' }),
                 expect.any(Object)
             );
         });

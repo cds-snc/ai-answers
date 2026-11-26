@@ -75,6 +75,7 @@ data "aws_iam_policy_document" "ai_answers_lambda_parameter_store" {
       var.bedrock_region_ssm_arn,
       var.redis_url_arn,
       var.conversation_integrity_secret_arn,
+      var.session_secret_arn,
       var.s3_bucket_name_ssm_arn
     ]
   }
@@ -212,6 +213,18 @@ data "aws_iam_policy_document" "lambda_management" {
       "ec2:DescribeVpcs",
       "ec2:DescribeSubnets",
       "ec2:DescribeSecurityGroups"
+    ]
+    effect    = "Allow"
+    resources = ["*"]
+  }
+
+  # Authenticated pulls from public.ecr.aws, so the image build isn't subject
+  # to the shared per-IP anonymous data limit on GitHub runners.
+  statement {
+    sid = "EcrPublicPull"
+    actions = [
+      "ecr-public:GetAuthorizationToken",
+      "sts:GetServiceBearerToken"
     ]
     effect    = "Allow"
     resources = ["*"]

@@ -59,6 +59,12 @@ describe('ExportService spreadsheet helpers', () => {
     );
   });
 
+  it('prefixes formula-leading text in downloaded CSV files', async () => {
+    ExportService.worksheetDataToCSV([['Question'], ['=1+1'], ['Plain text']], 'batch.csv');
+
+    await expect(createdBlobs[0].text()).resolves.toBe("Question\r\n'=1+1\r\nPlain text");
+  });
+
   it('downloads xlsx output through exceljs', async () => {
     await ExportService.worksheetDataToExcel(
       [

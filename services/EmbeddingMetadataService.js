@@ -1,8 +1,11 @@
 import { normalizeObjectId } from '../api/util/db-query.js';
 import { Chat } from '../models/chat.js';
+import { Context } from '../models/context.js';
 import { Embedding } from '../models/embedding.js';
+import { SentenceEmbedding } from '../models/sentenceEmbedding.js';
 import { ExpertFeedback } from '../models/expertFeedback.js';
 import { Interaction } from '../models/interaction.js';
+import { normalizeMatchDepartment } from './matchDepartment.js';
 
 function feedbackMetadata(feedback) {
   if (!feedback) return null;
@@ -21,7 +24,14 @@ const METADATA_UNSET = {
   expertFeedbackNeverStale: '',
   pageLanguage: '',
   interactionLanguage: '',
+  department: '',
 };
+
+// An embedding needs (re)syncing when it has no feedback metadata yet, or was
+// synced before `department` existed. A synced embedding whose context matched
+// no department stores '' (not absent), so it does not count as missing.
+// Equality to null matches both null and absent fields.
+const MISSING_METADATA_FILTER = { $or: [{ expertFeedbackId: null }, { department: null }] };
 
 // Keep enough work in flight to hide DocumentDB round-trip latency without
 // turning a maintenance operation into an unbounded write burst. This is
@@ -73,6 +83,10 @@ function looksLikeExpertFeedbackDocument(feedback) {
   );
 }
 
+function isObjectIdLike(value) {
+  return value?._bsontype === 'ObjectId' || value?._bsontype === 'ObjectID';
+}
+
 function toIdString(value) {
   if (!value) return null;
   return String(value);
@@ -87,6 +101,7 @@ function buildClearedSnapshot(interactionId) {
     expertFeedbackNeverStale: null,
     pageLanguage: null,
     interactionLanguage: null,
+    department: null,
   };
 }
 
@@ -124,6 +139,20 @@ async function getPageLanguage(interactionId, fallbackChatId = null) {
     : { interactions: interactionId };
   const chat = await Chat.findOne(query).select('pageLanguage').lean();
   return chat?.pageLanguage || null;
+}
+
+// The department the context agent matched for this interaction. A populated
+// context is authoritative (an older Context with no `department` field means
+// no department); only a bare ObjectId reference is looked up.
+async function getInteractionDepartment(interaction) {
+  const context = interaction?.context;
+  if (context && typeof context === 'object' && !isObjectIdLike(context)) {
+    return normalizeMatchDepartment(context.department);
+  }
+  const contextId = normalizeObjectId(context);
+  if (!contextId) return '';
+  const doc = await Context.findById(contextId).select('department').lean();
+  return normalizeMatchDepartment(doc?.department);
 }
 
 async function getInteractionLanguage(interactionOrId, fallbackChatId = null) {
@@ -173,7 +202,7 @@ class EmbeddingMetadataService {
     const interaction = typeof interactionOrId === 'object' && interactionOrId?._id
       ? interactionOrId
       : interactionId
-        ? await Interaction.findById(interactionId).select('_id expertFeedback question').populate({ path: 'question', select: 'language' }).lean()
+        ? await Interaction.findById(interactionId).select('_id expertFeedback question context').populate({ path: 'question', select: 'language' }).lean()
         : null;
     if (!interaction?._id) return { matchedCount: 0, modifiedCount: 0 };
 
@@ -236,13 +265,14 @@ class EmbeddingMetadataService {
       ? pageLanguageOverride
       : await getPageLanguage(interaction._id);
     const interactionLanguage = await getInteractionLanguage(interaction, interaction._id);
+    const department = await getInteractionDepartment(interaction);
     const metadata = feedbackMetadata(feedback);
     let updateFilter = buildUpdateFilter(interaction._id, embeddingId, updateScope);
     if (onlyMissingMetadata) {
       updateFilter = {
         $and: [
           updateFilter,
-          { expertFeedbackId: null },
+          MISSING_METADATA_FILTER,
         ],
       };
     }
@@ -251,6 +281,7 @@ class EmbeddingMetadataService {
       interactionId: interaction._id,
       pageLanguage: pageLanguage || undefined,
       interactionLanguage: normalizeMatchLanguage(interactionLanguage) || undefined,
+      department,
     };
 
     const updateResult = await Embedding.updateMany(
@@ -269,6 +300,7 @@ class EmbeddingMetadataService {
           expertFeedbackNeverStale: metadata.expertFeedbackNeverStale,
           pageLanguage: pageLanguage || null,
           interactionLanguage: normalizeMatchLanguage(interactionLanguage) || null,
+          department,
         },
         feedbackType: normalizeFeedbackType(feedback),
       };
@@ -284,6 +316,7 @@ class EmbeddingMetadataService {
         expertFeedbackNeverStale: metadata.expertFeedbackNeverStale,
         pageLanguage: pageLanguage || null,
         interactionLanguage: normalizeMatchLanguage(interactionLanguage) || null,
+        department,
       },
       feedbackType: normalizeFeedbackType(feedback),
     };
@@ -307,6 +340,91 @@ class EmbeddingMetadataService {
 
   async clearAllMetadata() {
     return Embedding.updateMany({}, { $unset: METADATA_UNSET });
+  }
+
+  // Read-only count of interactions with more than one Embedding document
+  // (an old db-generate-embeddings paging bug re-embedded already-embedded
+  // interactions). Only duplicates of expert-evaluated interactions can reach
+  // live answers, so those are counted separately.
+  async getDuplicateEmbeddingStatus() {
+    const [result] = await Embedding.aggregate([
+      // Project first so the vector fields are never loaded.
+      { $project: { interactionId: 1 } },
+      { $group: { _id: '$interactionId', copies: { $sum: 1 } } },
+      { $match: { copies: { $gt: 1 } } },
+      { $lookup: { from: 'interactions', localField: '_id', foreignField: '_id', as: 'interaction' } },
+      {
+        $project: {
+          copies: 1,
+          hasExpertFeedback: {
+            $cond: [{ $ifNull: [{ $arrayElemAt: ['$interaction.expertFeedback', 0] }, false] }, 1, 0],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          duplicateInteractions: { $sum: 1 },
+          duplicatesWithExpertFeedback: { $sum: '$hasExpertFeedback' },
+          extraEmbeddings: { $sum: { $subtract: ['$copies', 1] } },
+          maxCopies: { $max: '$copies' },
+        },
+      },
+    ]);
+
+    return {
+      duplicateInteractions: result?.duplicateInteractions || 0,
+      duplicatesWithExpertFeedback: result?.duplicatesWithExpertFeedback || 0,
+      extraEmbeddings: result?.extraEmbeddings || 0,
+      maxCopies: result?.maxCopies || 0,
+    };
+  }
+
+  // Deletes the extra Embedding documents (and their SentenceEmbeddings) so
+  // each interaction keeps exactly one. Keeps a copy that has expert feedback
+  // metadata if any copy does, otherwise the oldest. Safe to re-run.
+  async removeDuplicateEmbeddings({ batchSize = 500 } = {}) {
+    const groups = await Embedding.aggregate([
+      // Project first so the vector fields are never loaded.
+      { $project: { interactionId: 1, expertFeedbackId: 1 } },
+      {
+        $group: {
+          _id: '$interactionId',
+          copies: { $push: { id: '$_id', expertFeedbackId: '$expertFeedbackId' } },
+        },
+      },
+      { $match: { 'copies.1': { $exists: true } } },
+    ]);
+
+    const idsToDelete = [];
+    for (const { copies } of groups) {
+      // Oldest first. Sorted here, not in the pipeline: $push order after a
+      // $sort is not guaranteed (DocumentDB included). ObjectId hex strings
+      // sort by creation time.
+      copies.sort((a, b) => String(a.id).localeCompare(String(b.id)));
+      const keep = copies.find((c) => c.expertFeedbackId) || copies[0];
+      for (const c of copies) {
+        if (c !== keep) idsToDelete.push(c.id);
+      }
+    }
+
+    let deletedEmbeddings = 0;
+    let deletedSentenceEmbeddings = 0;
+    for (let i = 0; i < idsToDelete.length; i += batchSize) {
+      const batch = idsToDelete.slice(i, i + batchSize);
+      // Sentences first: if a batch fails part-way, a re-run still finds the
+      // parent duplicates, so no sentence embeddings are left orphaned.
+      const sentenceResult = await SentenceEmbedding.deleteMany({ parentEmbeddingId: { $in: batch } });
+      const embeddingResult = await Embedding.deleteMany({ _id: { $in: batch } });
+      deletedSentenceEmbeddings += sentenceResult.deletedCount || 0;
+      deletedEmbeddings += embeddingResult.deletedCount || 0;
+    }
+
+    return {
+      duplicateInteractions: groups.length,
+      deletedEmbeddings,
+      deletedSentenceEmbeddings,
+    };
   }
 
   async getBackfillStatus() {
@@ -337,6 +455,13 @@ class EmbeddingMetadataService {
               { $ne: [{ $ifNull: ['$feedback.type', ''] }, 'ai'] },
             ],
           },
+          // Mirrors MISSING_METADATA_FILTER.
+          metadataMissing: {
+            $or: [
+              { $eq: [{ $ifNull: ['$expertFeedbackId', null] }, null] },
+              { $eq: [{ $ifNull: ['$department', null] }, null] },
+            ],
+          },
         },
       },
       {
@@ -345,16 +470,10 @@ class EmbeddingMetadataService {
           totalEmbeddings: { $sum: 1 },
           recordsRequiringMetadata: { $sum: { $cond: ['$requiresMetadata', 1, 0] } },
           recordsWithMetadata: {
-            $sum: { $cond: [{ $ne: [{ $ifNull: ['$expertFeedbackId', null] }, null] }, 1, 0] },
+            $sum: { $cond: [{ $not: ['$metadataMissing'] }, 1, 0] },
           },
           recordsMissingMetadata: {
-            $sum: {
-              $cond: [
-                { $and: ['$requiresMetadata', { $eq: [{ $ifNull: ['$expertFeedbackId', null] }, null] }] },
-                1,
-                0,
-              ],
-            },
+            $sum: { $cond: [{ $and: ['$requiresMetadata', '$metadataMissing'] }, 1, 0] },
           },
         },
       },
@@ -394,8 +513,11 @@ class EmbeddingMetadataService {
     const feedbackIds = feedbacks.map(({ _id }) => _id).filter(Boolean);
     const interactions = feedbackIds.length
       ? await Interaction.find({ expertFeedback: { $in: feedbackIds } })
-        .select('_id expertFeedback question')
-        .populate({ path: 'question', select: 'language' })
+        .select('_id expertFeedback question context')
+        .populate([
+          { path: 'question', select: 'language' },
+          { path: 'context', select: 'department' },
+        ])
         .lean()
       : [];
     const feedbackById = new Map(
@@ -410,9 +532,9 @@ class EmbeddingMetadataService {
     const missingEmbeddings = interactionIds.length
       ? await Embedding.find({
         interactionId: { $in: interactionIds },
-        // Equality to null matches both null and absent fields. Populated
-        // embeddings are discarded by DocumentDB before their vectors load.
-        expertFeedbackId: null,
+        // Populated embeddings are discarded by DocumentDB before their
+        // vectors load.
+        ...MISSING_METADATA_FILTER,
       })
         .select('_id interactionId chatId')
         .populate({ path: 'chatId', select: 'pageLanguage' })
@@ -569,8 +691,11 @@ class EmbeddingMetadataService {
     const feedbackIds = feedbacks.map(({ _id }) => _id).filter(Boolean);
     const interactions = feedbackIds.length
       ? await Interaction.find({ expertFeedback: { $in: feedbackIds } })
-        .select('_id expertFeedback question')
-        .populate({ path: 'question', select: 'language' })
+        .select('_id expertFeedback question context')
+        .populate([
+          { path: 'question', select: 'language' },
+          { path: 'context', select: 'department' },
+        ])
         .lean()
       : [];
     const feedbackById = new Map(
@@ -689,10 +814,11 @@ class EmbeddingMetadataService {
       .select('_id chatId pageLanguage interactions')
       .populate({
         path: 'interactions',
-        select: '_id interactionId expertFeedback question',
+        select: '_id interactionId expertFeedback question context',
         populate: [
           { path: 'expertFeedback', select: 'totalScore type neverStale createdAt' },
           { path: 'question', select: 'language' },
+          { path: 'context', select: 'department' },
         ],
       })
       .lean();
@@ -702,7 +828,7 @@ class EmbeddingMetadataService {
     const interactionIds = interactions.map((interaction) => interaction._id).filter(Boolean);
     const embeddings = interactionIds.length
       ? await Embedding.find({ interactionId: { $in: interactionIds } })
-        .select('_id interactionId expertFeedbackId expertFeedbackTotalScore expertFeedbackCreatedAt expertFeedbackNeverStale pageLanguage interactionLanguage')
+        .select('_id interactionId expertFeedbackId expertFeedbackTotalScore expertFeedbackCreatedAt expertFeedbackNeverStale pageLanguage interactionLanguage department')
         .sort({ interactionId: 1, _id: 1 })
         .lean()
       : [];
@@ -733,6 +859,7 @@ class EmbeddingMetadataService {
         attachedExpertFeedbackType: normalizeFeedbackType(attachedFeedback),
         attachedExpertFeedbackTotalScore: typeof attachedFeedback?.totalScore === 'number' ? attachedFeedback.totalScore : null,
         attachedExpertFeedbackNeverStale: attachedFeedback?.neverStale === true,
+        contextDepartment: normalizeMatchDepartment(interaction.context?.department) || null,
       };
 
       if (!matchingEmbeddings.length) {
@@ -746,6 +873,7 @@ class EmbeddingMetadataService {
           metadataExpertFeedbackNeverStale: null,
           metadataPageLanguage: null,
           metadataInteractionLanguage: null,
+          metadataDepartment: null,
           metadataStatus: 'missingEmbedding',
         }];
       }
@@ -759,6 +887,9 @@ class EmbeddingMetadataService {
           metadataStatus = 'missingMetadata';
         } else if (attachedFeedbackId && metadataFeedbackId && attachedFeedbackId !== metadataFeedbackId) {
           metadataStatus = 'staleFeedbackId';
+        } else if (attachedFeedbackId && embedding.department == null) {
+          // Same rule as MISSING_METADATA_FILTER: synced before `department` existed.
+          metadataStatus = 'missingMetadata';
         }
 
         return {
@@ -773,6 +904,7 @@ class EmbeddingMetadataService {
           metadataExpertFeedbackNeverStale: embedding.expertFeedbackNeverStale === true,
           metadataPageLanguage: embedding.pageLanguage || null,
           metadataInteractionLanguage: embedding.interactionLanguage || null,
+          metadataDepartment: embedding.department || null,
           metadataStatus,
         };
       });

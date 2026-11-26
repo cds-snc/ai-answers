@@ -5,7 +5,9 @@ import React from 'react';
 // further down the page. Renders as a real <a> instead of a <div> so the
 // entire card is one keyboard-focusable, clickable target, not just a small
 // link inside `sub`.
-const StatCard = ({ label, value, sub, valueColour, className, href = null }) => {
+// `footnote` (optional): a small caption line under `sub`, e.g. the text an
+// "*" on `value` points to.
+const StatCard = ({ label, value, sub, footnote, valueColour, className, href = null }) => {
   const Tag = href ? 'a' : 'div';
   return (
     <Tag
@@ -15,6 +17,7 @@ const StatCard = ({ label, value, sub, valueColour, className, href = null }) =>
       <h3 className="stat-card__label">{label}</h3>
       <p className={`stat-card__value${valueColour ? ` stat-card__value--${valueColour}` : ''}`}>{value}</p>
       {sub && <p className="stat-card__sub font-size-text-xsm-nr">{sub}</p>}
+      {footnote && <p className="stat-card__footnote font-size-text-xxs-nr">{footnote}</p>}
     </Tag>
   );
 };

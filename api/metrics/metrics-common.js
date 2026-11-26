@@ -304,6 +304,29 @@ export function addAutoEvalLookup(pipeline) {
 }
 
 /**
+ * Interactions lookup + unwind for the dashboard chat lists, plus
+ * `questionNumber` (1-based position of the interaction in its chat). Same
+ * approach as chat-dashboard.js: keep the raw id array, since $lookup's
+ * output order isn't the array's order. The lists show it so links that
+ * share a chat ID can be told apart (WCAG 2.4.4).
+ */
+export function questionNumberLookupStages() {
+    return [
+        { $addFields: { interactionIds: '$interactions' } },
+        {
+            $lookup: {
+                from: 'interactions',
+                localField: 'interactionIds',
+                foreignField: '_id',
+                as: 'interactions'
+            }
+        },
+        { $unwind: '$interactions' },
+        { $addFields: { questionNumber: { $add: [{ $indexOfArray: ['$interactionIds', '$interactions._id'] }, 1] } } },
+    ];
+}
+
+/**
  * Shared prefix for the expert-feedback-flagged-chat list pipelines
  * (metrics-content-issue-chats.js, metrics-harmful-chats.js): Chat →
  * interactions → optional department filter → expertFeedback lookup,
@@ -321,15 +344,7 @@ export function addAutoEvalLookup(pipeline) {
 export function buildFlaggedChatsBasePipeline(dateFilter, extraFilters = [], departmentFilter = []) {
     const stages = [
         { $match: dateFilter },
-        {
-            $lookup: {
-                from: 'interactions',
-                localField: 'interactions',
-                foreignField: '_id',
-                as: 'interactions'
-            }
-        },
-        { $unwind: '$interactions' },
+        ...questionNumberLookupStages(),
         ...(extraFilters.length > 0 ? [{ $match: { $and: extraFilters } }] : []),
     ];
 

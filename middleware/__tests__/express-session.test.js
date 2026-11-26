@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import createSessionMiddleware from '../express-session.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import createSessionMiddleware, { resolveSessionSecret } from '../express-session.js';
 
 const {
   mockSessionFactory,
@@ -110,5 +110,61 @@ describe('express-session middleware', () => {
 
     expect(authReq.session.cookie.maxAge).toBe(1 * 60 * 1000);
     expect(authNext).toHaveBeenCalledTimes(1);
+  });
+});
+
+// AIA-004: a missing session secret must fail closed in a deployed environment.
+describe('resolveSessionSecret', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    delete process.env.SESSION_SECRET;
+    mockGetSetting.mockImplementation(() => undefined);
+  });
+
+  // Tests here switch NODE_ENV to production; never let that leak into later suites.
+  afterEach(() => {
+    process.env.NODE_ENV = 'test';
+    delete process.env.SESSION_SECRET;
+  });
+
+  it('prefers SESSION_SECRET from the environment over the database setting', () => {
+    process.env.NODE_ENV = 'production';
+    process.env.SESSION_SECRET = 'from-env';
+    mockGetSetting.mockImplementation((key) => (key === 'session.secret' ? 'from-setting' : undefined));
+    expect(resolveSessionSecret()).toBe('from-env');
+  });
+
+  it('falls back to the session.secret setting when the environment has none', () => {
+    process.env.NODE_ENV = 'production';
+    mockGetSetting.mockImplementation((key) => (key === 'session.secret' ? 'from-setting' : undefined));
+    expect(resolveSessionSecret()).toBe('from-setting');
+  });
+
+  it('uses SESSION_SECRET from the environment', () => {
+    process.env.NODE_ENV = 'production';
+    process.env.SESSION_SECRET = 'from-env';
+    expect(resolveSessionSecret()).toBe('from-env');
+  });
+
+  it('throws in production when no secret is set', () => {
+    process.env.NODE_ENV = 'production';
+    expect(() => resolveSessionSecret()).toThrow(/SESSION_SECRET is not set/);
+  });
+
+  it('throws when NODE_ENV is unset, because that counts as deployed', () => {
+    delete process.env.NODE_ENV;
+    expect(() => resolveSessionSecret()).toThrow(/SESSION_SECRET is not set/);
+  });
+
+  it('uses a random secret that lasts for the process in test and development', () => {
+    process.env.NODE_ENV = 'test';
+    const first = resolveSessionSecret();
+    process.env.NODE_ENV = 'development';
+    const second = resolveSessionSecret();
+    process.env.NODE_ENV = 'test';
+
+    expect(first).toMatch(/^[0-9a-f]{64}$/);
+    expect(second).toBe(first);
+    expect(first).not.toBe('change-me-session-secret');
   });
 });

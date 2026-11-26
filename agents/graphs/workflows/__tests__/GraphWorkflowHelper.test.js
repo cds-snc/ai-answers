@@ -196,17 +196,94 @@ describe('GraphWorkflowHelper', () => {
             expect(sentMessage()).toContain('<output-lang>eng</output-lang>');
         });
 
-        it('sends <final-turn> once the user reaches the last allowed turn', async () => {
-            // maxTurns is 3, and currentTurn counts this question on top of the history
-            await sendWith({ conversationHistory: [{}, {}] });
+        // The client sends its whole messages array: a user message then an AI
+        // message per completed turn (ChatAppContainer.js).
+        const turnsOfHistory = (n) => Array.from({ length: n }, (_v, i) => [
+            { sender: 'user', text: `q${i + 1}` },
+            { sender: 'ai', interaction: { answer: { content: `a${i + 1}` } } },
+        ]).flat();
+
+        it('sends <final-turn> on the last allowed turn', async () => {
+            // turn 3 of 3: two completed turns in the history
+            await sendWith({ conversationHistory: turnsOfHistory(2) });
 
             expect(sentMessage()).toContain('<final-turn>true</final-turn>');
         });
 
-        it('does not send <final-turn> on earlier turns', async () => {
-            await sendWith({ conversationHistory: [] });
+        it.each([
+            ['turn 1', 0],
+            ['turn 2', 1],
+        ])('does not send <final-turn> on %s of 3', async (_label, completedTurns) => {
+            await sendWith({ conversationHistory: turnsOfHistory(completedTurns) });
 
             expect(sentMessage()).not.toContain('<final-turn>');
+        });
+    });
+
+    // AIA-007: verifyCitation runs the real validator here (not mocked), so
+    // this covers the whole gate, including the helper never echoing a
+    // rejected citationUrl back as `url`.
+    describe('verifyCitation', () => {
+        it('keeps a Government of Canada citation', async () => {
+            const citationUrl = 'https://inspection.canada.ca/en/animal-health';
+            const result = await helper.verifyCitation({ citationUrl, lang: 'en', question: 'q' });
+            expect(result).toEqual({ url: citationUrl, fallbackUrl: null });
+        });
+
+        it('replaces a non-government citation with the search fallback', async () => {
+            const result = await helper.verifyCitation({
+                citationUrl: 'https://attacker.example/phish',
+                lang: 'en',
+                question: 'feed licence',
+            });
+            expect(result.url).toBeNull();
+            expect(result.fallbackUrl).toContain('https://www.canada.ca/en/sr/srb.html?q=feed%20licence');
+        });
+
+        it('fails closed to the search fallback when the validator throws', async () => {
+            const result = await helper.verifyCitation({
+                citationUrl: 'https://attacker.example/phish',
+                lang: 'fr',
+                question: 'impôts',
+                translationF: () => { throw new Error('boom'); },
+            });
+            expect(result.url).toBeNull();
+            expect(result.fallbackUrl).toContain('https://www.canada.ca/fr/sr/srb.html?q=imp%C3%B4ts');
+        });
+    });
+
+    // A reused answer skips verifyNode, so the stored citation is re-checked
+    // when the short-circuit payload is built.
+    describe('buildShortCircuitPayload citation', () => {
+        const build = (similarShortCircuit) => helper.buildShortCircuitPayload({
+            similarShortCircuit,
+            startTime: 0,
+            endTime: 1,
+            userMessage: 'feed licence',
+            lang: 'en',
+            chatId: 'c1',
+        });
+
+        it('keeps a stored Government of Canada citation', () => {
+            const url = 'https://inspection.canada.ca/en/animal-health';
+            const payload = build({ answer: { content: 'a' }, sourceCitation: { providedCitationUrl: url } });
+            expect(payload.finalCitationUrl).toBe(url);
+        });
+
+        it('replaces a stored non-government citation with the search fallback', () => {
+            const payload = build({ answer: { content: 'a' }, sourceCitation: { providedCitationUrl: 'https://attacker.example/phish' } });
+            expect(payload.finalCitationUrl).toContain('https://www.canada.ca/en/sr/srb.html?q=feed%20licence');
+        });
+
+        // similarShortCircuit.citationUrl falls back to the raw model aiCitationUrl.
+        it('gates the raw aiCitationUrl fallback too', () => {
+            const payload = build({ answer: { content: 'a' }, citationUrl: 'https://attacker.example/phish' });
+            expect(payload.finalCitationUrl).toContain('https://www.canada.ca/en/sr/srb.html');
+        });
+
+        it('leaves no citation when none was stored', () => {
+            const payload = build({ answer: { content: 'a' } });
+            expect(payload.finalCitationUrl).toBeNull();
         });
     });
 });

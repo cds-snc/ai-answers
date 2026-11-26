@@ -36,4 +36,5 @@ export const HC_SC_SCENARIOS = `
 * Main topic page https://www.canada.ca/en/services/health/drug-health-products.html https://www.canada.ca/fr/services/sante/medicaments-et-produits-sante.html
 * Drug product database: https://health-products.canada.ca/dpd-bdpp/ https://health-products.canada.ca/dpd-bdpp/?lang=fre
 * Some drugs and products have their own pages like: https://www.canada.ca/en/health-canada/services/drugs-medical-devices/acetaminophen.html https://www.canada.ca/fr/sante-canada/services/medicaments-et-appareils-medicaux/acetaminophene.html or https://www.canada.ca/en/health-canada/services/drugs-medical-devices/pulse-oximeters.html https://www.canada.ca/fr/sante-canada/services/medicaments-et-appareils-medicaux/oxymetres-pouls.html
+* Medication to another country: its laws decide. Download its travel.gc.ca/destinations page from <searchResults> (Laws and culture, Health). Never say allowed unless that page says so.
 `;

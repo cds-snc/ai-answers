@@ -3,6 +3,7 @@ import ServerLoggingService from '../../services/ServerLoggingService.js';
 import { logGraphEvent } from './GraphEventLogger.js';
 import { GraphWorkflowHelper } from './workflows/GraphWorkflowHelper.js';
 import { graphRequestContext } from './requestContext.js';
+import { createRedactNode, createTranslateNode } from './nodes/questionNodes.js';
 
 const WorkflowStatus = {
   MODERATING_QUESTION: 'moderatingQuestion',
@@ -38,22 +39,8 @@ graph.addNode('validate', async (state) => {
   logGraphEvent('info', 'node:validate output', state.chatId, {});
   return {};
 });
-graph.addNode('redact', async (state) => {
-  logGraphEvent('info', 'node:redact input', state.chatId, { lang: state.lang, selectedAI: state.selectedAI });
-  const { redactedText } = await workflow.processRedaction(state.userMessage, state.lang, state.chatId, state.selectedAI);
-  const out = { redactedText };
-  logGraphEvent('info', 'node:redact output', state.chatId, out);
-  return out;
-});
-graph.addNode('translate', async (state) => {
-  const translationContext = workflow.buildTranslationContext(state.conversationHistory);
-  logGraphEvent('info', 'node:translate input', state.chatId, { redactedText: state.redactedText, translationContext, selectedAI: state.selectedAI });
-  const translationData = await workflow.translateQuestion(state.redactedText, 'en', state.selectedAI, translationContext);
-  await workflow.postTranslateGuard(translationData, state.chatId, state.selectedAI);
-  const out = { translationData, status: WorkflowStatus.BUILDING_CONTEXT };
-  logGraphEvent('info', 'node:translate output', state.chatId, out);
-  return out;
-});
+graph.addNode('redact', createRedactNode(workflow));
+graph.addNode('translate', createTranslateNode(workflow, { status: WorkflowStatus.BUILDING_CONTEXT }));
 
 graph.addNode('shortCircuit', async (state) => {
   const cleanedHistory = (state.conversationHistory || []).filter(message => message && !message.error);
@@ -109,7 +96,6 @@ graph.addNode('shortCircuit', async (state) => {
     vectorMatches: payload.vectorMatches,
     nlpCandidates: payload.nlpCandidates,
     llmSelection: payload.llmSelection,
-    historySignature: payload.historySignature,
     payload,
   });
   return out;
@@ -144,7 +130,7 @@ graph.addNode('verifyNode', async (state) => {
     finalCitationUrl = citation.url || citation.fallbackUrl;
   }
   logGraphEvent('info', 'node:verify input', state.chatId, { answer, shortCircuit });
-  const out = { finalCitationUrl, result: { answer, context, question: state.userMessage, citationUrl: finalCitationUrl, historySignature: answer?.historySignature || null } };
+  const out = { finalCitationUrl, result: { answer, context, question: state.userMessage, citationUrl: finalCitationUrl } };
   logGraphEvent('info', 'node:verify output', state.chatId, { finalCitationUrl, shortCircuit });
   return out;
 });
@@ -171,5 +157,4 @@ graph.addEdge('translate', 'shortCircuit'); graph.addEdge('contextNode', 'answer
 graph.addEdge('verifyNode', 'persistNode'); graph.addEdge('persistNode', END);
 
 export const defaultWithLocalModelApp = graph.compile();
-export async function runDefaultWithLocalModel(input) { return defaultWithLocalModelApp.invoke(input); }
 export default defaultWithLocalModelApp;

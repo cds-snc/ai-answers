@@ -40,13 +40,27 @@ export const UNSUPPORTED_INDIGENOUS_ISO3 = new Set([
 // of this toggle and always on.
 const INDIGENOUS_LANGUAGE_BLOCKING_SETTING = 'guardrail.indigenousLanguageBlocking';
 
-export async function translateWithGuardrail(text, lang, selectedAI, translationContext = []) {
-  const resp = await translateService({ text, desiredLanguage: lang, selectedAI, translationContext });
+export async function translateWithGuardrail({ text, lang, selectedAI, translationContext = [], chatId }) {
+  // chatId is required by TranslationAgentService.translateQuestion (AIA-018).
+  const resp = await translateService({ text, desiredLanguage: lang, selectedAI, chatId, translationContext });
   if (resp && resp.blocked === true) {
-    await ServerLoggingService.info('translate blocked - graph workflow', null, { resp });
+    await ServerLoggingService.info('translate blocked - graph workflow', chatId, { resp });
     throw new RedactionError('Blocked content detected in translation', '#############', null, BLOCK_TYPE.AZURE_GUARDRAIL);
   }
   return resp;
+}
+
+// AIA-018: hard-blocked messages could not be safety- or PII-checked, so log
+// only metadata — never the original or translated text. The system card
+// promises blocked questions are never stored. detectedLanguage still shows
+// which languages are being turned away.
+function logHardBlock(message, chatId, sourceLang, blockType, translationData) {
+  return ServerLoggingService.info(message, chatId, {
+    detectedLanguage: sourceLang,
+    blockType,
+    originalLength: translationData?.originalText?.length ?? 0,
+    translatedLanguage: translationData?.translatedLanguage,
+  });
 }
 
 // Second-stage guardrail: re-run redaction word-lists + regex PII patterns on
@@ -55,22 +69,13 @@ export async function translateWithGuardrail(text, lang, selectedAI, translation
 export async function runPostTranslationGuardrail(translationData, chatId, selectedAI, originalLang) {
   const sourceLang = (translationData?.originalLanguage || originalLang || '').toLowerCase();
   if (sourceLang === 'zxx') {
-    await ServerLoggingService.info('postTranslateGuard zxx hard-block', chatId, {
-      originalText: translationData?.originalText,
-      translatedText: translationData?.translatedText,
-      translatedLanguage: translationData?.translatedLanguage,
-    });
+    await logHardBlock('postTranslateGuard zxx hard-block', chatId, sourceLang, BLOCK_TYPE.MANIPULATION, translationData);
     throw new RedactionError('Blocked encoded/obfuscated input after translation', '#############', null, BLOCK_TYPE.MANIPULATION);
   }
   // Undetermined source language: always hard-block — content in a language we
   // cannot identify can't be safety-checked.
   if (sourceLang === 'und') {
-    await ServerLoggingService.info('postTranslateGuard und hard-block (undetermined language)', chatId, {
-      detectedLanguage: sourceLang,
-      originalText: translationData?.originalText,
-      translatedText: translationData?.translatedText,
-      translatedLanguage: translationData?.translatedLanguage,
-    });
+    await logHardBlock('postTranslateGuard und hard-block (undetermined language)', chatId, sourceLang, BLOCK_TYPE.UNSUPPORTED_LANGUAGE, translationData);
     throw new RedactionError('Blocked unsupported language after translation', '#############', null, BLOCK_TYPE.UNSUPPORTED_LANGUAGE);
   }
 
@@ -81,12 +86,7 @@ export async function runPostTranslationGuardrail(translationData, chatId, selec
     true
   );
   if (indigenousBlockingEnabled && UNSUPPORTED_INDIGENOUS_ISO3.has(sourceLang)) {
-    await ServerLoggingService.info('postTranslateGuard indigenous-language hard-block (unsupported language)', chatId, {
-      detectedLanguage: sourceLang,
-      originalText: translationData?.originalText,
-      translatedText: translationData?.translatedText,
-      translatedLanguage: translationData?.translatedLanguage,
-    });
+    await logHardBlock('postTranslateGuard indigenous-language hard-block (unsupported language)', chatId, sourceLang, BLOCK_TYPE.UNSUPPORTED_LANGUAGE, translationData);
     throw new RedactionError('Blocked unsupported language after translation', '#############', null, BLOCK_TYPE.UNSUPPORTED_LANGUAGE);
   }
 

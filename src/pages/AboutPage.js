@@ -151,6 +151,7 @@ const AboutPage = ({ lang = 'en' }) => {
     accessibility: lang === 'fr' ? 'accessibilit-et-convivialit' : 'accessibility-and-usability',
     privacy: lang === 'fr' ? 'confidentialit-et-conditions-dutilisation-de-lia' : 'privacy-and-ai-terms-of-use',
     blogPosts: lang === 'fr' ? 'billets-de-blogue-portant-sur-rponses-ia' : 'ai-answers-blog-posts',
+    systemCard: lang === 'fr' ? 'documentation-de-la-fiche-systme' : 'system-card-documentation',
     contact: lang === 'fr' ? 'contactez-nous' : 'contact-us',
   };
 
@@ -219,6 +220,21 @@ const AboutPage = ({ lang = 'en' }) => {
           }}
         >
           {sections[sectionKeys.blogPosts].content}
+        </ReactMarkdown>
+      </section>
+    )}
+
+    {/* System Card Section */}
+    {sections[sectionKeys.systemCard] && (
+      <section className="mb-400">
+        <h2 className="mb-300">{sections[sectionKeys.systemCard].heading}</h2>
+        <ReactMarkdown
+          components={{
+            p: ({ children }) => <p>{children}</p>,
+            a: ({ href, children }) => <a href={href}>{children}</a>,
+          }}
+        >
+          {sections[sectionKeys.systemCard].content}
         </ReactMarkdown>
       </section>
     )}

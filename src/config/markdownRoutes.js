@@ -12,6 +12,7 @@
 // register these routes, so it can't drift from what's actually registered.
 import { getPath } from '../utils/routes.js';
 import { HOW_TOS, HOW_TO_CONTENT_DIR } from './howTos.js';
+import { SYSTEM_CARD_CONTENT_DIR, SYSTEM_CARD_FILES } from './systemCard.js';
 import { normalizePathname } from '../utils/normalizePathname.js';
 
 // Matches the default `contentDir` AboutPage.js passes to
@@ -21,6 +22,14 @@ const ABOUT_CONTENT_DIR = '/content';
 export const MARKDOWN_ROUTES = {
   [getPath('about', 'en')]: { dir: ABOUT_CONTENT_DIR, file: 'about-en.md' },
   [getPath('about', 'fr')]: { dir: ABOUT_CONTENT_DIR, file: 'about-fr.md' },
+  // Generated at build time from SYSTEM_CARD*.md (see systemCard.js), so it
+  // exists under build/, not public/.
+  ...Object.fromEntries(
+    ['en', 'fr'].map((lang) => [
+      getPath('system-card', lang),
+      { dir: SYSTEM_CARD_CONTENT_DIR, file: SYSTEM_CARD_FILES[lang].file },
+    ])
+  ),
   ...Object.fromEntries(
     HOW_TOS.flatMap((howTo) =>
       ['en', 'fr'].map((lang) => [

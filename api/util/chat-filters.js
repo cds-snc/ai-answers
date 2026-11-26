@@ -132,6 +132,12 @@ export function getFeedbackDataProjection(docsField, { includeContentIssue = fal
 // (categorizeExpertFeedback above is the older categorizer with different
 // edge-case semantics — a scored row without totalScore 100 falls back to
 // 'correct' there, but stays null here and in the aggregation.)
+// Every field deriveExpertFeedbackCategory reads, for callers that fetch
+// only these (a find() projection). Add to it when the function reads more.
+export const EXPERT_FEEDBACK_CATEGORY_FIELDS = [1, 2, 3, 4]
+  .flatMap((n) => [`sentence${n}Score`, `sentence${n}Harmful`])
+  .concat(['citationScore', 'totalScore']);
+
 export function deriveExpertFeedbackCategory(ef) {
   if (!ef) return null;
   const sentenceScores = [1, 2, 3, 4].map((n) => ef[`sentence${n}Score`]);
@@ -251,6 +257,22 @@ export function getHasCitationErrorAggregationExpression(feedbackPath = '$intera
           in: { $in: ['$$ef.citationScore', [0, 20]] }
         }
       }
+    }
+  };
+}
+
+// Eval-informed answering: the graph persists the expert-rated examples it
+// injected into the answer prompt on the context (context.qaMatches), so a
+// non-empty array is the flag. No separate field is stored. Used by the Eval
+// dashboard's "Informed" column and the partner dashboard's eval-informed
+// count/list. `qaMatchesExpr` resolves to the qaMatches array.
+export function getEvalInformedAggregationExpression(qaMatchesExpr) {
+  return {
+    $let: {
+      vars: { qa: qaMatchesExpr },
+      // $isArray guard: $size throws on a non-array and would fail the
+      // whole aggregation for one malformed document.
+      in: { $gt: [{ $size: { $cond: [{ $isArray: '$$qa' }, '$$qa', []] } }, 0] }
     }
   };
 }

@@ -74,6 +74,18 @@ const VectorService = {
     return await response.json();
   },
 
+  async getDuplicateEmbeddings() {
+    const response = await AuthService.fetch(getApiUrl('vector-duplicate-embeddings'));
+    if (!response.ok) throw new Error('Failed to count duplicate embeddings');
+    return await response.json();
+  },
+
+  async removeDuplicateEmbeddings() {
+    const response = await AuthService.fetch(getApiUrl('vector-remove-duplicate-embeddings'), { method: 'POST' });
+    if (!response.ok) throw new Error('Failed to remove duplicate embeddings');
+    return await response.json();
+  },
+
   async clearMetadata() {
     const response = await AuthService.fetch(getApiUrl('vector-metadata-clear'), { method: 'POST' });
     if (!response.ok) throw new Error('Failed to clear embedding metadata');

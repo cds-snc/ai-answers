@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 // Centralizes the success/system-error message pair shared across the
-// sign-in/account pages (RegisterPage, ResetRequestPage, ResetCompletePage)
+// sign-in/account pages (RegisterPage, ResetRequestPage)
 // — success is a completed action outcome (StatusMessage variant="success"),
 // systemError is an outcome the user can't fix by editing a field
 // (StatusMessage variant="error"). Field-tied errors stay on the separate

@@ -2,6 +2,7 @@ export const ROUTE_SLUGS = {
   // Public
   signin:                  { en: 'signin',                       fr: 'se-connecter' },
   about:                   { en: 'about',                        fr: 'a-propos' },
+  'system-card':           { en: 'system-card',                  fr: 'fiche-systeme' },
   register:                { en: 'register',                     fr: 's-inscrire' },
   logout:                  { en: 'logout',                       fr: 'deconnexion' },
   'reset-request':         { en: 'reset-request',                fr: 'reinitialisation' },
@@ -20,6 +21,7 @@ export const ROUTE_SLUGS = {
   metrics:                 { en: 'metrics',                      fr: 'metriques' },
   'public-dashboard':      { en: 'public-dashboard',             fr: 'tableau-de-bord-public' },
   'partner-dashboard':     { en: 'partner-dashboard',            fr: 'tableau-de-bord-partenaire' },
+  'ai-analysis':           { en: 'ai-analysis',                  fr: 'analyse-assistee-par-ia' },
   'technical-metrics':     { en: 'technical-metrics',            fr: 'metriques-techniques' },
   sessions:                { en: 'sessions',                     fr: 'sessions' },
   'scenario-overrides':    { en: 'scenario-overrides',           fr: 'derogation-scenarios' },

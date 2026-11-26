@@ -319,7 +319,24 @@ describe('ExperimentalDatasetService', () => {
             expect(rows).toHaveLength(1);
             expect(rows[0].data).toHaveProperty('question', 'What is SCIS?');
             expect(rows[0].data).toHaveProperty('chatId', '1234');
-            expect(rows[0].data).toHaveProperty('referringUrl', 'https://www.sac-isc.gc.ca');
+            // Normalized on upload (AIA-006) — the URL parser adds the root slash.
+            expect(rows[0].data).toHaveProperty('referringUrl', 'https://www.sac-isc.gc.ca/');
+        });
+
+        it('should normalize every referring-URL column, not just the first alias (AIA-006)', async () => {
+            const buffer = await createCsvBuffer([
+                'question,referringUrl,URL',
+                'Q1,https://www.canada.ca/en/a.html?q=046454286,https://www.canada.ca/en/b.html#/case/046454286'
+            ].join('\n'));
+
+            const result = await ExperimentalDatasetService.createFromUpload(
+                buffer, 'text/csv', { name: 'Two URL columns', type: 'question-only' }, userId, 'two-urls.csv'
+            );
+
+            const [row] = await ExperimentalDatasetRow.find({ experimentalDataset: result.dataset._id }).lean();
+            expect(row.data.referringUrl).toBe('https://www.canada.ca/en/a.html');
+            expect(row.data.URL).toBe('https://www.canada.ca/en/b.html');
+            expect(JSON.stringify(row.data)).not.toContain('046454286');
         });
 
         it('should discard answer columns for question-only uploads', async () => {
@@ -606,6 +623,32 @@ describe('ExperimentalDatasetService', () => {
             expect(result.csvText).not.toContain('redactedAnswer');
             expect(result.csvText).toContain('chat-1,First question?,First answer');
             expect(result.csvText).toContain('chat-2,Second question?,');
+        });
+
+        it('should store the original text when an exported dataset CSV is uploaded again', async () => {
+            const question = '=HYPERLINK("http://evil.example")';
+            const answer = '- Apply online';
+            const ds = await ExperimentalDataset.create({ name: 'Round Trip Dataset', type: 'qa-pair' });
+            await ExperimentalDatasetRow.create({
+                experimentalDataset: ds._id,
+                rowIndex: 1,
+                data: { chatId: 'chat-1', question, answer }
+            });
+
+            const exported = await ExperimentalDatasetService.exportDataset(ds._id);
+            const result = await ExperimentalDatasetService.createFromUpload(
+                Buffer.from(exported.csvText, 'utf8'),
+                'text/csv',
+                { name: 'Reimported Dataset', type: 'qa-pair' },
+                userId,
+                'reimported.csv'
+            );
+
+            const rows = await ExperimentalDatasetRow.find({ experimentalDataset: result.dataset._id });
+            expect(rows).toHaveLength(1);
+            expect(rows[0].data.question).toBe(question);
+            expect(rows[0].data.answer).toBe(answer);
+            expect(rows[0].data.chatId).toBe('chat-1');
         });
 
         it('should return null for a missing dataset', async () => {

@@ -1,13 +1,13 @@
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import fs from 'fs';
+import { corsMiddleware } from './corsPolicy.js';
 import { renderIndexHtml } from './renderIndexHtml.js';
 import { normalizePathname } from '../src/utils/normalizePathname.js';
 
 
 import similarChatsHandler from '../api/vector/vector-similar-chats.js';
 import express from 'express';
-import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -16,6 +16,7 @@ import dotenv from 'dotenv';
 import dbChatLogsHandler from '../api/db/db-chat-logs.js';
 
 import dbBatchListHandler from '../api/batch/batch-list.js';
+import dbBatchListFiltersHandler from '../api/batch/batch-list-filters.js';
 import dbBatchRetrieveHandler from '../api/batch/batch-retrieve.js';
 import dbBatchPersistHandler from '../api/batch/batch-persist.js';
 import dbBatchItemsUpsertHandler from '../api/batch/batch-items-upsert.js';
@@ -84,9 +85,7 @@ import evalGetHandler from '../api/eval/eval-get.js';
 import evalDeleteHandler from '../api/eval/eval-delete.js';
 import evalRunHandler from '../api/eval/eval-run.js';
 import evalDashboardHandler from '../api/eval/eval-dashboard.js';
-import evalAnalysisPrecheckHandler from '../api/eval/eval-analysis-precheck.js';
 import evalAnalysisRunHandler from '../api/eval/eval-analysis-run.js';
-import evalAnalysisAdvanceHandler from '../api/eval/eval-analysis-advance.js';
 import evalAnalysisGetHandler from '../api/eval/eval-analysis-get.js';
 import evalAnalysisListHandler from '../api/eval/eval-analysis-list.js';
 import dbChatHandler from '../api/db/db-chat.js';
@@ -105,13 +104,17 @@ import blockedMetricsHandler from '../api/metrics/metrics-blocked.js';
 import referralMetricsHandler from '../api/metrics/metrics-referrals.js';
 import citationMetricsHandler from '../api/metrics/metrics-citations.js';
 import programMetricsHandler from '../api/metrics/metrics-programs.js';
+import evalCoverageMetricsHandler from '../api/metrics/metrics-eval-coverage.js';
+import evalReuseMetricsHandler from '../api/metrics/metrics-eval-reuse.js';
 import contentIssueChatsMetricsHandler from '../api/metrics/metrics-content-issue-chats.js';
+import evalInformedChatsMetricsHandler from '../api/metrics/metrics-eval-informed-chats.js';
 import harmfulChatsMetricsHandler from '../api/metrics/metrics-harmful-chats.js';
 import dbTableCountsHandler from '../api/db/db-table-counts.js';
 import dbRepairTimestampsHandler from '../api/db/db-repair-timestamps.js';
 import dbRepairExpertFeedbackHandler from '../api/db/db-repair-expert-feedback.js';
 import dbRepairQaMatchScoresHandler from '../api/db/db-repair-qa-match-scores.js';
 import dbMigratePublicFeedbackHandler from '../api/db/db-migrate-public-feedback.js';
+import dbRemoveRetiredFieldsHandler from '../api/db/db-remove-retired-fields.js';
 import chatDashboardHandler from '../api/chat/chat-dashboard.js';
 import chatAssignInteractionHandler from '../api/chat/chat-assign-interaction.js';
 import chatExportLogsHandler from '../api/chat/chat-export-logs.js';
@@ -121,6 +124,8 @@ import vectorReinitializeHandler from '../api/vector/vector-reinitialize.js';
 import vectorBackfillMetadataHandler from '../api/vector/vector-backfill-metadata.js';
 import vectorMetadataLookupHandler from '../api/vector/vector-metadata-lookup.js';
 import vectorMetadataStatusHandler from '../api/vector/vector-metadata-status.js';
+import vectorDuplicateEmbeddingsHandler from '../api/vector/vector-duplicate-embeddings.js';
+import vectorRemoveDuplicateEmbeddingsHandler from '../api/vector/vector-remove-duplicate-embeddings.js';
 import vectorMetadataClearHandler from '../api/vector/vector-metadata-clear.js';
 import vectorMetadataBackfillJobHandler from '../api/vector/vector-metadata-backfill-job.js';
 import { rateLimiterMiddleware, initializeRateLimiter } from '../middleware/rate-limiter.js';
@@ -130,12 +135,13 @@ import dbBatchStatsHandler from '../api/batch/batch-stats.js';
 import dbCheckhandler from '../api/db/db-check.js';
 import scenarioOverrideHandler from '../api/scenario/scenario-overrides.js';
 import connectivityHandler from '../api/util/util-connectivity.js';
-import createSessionMiddleware from '../middleware/express-session.js';
+import createSessionMiddleware, { resolveSessionSecret } from '../middleware/express-session.js';
 import botIsBot from '../middleware/bot-isbot.js';
 import botDetector from '../middleware/bot-detector.js';
 import botFingerprintPresence from '../middleware/bot-fingerprint-presence.js';
 import passport from '../config/passport.js';
 import systemHealthMonitor from '../services/SystemHealthMonitor.js';
+import ConversationIntegrityService from '../services/ConversationIntegrityService.js';
 
 
 
@@ -143,6 +149,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
+
+// Refuse to start without the conversation-integrity secret (AIA-019).
+ConversationIntegrityService.assertConfigured();
 
 const app = express();
 
@@ -222,10 +231,8 @@ const isRegisteredApiRoute = (method, pathName) => {
   });
 };
 
-app.use(cors({
-  origin: true,
-  credentials: true
-}));
+// Credentialed CORS only for this app's own hosts. See corsPolicy.js (AIA-022).
+app.use(corsMiddleware);
 
 // Reject unknown API routes before body parsing, sessions, Passport, and API middleware.
 app.use('/api', (req, res, next) => {
@@ -329,6 +336,8 @@ app.post('/api/vector/vector-backfill-metadata', vectorBackfillMetadataHandler);
 app.post('/api/vector/vector-metadata-clear', vectorMetadataClearHandler);
 app.get('/api/vector/vector-metadata-lookup', vectorMetadataLookupHandler);
 app.get('/api/vector/vector-metadata-status', vectorMetadataStatusHandler);
+app.get('/api/vector/vector-duplicate-embeddings', vectorDuplicateEmbeddingsHandler);
+app.post('/api/vector/vector-remove-duplicate-embeddings', vectorRemoveDuplicateEmbeddingsHandler);
 app.get('/api/vector/vector-metadata-backfill-job', vectorMetadataBackfillJobHandler);
 app.post('/api/vector/vector-metadata-backfill-job', vectorMetadataBackfillJobHandler);
 app.delete('/api/vector/vector-metadata-backfill-job', vectorMetadataBackfillJobHandler);
@@ -339,9 +348,7 @@ app.post('/api/eval/eval-get', evalGetHandler);
 app.post('/api/eval/eval-delete', evalDeleteHandler);
 app.post('/api/eval/eval-run', evalRunHandler);
 app.get('/api/eval/eval-dashboard', evalDashboardHandler);
-app.get('/api/eval/eval-analysis-precheck', evalAnalysisPrecheckHandler);
 app.post('/api/eval/eval-analysis-run', evalAnalysisRunHandler);
-app.post('/api/eval/eval-analysis-advance', evalAnalysisAdvanceHandler);
 app.get('/api/eval/eval-analysis-get', evalAnalysisGetHandler);
 app.get('/api/eval/eval-analysis-list', evalAnalysisListHandler);
 app.get('/api/db/db-chat', dbChatHandler);
@@ -355,6 +362,7 @@ app.post('/api/feedback/feedback-expert-never-stale', feedbackExpertNeverStaleHa
 app.post('/api/feedback/feedback-update-expert', feedbackUpdateExpertHandler);
 app.get('/api/chat/chat-session-metrics', chatSessionMetricsHandler);
 app.get('/api/batch/batch-list', dbBatchListHandler);
+app.get('/api/batch/batch-list-filters', dbBatchListFiltersHandler);
 app.get('/api/batch/batch-retrieve', dbBatchRetrieveHandler);
 app.post('/api/batch/batch-persist', dbBatchPersistHandler);
 app.post('/api/batch/batch-items-upsert', dbBatchItemsUpsertHandler);
@@ -385,9 +393,10 @@ app.get('/api/experimental/experimental-instant-answer-dataset', experimentalIns
 app.post('/api/experimental/experimental-instant-answer-dataset', experimentalInstantAnswerDatasetHandler);
 app.delete('/api/experimental/experimental-dataset-delete/:id', experimentalDatasetDeleteHandler);
 app.post('/api/experimental/experimental-dataset-process/:id', experimentalDatasetProcessHandler);
-app.get('/api/db/db-check', dbCheckhandler);
-app.post('/api/db/db-log', dbLogHandler);
-app.get('/api/db/db-log', dbLogHandler);
+// Registered for every method. db-check.js returns 405 for anything other than GET.
+app.all('/api/db/db-check', dbCheckhandler);
+// Registered for every method. db-log.js returns 405 for anything other than GET.
+app.all('/api/db/db-log', dbLogHandler);
 app.get('/api/db/db-chat-logs', dbChatLogsHandler);
 app.post('/api/auth/auth-signup', signupHandler);
 app.post('/api/auth/auth-login', loginHandler);
@@ -431,7 +440,10 @@ app.get('/api/metrics/metrics-blocked', blockedMetricsHandler);
 app.get('/api/metrics/metrics-referrals', referralMetricsHandler);
 app.get('/api/metrics/metrics-citations', citationMetricsHandler);
 app.get('/api/metrics/metrics-programs', programMetricsHandler);
+app.get('/api/metrics/metrics-eval-coverage', evalCoverageMetricsHandler);
+app.get('/api/metrics/metrics-eval-reuse', evalReuseMetricsHandler);
 app.get('/api/metrics/metrics-content-issue-chats', contentIssueChatsMetricsHandler);
+app.get('/api/metrics/metrics-eval-informed-chats', evalInformedChatsMetricsHandler);
 app.get('/api/metrics/metrics-harmful-chats', harmfulChatsMetricsHandler);
 app.get('/api/db/db-eval-non-empty-count', dbEvalNonEmptyCountHandler);
 app.get('/api/db/db-table-counts', dbTableCountsHandler);
@@ -439,6 +451,7 @@ app.post('/api/db/db-repair-timestamps', dbRepairTimestampsHandler);
 app.post('/api/db/db-repair-expert-feedback', dbRepairExpertFeedbackHandler);
 app.post('/api/db/db-repair-qa-match-scores', dbRepairQaMatchScoresHandler);
 app.post('/api/db/db-migrate-public-feedback', dbMigratePublicFeedbackHandler);
+app.all('/api/db/db-remove-retired-fields', dbRemoveRetiredFieldsHandler);
 
 app.post('/api/chat/chat-graph-run', chatGraphRunHandler);
 app.all('/api/scenario/scenario-overrides', scenarioOverrideHandler);
@@ -471,6 +484,10 @@ const PORT = process.env.PORT || 3001;
 
     await SettingsService.loadAll();
     console.log("Settings service started...");
+
+    // Refuse to start without a session secret (AIA-004). Runs after settings
+    // load because session.secret can come from the database.
+    resolveSessionSecret();
 
     systemHealthMonitor.start();
     console.log("System health monitor started...");

@@ -8,6 +8,7 @@ Read this before backend, pipeline, agent, or service work.
 |-----------|---------|
 | `agents/graphs/` | LangGraph state-machine workflows (nodes, edges, state) |
 | `agents/graphs/workflows/` | `GraphWorkflowHelper.js` — shared node implementations |
+| `agents/graphs/nodes/` | `questionNodes.js` — the `redact` and `translate` nodes every graph uses; keeps question text out of logs until `postTranslateGuard` passes (AIA-018) |
 | `agents/graphs/services/` | Graph-internal services (redaction, translation, answer/context helpers) |
 | `agents/graphs/guardrails/` | Query-blocking guardrails and shared block-type errors/constants |
 | `agents/prompts/` | System prompt assembly and base prompt text |
@@ -75,18 +76,20 @@ Model selection is decoupled from workflow — the `model.default` setting contr
 
 ### How department scenarios load
 
-**The context node must run first.** `contextSystemPrompt.js` (via `ContextAgentService`) uses the user's question, referring URL, and search results to match a department `abbrKey`. Only after this match does `systemPrompt.js` dynamically import the scenario:
+**The context node must run first.** `contextSystemPrompt.js` (via `ContextAgentService`) uses the user's question, referring URL, and search results to match a department `abbrKey`. Only after this match does `systemPrompt.js` look the scenario up in the static registry:
 
 ```js
-// In systemPrompt.js — dynamic import using the abbrKey returned by contextSystemPrompt
-const deptDashed = department.toLowerCase().replace(/\s+/g, '-');
-const mod = await import(`./scenarios/context-${deptDashed}/${deptDashed}-scenarios.js`);
+// In systemPrompt.js — alias → canonical key, then a case-insensitive registry lookup
+const loader = findScenarioLoader(resolveScenarioKey(String(department)));
+if (loader) content.scenarios = await loader();
 ```
+
+**Never build a module path from `department`.** It comes from LLM output and from client-held conversation context, so a template-literal `import()` is a path-traversal sink (AIA-017). Every scenario file is registered in `SCENARIO_LOADERS` (`agents/prompts/scenarios/scenario-loaders.js`), which the scenario override API also uses.
 
 - `scenarios-all.js` is always included (global rules for all departments)
 - `context-{abbrKey}/` folders provide department-specific overrides — one per partner department
 - If context matching returns no department → no department scenario is loaded
-- Falls back gracefully if a matched department has no scenario folder
+- An unregistered department (including any LLM/client junk) loads no department scenarios
 
 ## AI Model Config (`config/ai-models.js`)
 
@@ -130,7 +133,7 @@ The ones you'll touch most; `models/` holds more (audit, counters, logs, backfil
 | `PublicFeedback` | User ratings (thumbs up/down, feedback text) |
 | `Embedding` | Vector embeddings for Q+A pairs |
 | `Tool` | Tool invocations (downloadWebPage, checkUrl) per answer |
-| `User` | Auth user (admin/partner/expert roles) |
+| `User` | Auth user (`admin` / `partner` roles, institution, group) — see [admin-and-auth.md](admin-and-auth.md) |
 | `Batch` / `BatchItem` | Batch question processing |
 | `ScenarioOverride` | Admin-created custom scenario text per department |
 | `Setting` | App feature flags and settings |
@@ -143,7 +146,7 @@ Each file exports `async function handler(req, res)`. Organised by domain:
 
 | Subdirectory | Covers |
 |-------------|--------|
-| `api/auth/` | Login, signup, 2FA, reset, logout |
+| `api/auth/` | Login, signup, 2FA, reset, logout (see [admin-and-auth.md](admin-and-auth.md)) |
 | `api/chat/` | Graph run, init, persist, similar-answer, dashboard, export |
 | `api/data/` | Program/action seed data and loader |
 | `api/db/` | DB connect/check, migrations, embeddings, evals, logs |

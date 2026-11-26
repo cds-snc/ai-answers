@@ -9,8 +9,13 @@ import { Interaction } from '../../models/interaction.js';
 import { ExpertFeedback } from '../../models/expertFeedback.js';
 import { Chat } from '../../models/chat.js';
 import { normalizeObjectId } from '../../api/util/db-query.js';
-import { serializeCsvRows } from '../../src/utils/spreadsheets/csv.js';
-import { EXPLICIT_REFERENCE_ANSWER_ALIASES, hasReferenceAnswerColumn } from './datasetColumns.js';
+import { restoreSpreadsheetText, serializeCsvRows } from '../../src/utils/spreadsheets/csv.js';
+import {
+    EXPLICIT_REFERENCE_ANSWER_ALIASES,
+    REFERRING_URL_ALIASES,
+    hasReferenceAnswerColumn,
+    normalizeReferringUrlColumns
+} from './datasetColumns.js';
 import QuestionVariationService from './QuestionVariationService.js';
 import ExperimentalQueueService from './ExperimentalQueueService.js';
 
@@ -24,7 +29,6 @@ const escapeRegex = (input = '') => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 // QUESTION etc. all resolve.
 const QUESTION_ALIASES = ['question', 'redactedquestion', 'problemdetails', 'prompt'];
 const CHAT_ID_ALIASES = ['chatid'];
-const REFERRING_URL_ALIASES = ['referringurl', 'url'];
 
 // Chat exports sometimes prefix each question with a row/turn number (for
 // example, "12. What is SCIS?"). The number identifies the source row and is
@@ -591,7 +595,7 @@ class ExperimentalDatasetService {
                 .on('error', reject)
                 .on('data', (row) => {
                     if (!headers) {
-                        headers = row.map(header => this._sanitizeImportedKey(header));
+                        headers = row.map(header => this._sanitizeImportedKey(restoreSpreadsheetText(header)));
                         return;
                     }
 
@@ -602,7 +606,7 @@ class ExperimentalDatasetService {
                             continue;
                         }
 
-                        rawRow[header] = this._normalizeCellValue(row[i]);
+                        rawRow[header] = restoreSpreadsheetText(this._normalizeCellValue(row[i]));
                     }
                     rawRows.push(rawRow);
                 })
@@ -737,7 +741,7 @@ class ExperimentalDatasetService {
     }
 
     _normalizeUploadedRow(row, type) {
-        const normalized = { ...row };
+        const normalized = normalizeReferringUrlColumns(row);
         const questionKey = this._findColumnKey(normalized, QUESTION_ALIASES);
 
         if (questionKey && questionKey !== 'question') {

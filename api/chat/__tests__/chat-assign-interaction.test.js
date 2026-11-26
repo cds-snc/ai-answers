@@ -5,10 +5,11 @@ import { Interaction } from '../../../models/interaction.js';
 import mongoose from 'mongoose';
 import { User } from '../../../models/user.js';
 
-function createReq({ method = 'POST', body, user }) {
+function createReq({ method = 'POST', body, query = {}, user }) {
   return {
     method,
     body,
+    query,
     path: '/api/chat/chat-assign-interaction',
     user,
     isAuthenticated: () => true
@@ -37,9 +38,9 @@ async function runPost(body, user) {
   return res;
 }
 
-async function runDelete(body, user) {
+async function runDelete(query, user) {
   const res = createRes();
-  await handler(createReq({ method: 'DELETE', body, user }), res);
+  await handler(createReq({ method: 'DELETE', query, user }), res);
   return res;
 }
 
@@ -269,6 +270,25 @@ describe('chat-assign-interaction DELETE (unassign)', () => {
     expect(String(unchanged.assignedTo)).toBe(second._id.toString());
   });
 
+  it('409s rather than clearing a newer assignment to the same person', async () => {
+    await dbConnect();
+    const admin = await makeUser({ role: 'admin' });
+    const assignee = await makeUser();
+    const question = await Interaction.create({ assignedTo: assignee._id, assignedBy: admin._id, assignedOn: new Date(), assignedNotes: 'newer note' });
+
+    // The authorization read sees the earlier assignment. The chat has since
+    // been unassigned and reassigned to the same person.
+    vi.spyOn(Interaction, 'findOne').mockReturnValueOnce({ lean: async () => ({ assignedTo: assignee._id, assignedBy: admin._id, assignedOn: new Date(0) }) });
+
+    const res = await runDelete({ interactionId: question._id.toString() }, { role: 'admin', userId: admin._id.toString() });
+
+    expect(res.statusCode).toBe(409);
+    expect(res.payload.code).toBe('assignment_changed');
+    const unchanged = await Interaction.findById(question._id).lean();
+    expect(String(unchanged.assignedTo)).toBe(assignee._id.toString());
+    expect(unchanged.assignedNotes).toBe('newer note');
+  });
+
   it('lets the current assignee remove their own assignment', async () => {
     await dbConnect();
     const assignee = await makeUser();
@@ -341,5 +361,14 @@ describe('chat-assign-interaction DELETE (unassign)', () => {
     const res = await runDelete({ interactionId: new mongoose.Types.ObjectId().toString() }, { role: 'admin', userId: admin._id.toString() });
 
     expect(res.statusCode).toBe(404);
+  });
+
+  it('400s when the URL has no interactionId', async () => {
+    await dbConnect();
+    const admin = await makeUser({ role: 'admin' });
+
+    const res = await runDelete({}, { role: 'admin', userId: admin._id.toString() });
+
+    expect(res.statusCode).toBe(400);
   });
 });

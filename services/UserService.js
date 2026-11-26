@@ -1,6 +1,7 @@
 import dbConnect from '../api/db/db-connect.js';
 import { User } from '../models/user.js';
 import { requireObjectIdString } from '../api/util/db-query.js';
+import TrustedDeviceService from './TrustedDeviceService.js';
 import { PARTNER_DEPARTMENTS } from '../src/constants/partnerDepartments.js';
 import { PARTNER_GROUPS, QA_GROUP, groupFitsInstitution } from '../src/constants/partnerGroups.js';
 
@@ -103,6 +104,13 @@ function assertGroupFitsInstitution(current, updateFields) {
 
 const MEMBERSHIP_FIELDS = { institution: 1, group: 1, preferences: 1 };
 const PROFILE_FIELDS = { email: 1, role: 1, active: 1, ...MEMBERSHIP_FIELDS };
+
+// What the admin Users page shows, for listUsers and adminUpdateUser (the
+// page swaps the saved row for the PATCH response). An allowlist, not
+// '-password': the document also holds the reset token hash, 2FA codes and
+// lockout counters. No .lean(): hydrating fills schema defaults, so older
+// users without institution/group get ''.
+const ADMIN_USER_FIELDS = '_id email role active institution group createdAt';
 
 const toProfile = (user) => ({
   email: user.email,
@@ -227,7 +235,7 @@ class UserServiceClass {
 
   async listUsers() {
     await dbConnect();
-    return User.find({}, { password: 0 }).sort({ createdAt: -1 });
+    return User.find({}, ADMIN_USER_FIELDS).sort({ createdAt: -1 });
   }
 
   async adminUpdateUser(userId, { active, role, institution, group } = {}) {
@@ -249,15 +257,23 @@ class UserServiceClass {
 
     await dbConnect();
     userId = requireObjectIdString(userId, 'user ID');
-    if (updateFields.institution !== undefined || updateFields.group !== undefined) {
-      const current = await User.findById(userId, { institution: 1, group: 1 }).lean();
+    let current = null;
+    if (updateFields.institution !== undefined || updateFields.group !== undefined || updateFields.role !== undefined) {
+      current = await User.findById(userId, { role: 1, institution: 1, group: 1 }).lean();
       if (!current) throw fail(404, 'User not found');
       assertGroupFitsInstitution(current, updateFields);
+    }
+    // Deactivation or a role change: every remembered device needs a 2FA code
+    // again. The Users page sends role on every save, so compare it. Revoked
+    // before the write: if the write fails, the cost is one extra code, and a
+    // retry still revokes.
+    if (updateFields.active === false || (updateFields.role !== undefined && updateFields.role !== current.role)) {
+      await TrustedDeviceService.revokeAll(userId);
     }
     const user = await User.findByIdAndUpdate(
       userId,
       updateFields,
-      { new: true, select: '-password' }
+      { new: true, select: ADMIN_USER_FIELDS }
     );
     if (!user) throw fail(404, 'User not found');
     return user;
@@ -265,7 +281,10 @@ class UserServiceClass {
 
   async deleteUser(userId) {
     await dbConnect();
-    const user = await User.findByIdAndDelete(requireObjectIdString(userId, 'user ID'));
+    userId = requireObjectIdString(userId, 'user ID');
+    // Before the delete, as in adminUpdateUser.
+    await TrustedDeviceService.revokeAll(userId);
+    const user = await User.findByIdAndDelete(userId);
     if (!user) throw fail(404, 'User not found');
   }
 

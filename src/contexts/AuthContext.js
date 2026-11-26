@@ -244,23 +244,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const signup = async (email, password) => {
-    try {
-      setLoading(true);
-      const data = await AuthService.signup(email, password);
-      setSessionExpiredRedirecting(false);
-      setCurrentUser(data.user);
-      const expiry = syncSessionExpiry();
-      scheduleSessionExpiryState(expiry);
-      return data;
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // The user chose to sign out (Sign out link, /logout): also forget this
+  // browser's remembered device.
   const logout = () => {
     setLoading(true);
-    AuthService.logout();
+    AuthService.logout({ forgetDevice: true });
     redirectingRef.current = false;
     sessionCheckInFlightRef.current = false;
     setSessionExpiredRedirecting(false);
@@ -324,7 +312,6 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     refreshUser,
-    signup,
     logout,
     isAdmin,
     isPartner,

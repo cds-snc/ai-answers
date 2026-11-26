@@ -8,7 +8,8 @@ AI Answers uses a **LangGraph-based state machine architecture** to orchestrate 
 
 **Companion documents:** [SYSTEM_CARD.md](../../SYSTEM_CARD.md) and
 [SYSTEM_CARD_FR.md](../../SYSTEM_CARD_FR.md) carry the plain-language version of this
-pipeline for a general and governance audience. This document is the developer view (nodes,
+pipeline for a general and governance audience, and are also published in the app at
+`/en/system-card` and `/fr/fiche-systeme`. This document is the developer view (nodes,
 state, file references); the card is the reader-facing one. They are deliberately at
 different levels of detail, but a step added, removed, or moved out of the production graph
 here has to be reflected there — in both languages. See
@@ -166,7 +167,10 @@ The graph maintains state across all nodes with these key fields:
   cleanedHistory: array,         // Cleaned conversation history
   lang: string,                  // UI language (en/fr)
   department: string,            // Department code (if provided)
-  referringUrl: string,          // Page URL where question was asked
+  referringUrl: string,          // Page URL where question was asked. Normalized at entry
+                                 //   by api/util/referring-url.js (http(s) only, query
+                                 //   stripped, anchor kept only if section-like,
+                                 //   ≤500 chars) or '' (AIA-006)
   selectedAI: string,            // AI provider (openai, azure, anthropic)
   translationF: boolean,         // Translation function enabled
   searchProvider: string,        // Search provider (canadaCa, google)
@@ -175,8 +179,8 @@ The graph maintains state across all nodes with these key fields:
   translationData: object,       // Translation results
   context: object,               // Derived context (department, search results,
                                  //   similarQuestions block, qaMatches)
-  usedExistingContext: boolean,  // Whether context was reused (always false in the
-                                 //   production graph — see step 5d)
+  usedExistingContext: boolean,  // Whether context was reused (always false in
+                                 //   every graph — see step 5d)
   answer: object,                // Generated answer
   finalCitationUrl: string,      // Verified citation URL
   status: string,                // Current pipeline status (camelCase)
@@ -302,6 +306,45 @@ The same guardrail wrapper also maps translation-service blocks to `azureGuardra
 obfuscated `zxx` source language to `manipulation`, and unsupported `und` source
 language to `unsupportedLanguage`.
 
+The guardrail logs each hard block (`zxx`, `und`, unsupported Indigenous language) to
+the chat logs as metadata only: detected language, block type, original length and
+translated language. Its log never includes the text. These branches throw before the
+stage-2 PII check, so the text was never fully screened, and the system card promises
+blocked questions are never stored (AIA-018). The trade-off: the logs show which
+languages are blocked, but not enough to judge whether a block was a false positive.
+
+The same rule covers every log written before `postTranslateGuard` finishes, since any
+of those questions may still be blocked. Every graph builds its `redact` and `translate`
+nodes from the shared factories in `agents/graphs/nodes/questionNodes.js`, so the rule
+lives in one place and a new graph gets it without code of its own. The
+`node:redact output` and `node:translate input` events carry no question text, and the
+translation service's "coerced to no-op" log records languages only. Dropping the
+question text costs little for debugging: every stage-1 redaction blocks, so any
+question that gets past `redact` is unchanged, and it is saved with the interaction if
+it is answered.
+
+When the translation model rewrites a question in the same language (for example, it
+follows an instruction embedded in the question), the service discards the rewrite and
+passes the original on. The rewrite is deliberately never logged, not even after the
+guard passes: it is model output that no guardrail has checked, and it could turn
+spelled-out or obfuscated PII into a readable form. The cost is that there is no record
+of what the model produced when it followed an embedded instruction.
+
+Translation logs are filed under the real `chatId`, which
+`TranslationAgentService.translateQuestion` requires (there is no shared fallback
+bucket).
+`blockedQuestionLogs.security.test.js` runs every registered graph (from
+`listGraphs()`, through `getGraphApp()` as production does) through each block type
+after `redact`. It runs everything except the model call itself (agent orchestrator,
+translation and PII services, strategies), and fails if any log call contains the
+question text or is filed under a different chat. It also runs a question that passes
+every guardrail, stopped after `translate`: no log before `node:translate output` may
+contain the question, and `node:translate output` does — the question may appear only
+after the guard. A same-language rewrite never appears in any log, whether the
+question is blocked or passes. A guard test fails if a graph module in
+`agents/graphs/` is not registered, since an unregistered graph would escape these
+runs.
+
 ---
 
 ### 5. Context Derivation (`contextNode`)
@@ -331,19 +374,26 @@ verified answer is found
 - Identify relevant URLs
 - Parse the institution code / `abbrKey` (e.g., `EDSC-ESDC`, `CRA-ARC`)
 - The `abbrKey` is what loads that institution's scenarios into the answer prompt (step 7)
+- `parseContextMessage` keeps the department only if it is an `abbrKey` in
+  `departments_EN.js`/`departments_FR.js`, and the URL only if `isGovernmentUrl` accepts
+  it (the citation host check). Anything else becomes `''` and is logged as
+  `Context agent department rejected`. Both values go into the answer agent's system
+  prompt, and the prompts treat `<department-url>`'s domain as an approved source, so a
+  question that steers the context agent must not be able to set them.
 - Categorizing *what the question was about* is not done here — that is the program/action
   classification, which runs after the answer
   ([After the Answer](#after-the-answer-evaluation-and-the-feedback-loop))
 
-**5d. Context Reuse — variant graphs only**
-- **The production graph does not reuse context.** `GenericWithQAGraph` and `GenericGraph`
-  call `deriveContext` directly and hardcode `usedExistingContext: false`
+**5d. No context reuse — every graph**
+- **No graph reuses context.** Every graph calls `deriveContext` directly and sets
+  `usedExistingContext: false`
   ([`GenericWithQAGraph.js:123-139`](../../agents/graphs/GenericWithQAGraph.js#L123)), so
   fresh context is derived for **every** question, follow-ups included. This matters for
   institution identification on multi-turn conversations.
-- `DefaultWithVectorGraph` and `InstantAndQAGraph` instead call `getContextForFlow()`,
-  which reuses a previous turn's context when it is still valid and sets
-  `usedExistingContext` accordingly.
+- Context feeds the system prompt, and the conversation history is held by the client, so
+  context must never be read from the history. `DefaultWithVectorGraph` and
+  `InstantAndQAGraph` used to reuse a previous turn's context; that helper has been
+  removed.
 
 **Files:**
 - [`agents/graphs/services/contextService.js`](../../agents/graphs/services/contextService.js)
@@ -366,12 +416,16 @@ avoid what they flagged as wrong. *This is the production graph's eval-driven st
 system card calls it **eval-informed answering**.*
 
 **Process:**
+0. If context matched no department (`context.department` empty), skip the lookup and add no
+   examples — generic questions ("when is the deadline?") would otherwise match evals from
+   unrelated departments.
 1. Call `QuestionAnswerService.getSimilarQuestionsContext(userMessage, opts)` with
-   `k: 3`, `threshold: 0.75`, `expertFeedbackRating: 100`, `expertFeedbackComparison: 'lte'`,
+   `department: context.department`, `k: 3`, `threshold: 0.75`, `expertFeedbackRating: 100`, `expertFeedbackComparison: 'lte'`,
    `recencyDays: 365`, `useDenormalizedPreFilter: true`, `returnDebugData: true`.
    `lte` means **both** perfect-score and lower-score pairs are eligible: perfect ones as a
    known-good model, lower ones with the expert's sentence-level comments as mistakes to avoid.
-2. Candidates below the `0.75` cosine-similarity floor are dropped at the vector layer, and
+2. Only past Q/As whose context matched the **same department** are eligible (exact abbrKey,
+   no scenario aliasing). Candidates below the `0.75` cosine-similarity floor are dropped at the vector layer, and
    hits whose expert feedback is older than 365 days are dropped (unless flagged `neverStale`).
 3. Write the formatted block back into `context.similarQuestions`, plus `context.qaMatches`
    (chatId, interactionId, similarity, score, question/answer text) for ChatViewer.
@@ -415,6 +469,15 @@ short-circuit variants when a verified match was found)
 - `checkUrlStatus`: Validate URL accessibility
 - `contextAgentTool`: Re-derive context if needed
 
+Both fetch tools take a model-chosen URL, so they are restricted (AIA-010):
+`normalizeFetchUrl` allows only Government of Canada hosts (`api/util/govHost.js`, the same
+check citations get) plus `raw.githubusercontent.com/cds-snc/ai-answers/main/…` for scenario
+files (no encoded `/`, `\` or `.` in the path), on default ports. `api/util/fetchGuard.js` refuses connections whose DNS answer
+includes a private, loopback, link-local or reserved address (checked at connect time, so it
+covers DNS rebinding and every hop) and re-checks the allowlist on each redirect, https only.
+TLS certificates are verified, with one bundled intermediate that some GC servers omit. A
+certificate failure is logged as `TLS verification failed: <host> <code> <tool> <url>`.
+
 **Output Parsing:**
 - `<answer>` block: Main content (1-4 sentences)
 - `<citation-url>`: AI's proposed citation
@@ -434,28 +497,31 @@ short-circuit variants when a verified match was found)
 **Type:** Programmatic URL validation
 **Status:** `verifyingCitation`
 
-**Purpose:** Ensure citation URL is accessible and build final result object
+**Purpose:** Gate the model's citation URL on host, then build the final result object
 
-**Process:**
-1. Send HEAD request to URL (fast, low bandwidth)
-2. If fails: try GET request
-3. Follow up to 10 redirects
-4. Timeout: 10 seconds
-5. Check for known 404 pages
+**Process** (`GraphWorkflowHelper.verifyCitation` → `UrlValidationService.validateUrlFormatting`;
+no network request — the page is not fetched):
+1. No URL → no citation (`verifyCitation` returns `{ url: null, fallbackUrl: null }`
+   before reaching the validator).
+2. URL must be absolute `http(s)`, carry no credentials, and have a Government of Canada
+   host: `canada.ca`/`gc.ca` or a subdomain, or a host from `departments_EN.js` /
+   `departments_FR.js` (`api/util/govHost.js`). Matching is exact or dot-boundary suffix,
+   never substring. Department hosts the GC doesn't control (`NON_GC_DEPARTMENT_HOSTS`)
+   match without subdomains, and `canada.multites.net` (shared vendor hosting) only under
+   the thesaurus paths. Anything else → fallback, and a `warn` graph event is logged with the
+   hostname only (AIA-007).
+3. Allowed URL is passed through unchanged (no http→https upgrade).
+4. If the validator throws → general/department search fallback (fails closed).
 
-**Output:**
-```javascript
-{
-  isValid: boolean,
-  url: string,
-  status: number,
-  confidenceRating: 0 | 1,
-  error?: string
-}
-```
+Reused answers (short circuit / instant answer) skip this node, so
+`buildShortCircuitPayload` runs the same check (`UrlValidationService.checkCitationUrl`)
+on the stored citation.
+
+**Output:** `{ isValid: true, url }`, or on fallback `{ isValid: false, fallbackUrl, fallbackText }`
 
 **Fallback:**
-- If invalid: use `fallbackUrl` or Canada.ca search
+- Department search page (CRA, IRCC, ISC) or the general Canada.ca search, with the question as the query
+- `src/utils/safeUrl.js` (`safeHttpHref`) remains the client-side scheme backstop
 
 **File:** [`services/UrlValidationService.js`](../../services/UrlValidationService.js)
 
@@ -521,8 +587,8 @@ finishes) and emitted as a `result` SSE event with `chatId` merged in:
     citationUrl: string
   },
   context: {
-    department: string,
-    departmentUrl: string,
+    department: string,      // a listed abbrKey or '' — parseContextMessage drops anything else
+    departmentUrl: string,   // that department's EN/FR URL from the list, or ''
     searchResults: array,
     similarQuestions: string,   // injected eval block (GenericWithQAGraph)
     qaMatches: array            // matched past Q/A, for ChatViewer
@@ -776,6 +842,15 @@ Each node can:
 - State is **not persisted** between graph executions (stateless)
 - Each user question triggers a new graph execution
 - Conversation history passed as input, not stored in graph state
+- The client holds the history, so the server checks it before any graph runs
+  (`validateConversationIntegrity` in `middleware/chat-session.js`). The signature covers
+  the question and answer text of every completed turn, and the chat ID. The graph
+  receives a history rebuilt from that signed text only: nothing else the client sent
+  (context, citations, extra fields, error messages, questions that never got an answer)
+  reaches it. A history that does not match its signature is rejected with a 403.
+- The signature is created in one place, where a completed turn leaves the server
+  (`api/chat/chat-graph-run.js`). A failed turn returns no `historySignature`. Details:
+  [conversation integrity](../plans/conversation_integrity_plan.md).
 
 ---
 
@@ -891,7 +966,7 @@ The LangGraph-based architecture provides:
 
 ✅ **Reliability**: Deterministic execution with clear error handling
 ✅ **Observability**: Complete state tracking and logging
-✅ **Performance**: Prompt caching (plus context reuse and short-circuit reuse in the experimental variants)
+✅ **Performance**: Prompt caching (plus short-circuit reuse in the experimental variants)
 ✅ **Maintainability**: Clear node boundaries, easy to extend
 ✅ **Scalability**: Stateless execution, horizontal scaling ready
 ✅ **Auditability**: Complete execution history for compliance

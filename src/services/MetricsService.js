@@ -2,18 +2,6 @@ import AuthService from './AuthService.js';
 import { getApiUrl } from '../utils/apiToUrl.js';
 
 class MetricsService {
-  static async getChatLogs(filters = {}, limit = 100, lastId = null) {
-    try {
-      const queryParams = new URLSearchParams({ ...filters, limit, lastId }).toString();
-      const response = await AuthService.fetch(getApiUrl(`db-chat-logs?${queryParams}`));
-      if (!response.ok) throw new Error('Failed to get chat logs');
-      return await response.json();
-    } catch (error) {
-      console.error('Error getting chat logs:', error);
-      throw error;
-    }
-  }
-
   static async getUsageMetrics(filters = {}, signal) {
     return this._fetchMetric('metrics-usage', filters, signal);
   }
@@ -54,6 +42,14 @@ class MetricsService {
     return this._fetchMetric('metrics-programs', filters, signal);
   }
 
+  static async getEvalCoverageMetrics(filters = {}, signal) {
+    return this._fetchMetric('metrics-eval-coverage', filters, signal);
+  }
+
+  static async getMostUsedEvalsMetrics(filters = {}, signal) {
+    return this._fetchMetric('metrics-eval-reuse', filters, signal);
+  }
+
   static async getCitationMetrics(filters = {}, signal) {
     return this._fetchMetric('metrics-citations', filters, signal);
   }
@@ -64,6 +60,10 @@ class MetricsService {
 
   static async getHarmfulChatsMetrics(filters = {}, signal) {
     return this._fetchMetric('metrics-harmful-chats', filters, signal);
+  }
+
+  static async getEvalInformedChatsMetrics(filters = {}, signal) {
+    return this._fetchMetric('metrics-eval-informed-chats', filters, signal);
   }
 
   static async _fetchMetric(endpoint, filters, signal) {

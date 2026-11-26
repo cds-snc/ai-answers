@@ -37,7 +37,8 @@ function buildHarmfulChatsPipeline(dateFilter, extraFilters = [], departmentFilt
                 chatId: 1,
                 pageLanguage: 1,
                 createdAt: 1,
-                interactionId: '$interactions._id'
+                interactionId: '$interactions._id',
+                questionNumber: 1
             }
         },
         { $sort: { createdAt: -1 } },
@@ -62,7 +63,8 @@ async function getHarmfulChatsMetrics(req, res) {
             chatId: r.chatId,
             interactionId: r.interactionId ? String(r.interactionId) : '',
             pageLanguage: r.pageLanguage || '',
-            createdAt: r.createdAt
+            createdAt: r.createdAt,
+            questionNumber: r.questionNumber
         }));
 
         return res.status(200).json({ success: true, metrics: { harmfulChats } });

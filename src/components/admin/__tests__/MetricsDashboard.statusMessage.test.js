@@ -122,10 +122,10 @@ describe('MetricsDashboard StatusMessage role', () => {
     expect(dataTableCallCount.current).toBeGreaterThan(0);
   });
 
-  it('renders all 3 affected sections without a sectionKey collision when usage errors', async () => {
+  it('renders all 4 affected sections without a sectionKey collision when usage errors', async () => {
     // Regression for the sectionKey fix: a single failed 'usage' fetch feeds
-    // 3 different SectionWrapper instances (questions, accuracy,
-    // questionTypes) off one useErrorStatus() hook instance — these used to
+    // 4 different SectionWrapper instances (questions, accuracy,
+    // questionTypes, evalInformed) off one useErrorStatus() hook instance — these used to
     // collide on the 'default' renderStatusMessage key.
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     mockGetUsageMetrics.mockRejectedValue(new Error('usage metrics failed'));
@@ -134,7 +134,7 @@ describe('MetricsDashboard StatusMessage role', () => {
     fireEvent.click(screen.getByText('trigger-apply-filters'));
 
     await waitFor(() => {
-      expect(document.querySelectorAll('.status-message--error-box').length).toBe(3);
+      expect(document.querySelectorAll('.status-message--error-box').length).toBe(4);
     });
     expect(errorSpy).not.toHaveBeenCalledWith(expect.stringContaining('in the same render'));
     errorSpy.mockRestore();

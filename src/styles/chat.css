@@ -251,6 +251,47 @@
 .feedback-container p {
   margin-bottom: 10px;
 }
+/* Search results panel: one <dl> per result. Long URLs have no spaces to
+   wrap at, so break them only where needed to stay inside the panel. */
+/* Outranks .review-details dl's margin and 13rem label column further
+   down - these labels are all one short word. */
+.review-details .search-results-list dl {
+  margin-bottom: 1.5rem;
+  grid-template-columns: max-content 1fr;
+}
+/* max-content leaves only dt's 0.5rem before the value - widen it.
+   Padding, not a grid gap, same as .review-details dt. */
+.review-details .search-results-list dt {
+  padding-right: 1.5rem;
+}
+/* No divider under each result's last row - the gap separates results. */
+.review-details .search-results-list dt:nth-last-child(2),
+.review-details .search-results-list dd:last-child {
+  border-bottom: none;
+}
+/* Narrow screens: label above its value, so the value gets the full width. */
+@media only screen and (width < 48em) {
+  .review-details .search-results-list dl {
+    grid-template-columns: 1fr;
+  }
+  /* Divider under the value only, as with .stacked pairs. :not(.stacked)
+     to outrank .review-details dt:not(.stacked)'s divider further down. */
+  .review-details .search-results-list dt:not(.stacked) {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+}
+.search-results-list dd,
+.search-results-text,
+.review-pre-wrap {
+  overflow-wrap: anywhere;
+}
+/* <pre> never wraps by default, so one long line (a URL in the stage
+   timeline's JSON) stretched the table past the panel edge. */
+.search-results-text,
+.review-pre-wrap {
+  white-space: pre-wrap;
+}
 /* Review panels table styling - shared with ExperimentalDatasetsPage.js, so
    left at its original values; review-panel-only overrides are scoped to
    .review-details below. */

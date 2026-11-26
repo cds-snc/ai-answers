@@ -17,7 +17,12 @@ const MAX_PROGRAMS = 25;
 // 'unknown' bucket. Unclassified ('' — historical or failed call) and
 // low-confidence ('unknown') normal questions are folded into a single
 // 'unknown' sentinel bucket the client translates for display.
-function buildProgramPipeline(dateFilter, extraFilters = [], departmentFilter = [], answerTypeFilter = null, partnerEvalFilter = null, aiEvalFilter = null) {
+//
+// The scope stages (everything before the $group) are exported so the
+// evaluation coverage card (metrics-eval-coverage.js) counts over exactly the
+// same questions as this volume chart. `extraProject` adds fields to the
+// projection for that consumer without widening this endpoint's documents.
+export function buildProgramScopeStages(dateFilter, extraFilters = [], departmentFilter = [], answerTypeFilter = null, partnerEvalFilter = null, aiEvalFilter = null, extraProject = {}) {
     const stages = [
         { $match: dateFilter },
         {
@@ -76,7 +81,8 @@ function buildProgramPipeline(dateFilter, extraFilters = [], departmentFilter = 
                 answerType: 1,
                 pageLanguage: 1,
                 autoEvalId: '$interactions.autoEval',
-                expertFeedbackId: '$interactions.expertFeedback'
+                expertFeedbackId: '$interactions.expertFeedback',
+                ...extraProject
             }
         }
     ];
@@ -145,6 +151,11 @@ function buildProgramPipeline(dateFilter, extraFilters = [], departmentFilter = 
         );
     }
 
+    return stages;
+}
+
+function buildProgramPipeline(dateFilter, extraFilters = [], departmentFilter = [], answerTypeFilter = null, partnerEvalFilter = null, aiEvalFilter = null) {
+    const stages = buildProgramScopeStages(dateFilter, extraFilters, departmentFilter, answerTypeFilter, partnerEvalFilter, aiEvalFilter);
     stages.push({
         $group: {
             _id: '$program',

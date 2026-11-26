@@ -22,6 +22,7 @@ import { invokeContextAgent } from '../../../services/ContextAgentService.js';
 import ServiceCallMetricsService from '../../../services/ServiceCallMetricsService.js';
 import { exponentialBackoff } from '../../../api/util/backoff.js';
 import { referringUrlTag } from '../../../api/util/prompt-tags.js';
+import { countCompletedTurns } from '../../../api/util/conversation-turns.js';
 
 export class GraphWorkflowHelper {
   async validateShortQuery(conversationHistory, userMessage, lang, department) {
@@ -39,8 +40,8 @@ export class GraphWorkflowHelper {
     return result;
   }
 
-  async translateQuestion(text, lang, selectedAI, translationContext = []) {
-    return translateWithGuardrail(text, lang, selectedAI, translationContext);
+  async translateQuestion({ text, lang, selectedAI, translationContext = [], chatId }) {
+    return translateWithGuardrail({ text, lang, selectedAI, translationContext, chatId });
   }
 
   // Second-stage guardrail: re-run redaction word-lists + regex PII patterns on
@@ -57,7 +58,8 @@ export class GraphWorkflowHelper {
   //     mechanisms are in place. Logged separately so we can monitor false
   //     positives independently from the zxx case.
   // Both blocks are only as good as the translator's labeling — false positives
-  // will reject legit users, which is why we log every trigger for auditing.
+  // will reject legit users, which is why we log every trigger for auditing
+  // (language and block type only — never the text; AIA-018).
   async postTranslateGuard(translationData, chatId, selectedAI, originalLang) {
     return runPostTranslationGuardrail(translationData, chatId, selectedAI, originalLang);
   }
@@ -138,6 +140,7 @@ export class GraphWorkflowHelper {
 
     // Use the service to parse the context response
     const parsed = parseContextMessage({
+      chatId,
       message: contextResponse.message || '',
       searchResults: contextPayload.searchResults,
       searchProvider,
@@ -168,47 +171,6 @@ export class GraphWorkflowHelper {
     });
   }
 
-  async getContextForFlow({ conversationHistory, translationData, userMessage, lang, searchProvider, chatId, selectedAI, department, overrideUserId }) {
-    const safeHistory = (conversationHistory || []).filter(m => m && !m.error);
-    const cleanedHistory = safeHistory;
-    const aiHistory = safeHistory.filter(m => m.sender === 'ai');
-    const lastMessage = aiHistory.length > 0 ? aiHistory[aiHistory.length - 1] : null;
-
-    const hasUsableExisting = (
-      lastMessage &&
-      lastMessage.interaction &&
-      lastMessage.interaction.context &&
-      lastMessage.interaction.context.searchQuery &&
-      lastMessage.interaction.answer &&
-      typeof lastMessage.interaction.answer.answerType === 'string' &&
-      !lastMessage.interaction.answer.answerType.includes('question')
-    );
-
-    if (hasUsableExisting) {
-      const context = { ...lastMessage.interaction.context };
-      context.translatedQuestion = translationData?.translatedText || userMessage;
-      context.originalLang = translationData?.originalLanguage || lang;
-      context.outputLang = this.determineOutputLang(translationData);
-      const departmentKey = department || context.department;
-      const updatedContext = await this.applyScenarioOverride({
-        context,
-        departmentKey,
-        overrideUserId,
-        chatId,
-      });
-      return { context: updatedContext, usedExistingContext: true, conversationHistory: safeHistory };
-    }
-
-    const minimalContext = {
-      translatedQuestion: translationData?.translatedText || userMessage,
-      originalLang: translationData?.originalLanguage || lang,
-      searchProvider: searchProvider || '',
-      systemPrompt: '',
-    };
-
-    return { context: minimalContext, usedExistingContext: false, conversationHistory: safeHistory };
-  }
-
   buildShortCircuitPayload({ similarShortCircuit, startTime, endTime, translationData, userMessage, userMessageId, referringUrl, selectedAI, chatId, lang, searchProvider, contextOverride = null }) {
     const totalResponseTimeSC = endTime - startTime;
     const scContext = contextOverride || {
@@ -218,7 +180,16 @@ export class GraphWorkflowHelper {
     };
 
     const aiCitationUrl = similarShortCircuit.sourceCitation?.aiCitationUrl || similarShortCircuit.citationUrl || null;
-    const providedCitationUrl = similarShortCircuit.sourceCitation?.providedCitationUrl || similarShortCircuit.citationUrl || null;
+    const storedCitationUrl = similarShortCircuit.sourceCitation?.providedCitationUrl || similarShortCircuit.citationUrl || null;
+    // A reused answer's citation was stored before the AIA-007 host check
+    // existed (and similarShortCircuit.citationUrl can be the raw model
+    // aiCitationUrl), so gate it again here. verifyNode doesn't see it: on a
+    // short circuit it only checks state.answer, which isn't set.
+    let providedCitationUrl = null;
+    if (storedCitationUrl) {
+      const checked = UrlValidationService.checkCitationUrl(storedCitationUrl, lang, userMessage, undefined, null, chatId);
+      providedCitationUrl = checked.url || checked.fallbackUrl;
+    }
     const citationHead = similarShortCircuit.answer?.citationHead || similarShortCircuit.sourceCitation?.citationHead || null;
 
     const contentText = similarShortCircuit.answer?.content || (Array.isArray(similarShortCircuit.answer?.paragraphs) ? similarShortCircuit.answer.paragraphs.join('\n\n') : '') || '';
@@ -240,7 +211,6 @@ export class GraphWorkflowHelper {
         paragraphs: similarShortCircuit.answer?.paragraphs || [],
         sentences: parsedSentences,
         englishAnswer: englishAnswerText,
-        historySignature: similarShortCircuit.historySignature || similarShortCircuit.answer?.historySignature || null,
         citationHead,
         questionLanguage: translationData?.originalLanguage || lang,
         englishQuestion: translationData?.translatedText || userMessage,
@@ -248,7 +218,6 @@ export class GraphWorkflowHelper {
         citationUrl: aiCitationUrl,
       },
       finalCitationUrl: providedCitationUrl,
-      historySignature: similarShortCircuit.historySignature || null,
       context: scContext,
       chatId,
       pageLanguage: lang,
@@ -308,7 +277,6 @@ export class GraphWorkflowHelper {
           paragraphs: [answerText],
           sentences: [answerText],
           englishAnswer: englishAnswerText,
-          historySignature: similarJson.historySignature || similarJson.answer?.historySignature || null,
           instantAnswerChatId: instantAnswerChatId,
           instantAnswerInteractionId: instantAnswerInteractionId,
           similarity: similarJson.similarity || null,
@@ -318,7 +286,6 @@ export class GraphWorkflowHelper {
         question: userMessage,
         citationUrl: similarJson.citation?.providedCitationUrl || similarJson.citation?.aiCitationUrl || null,
         sourceCitation: similarJson.citation || null,
-        historySignature: similarJson.historySignature || null,
         instantAnswerChatId,
         instantAnswerInteractionId,
         vectorMatches: similarJson.vectorMatches || [],
@@ -351,7 +318,7 @@ export class GraphWorkflowHelper {
     message = `${message}${referringUrlTag(referringUrl)}`;
 
     const maxTurns = 3;
-    const currentTurn = (conversationHistory || []).length + 1;
+    const currentTurn = countCompletedTurns(conversationHistory) + 1;
     if (currentTurn >= maxTurns) {
       message = `${message}\n<final-turn>true</final-turn>`;
     }
@@ -407,13 +374,18 @@ export class GraphWorkflowHelper {
         translationF,
         chatId
       );
+      // Never default `url` to the raw citationUrl: when the validator
+      // rejects it (AIA-007) it returns only fallbackUrl, and callers pick
+      // `url || fallbackUrl`, so echoing citationUrl here would undo the gate.
       return {
-        url: result.url || citationUrl,
+        url: result.url || null,
         fallbackUrl: result.fallbackUrl || null,
       };
     } catch (error) {
       await ServerLoggingService.error('Citation validation failed', chatId, error);
-      return fallback;
+      // Fail closed to the search page rather than to no link, so nothing
+      // downstream falls back to the unchecked model URL.
+      return { ...fallback, fallbackUrl: UrlValidationService.fallbackSearchUrl(lang, question, department) };
     }
   }
 

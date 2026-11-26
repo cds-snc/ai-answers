@@ -43,6 +43,29 @@ Remove one when the content it was based on has changed, the judgement was wrong
 - Takes effect on the next question. There is nothing to re-run or re-index.
 - Worth a pass whenever a program's web content changes substantially.
 
+## See how often it is used
+
+The **Partner dashboard** shows an **Eval-informed answers** card in its own section, beside a list of the most recent examples.
+
+- The percentage is the share of questions where past evaluations were used.
+- It counts only questions answered since evaluation-informed answering went live. Older questions are left out.
+- It follows the dashboard's filters.
+
+Open a chat ID in the list to see the past evaluations it used.
+
+## See where evaluations are missing
+
+Below that card, **Evaluation coverage by service** lists the 10 services with the most questions. Use it to decide where to evaluate next.
+
+- Open it with **Top services by evaluation coverage**.
+- **Expert evaluations** counts the evaluations the AI can use as examples: those from the past year, plus any marked **Never stale**. It ignores the date range. The table lists the busiest services first, so services near the top with few evaluations are the ones to evaluate next.
+- **Answers using evaluations** shows whether the evaluations you did match what people ask.
+- **Expiring soon** counts evaluations that will stop being used within 60 days. Evaluate new questions for that service to replace them. It also ignores the date range.
+- **Actions asked about** lists up to three things people asked to do, most common first. Actions asked only once are left out.
+- The other columns follow the dashboard's filters.
+
+**Most-used evaluations** lists the evaluations given to the AI most often in the period. Open a chat ID to check that an evaluation is still right. A wrong evaluation that is used often affects many answers.
+
 ## Rules the system applies
 
 - Matches on meaning rather than wording.
@@ -64,6 +87,6 @@ Remove one when the content it was based on has changed, the judgement was wrong
 
 ## Related
 
-- [Using evaluations to improve answers](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD.md#using-evaluations-to-improve-answers): the public-facing summary in the system card
+- [Using evaluations to improve answers](/en/system-card#using-evaluations-to-improve-answers): the public-facing summary in the system card
 - [Retrieval mechanics, thresholds, failure modes](https://github.com/cds-snc/ai-answers/blob/main/docs/architecture/using-evals-for-answers.md)
 - [Expert evaluation process, with screenshots](https://github.com/cds-snc/ai-answers/blob/main/docs/pdf/ai-answers-expert-evals-integration.pdf)

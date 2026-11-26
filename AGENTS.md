@@ -4,6 +4,7 @@
 - **React build restriction**: Files imported by frontend code (`src/`) must live inside `src/`. Never place shared config intended for UI components in `config/` (root) — use `src/config/` instead. Server-side code (`api/`, `agents/`, `services/`) can import from anywhere.
 - **Test runner**: This project uses **vitest**, not jest. Run tests with `npx vitest run <path>` (or `npm test` for all).
 - **CSS/styling**: See [docs/coding-agent-docs/design-system.md](docs/coding-agent-docs/design-system.md) for all CSS and visual style rules.
+- **Line endings**: Most files are LF, but some use CRLF (e.g. `src/pages/LoginPage.js`) or mixed endings (`git ls-files --eol` lists them). Keep each file's existing endings. Editing through a script (Python `open(...).write`, `sed`, heredocs) can rewrite every line and turn a 5-line change into a whole-file diff. After any edit, check `git diff --stat`. If a file shows far more changed lines than you touched, restore its original endings before you finish.
 
 ## Commit messages and releases
 
@@ -113,7 +114,7 @@ reorder a pipeline step, update all three:
 | Document | Reader | Level |
 |---|---|---|
 | [docs/architecture/pipeline-architecture.md](docs/architecture/pipeline-architecture.md) | developers | Nodes, edges, state fields, file/line references. Says which graph does what. |
-| [SYSTEM_CARD.md](SYSTEM_CARD.md) + [SYSTEM_CARD_FR.md](SYSTEM_CARD_FR.md) | general/public, governance reviewers | Plain-language numbered steps. No node names, no file paths. Both languages, always. |
+| [SYSTEM_CARD.md](SYSTEM_CARD.md) + [SYSTEM_CARD_FR.md](SYSTEM_CARD_FR.md) (also the public page at `/en/system-card` and `/fr/fiche-systeme`) | general/public, governance reviewers | Plain-language numbered steps. No node names, no file paths, no links to developer docs. Both languages, always. |
 | [docs/architecture/using-evals-for-answers.md](docs/architecture/using-evals-for-answers.md) | developers | Deep detail on the two eval-driven mechanisms only. |
 
 They are **not** meant to match one-for-one — the card describes processing steps a reader
@@ -128,7 +129,7 @@ fine and deliberate. What must never differ:
 - **Behavioural claims about the production graph.** Check the graph the
   `workflow.default` setting names before writing "the system does X"; a claim inherited
   from an older default silently becomes false (e.g. context reuse, which only the
-  short-circuit variants do).
+  short-circuit variants ever did, and which no graph does now).
 
 ## Documentation Regeneration
 
@@ -206,6 +207,10 @@ the locale files. Edit the markdown, not the component — and always both langu
 - **About page** — `public/content/about-en.md` / `about-fr.md`
 - **Admin how-to guides** — `public/content/admin/`, one file per language, with
   screenshots in `public/content/admin/images/`
+- **System card page** — `SYSTEM_CARD.md` / `SYSTEM_CARD_FR.md` at the repo root.
+  The build turns them into the page's content and serves the images/PDFs they
+  link to (`src/config/systemCard.js`); a linked image/PDF that doesn't exist
+  shows as "unavailable" on the page and fails `systemCardMarkdown.test.js`
 
 Both render through `useMarkdownWithFrontmatter` — see
 [docs/coding-agent-docs/common-tasks.md](docs/coding-agent-docs/common-tasks.md#markdown-driven-pages)
@@ -222,6 +227,7 @@ Before starting work, read the relevant reference doc:
 - **Backend/pipeline/agent/service changes:** [docs/coding-agent-docs/architecture-quick-ref.md](docs/coding-agent-docs/architecture-quick-ref.md)
 - **Writing or running tests, local dev:** [docs/coding-agent-docs/testing-and-dev.md](docs/coding-agent-docs/testing-and-dev.md)
 - **Common task patterns (prompts, UI, scenarios, API):** [docs/coding-agent-docs/common-tasks.md](docs/coding-agent-docs/common-tasks.md)
+- **Admin interface, roles, accounts, login/2FA, sessions, protecting an admin route or endpoint:** [docs/coding-agent-docs/admin-and-auth.md](docs/coding-agent-docs/admin-and-auth.md)
 - **Dashboards & filters (exec/partner cards, `FilterPanel`, cross-dashboard filter logic, Chat/Eval/Metrics gotchas):** [docs/coding-agent-docs/dashboards.md](docs/coding-agent-docs/dashboards.md)
 - **Any server-side paginated/searchable table, dashboard or not (which wrapper to use, migrating a hand-rolled table):** [docs/coding-agent-docs/tables.md](docs/coding-agent-docs/tables.md)
 - **CSS, styling, visual look and feel, GC Design System tokens:** [docs/coding-agent-docs/design-system.md](docs/coding-agent-docs/design-system.md)

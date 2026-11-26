@@ -22,6 +22,8 @@ const {
   mockStopMetadataBackfillJob,
   mockClearMetadata,
   mockGetMetadataStatus,
+  mockGetDuplicateEmbeddings,
+  mockRemoveDuplicateEmbeddings,
   mockGetMetadataBackfillJob,
   mockRunDocdb8CapabilityTest,
   mockLookupMetadata,
@@ -32,6 +34,8 @@ const {
   mockStopMetadataBackfillJob: vi.fn(),
   mockClearMetadata: vi.fn(),
   mockGetMetadataStatus: vi.fn(),
+  mockGetDuplicateEmbeddings: vi.fn(),
+  mockRemoveDuplicateEmbeddings: vi.fn(),
   mockGetMetadataBackfillJob: vi.fn().mockResolvedValue({ job: null }),
   mockRunDocdb8CapabilityTest: vi.fn(),
   mockLookupMetadata: vi.fn(),
@@ -43,6 +47,8 @@ vi.mock('../../services/VectorService.js', () => ({
     getMetadataBackfillJob: mockGetMetadataBackfillJob,
     getStats: mockGetStats,
     getMetadataStatus: mockGetMetadataStatus,
+    getDuplicateEmbeddings: mockGetDuplicateEmbeddings,
+    removeDuplicateEmbeddings: mockRemoveDuplicateEmbeddings,
     lookupMetadata: mockLookupMetadata,
     startMetadataBackfillJob: mockStartMetadataBackfillJob,
     stopMetadataBackfillJob: mockStopMetadataBackfillJob,
@@ -81,6 +87,8 @@ const resetMocks = () => {
   mockClearMetadata.mockReset();
   mockGenerateEmbeddings.mockReset();
   mockGetMetadataStatus.mockReset();
+  mockGetDuplicateEmbeddings.mockReset();
+  mockRemoveDuplicateEmbeddings.mockReset();
   mockGetMetadataBackfillJob.mockReset().mockResolvedValue({ job: null });
   mockRunDocdb8CapabilityTest.mockReset();
   vi.restoreAllMocks();
@@ -547,6 +555,135 @@ describe('VectorPage metadata status — was a plain <p>, now StatusMessage', ()
   });
 });
 
+describe('VectorPage duplicate embeddings check', () => {
+  afterEach(() => {
+    cleanup();
+    resetMocks();
+  });
+
+  it('shows success when no duplicates are found', async () => {
+    mockGetDuplicateEmbeddings.mockResolvedValue({
+      duplicateInteractions: 0,
+      duplicatesWithExpertFeedback: 0,
+      extraEmbeddings: 0,
+      maxCopies: 0,
+    });
+
+    renderWithRouter(<VectorPage lang="en" />);
+    fireEvent.click(await screen.findByText('vector.duplicateEmbeddings.check'));
+
+    const status = await screen.findByText('vector.duplicateEmbeddings.none');
+    expect(status.closest('.status-message--success-box')).toBeTruthy();
+  });
+
+  it('shows the duplicate counts as a label/value list when duplicates exist', async () => {
+    mockGetDuplicateEmbeddings.mockResolvedValue({
+      duplicateInteractions: 1200,
+      duplicatesWithExpertFeedback: 40,
+      extraEmbeddings: 1300,
+      maxCopies: 3,
+    });
+
+    renderWithRouter(<VectorPage lang="en" />);
+    fireEvent.click(await screen.findByText('vector.duplicateEmbeddings.check'));
+
+    const status = await screen.findByText('vector.duplicateEmbeddings.found');
+    expect(status.closest('.status-message--info-box')).toBeTruthy();
+    const term = await screen.findByText('vector.duplicateEmbeddings.duplicateInteractions');
+    expect(term.tagName).toBe('DT');
+    expect(term.nextElementSibling.textContent).toBe('1,200');
+  });
+
+  it('announces a failed check as an error', async () => {
+    mockGetDuplicateEmbeddings.mockRejectedValue(new Error('boom'));
+
+    renderWithRouter(<VectorPage lang="en" />);
+    fireEvent.click(await screen.findByText('vector.duplicateEmbeddings.check'));
+
+    await waitForAnnouncement('vector.duplicateEmbeddings.failed', 'assertive');
+  });
+
+  it('does not offer removal until a check finds duplicates', async () => {
+    mockGetDuplicateEmbeddings.mockResolvedValue({
+      duplicateInteractions: 0, duplicatesWithExpertFeedback: 0, extraEmbeddings: 0, maxCopies: 0,
+    });
+
+    renderWithRouter(<VectorPage lang="en" />);
+    expect(screen.queryByText('vector.duplicateEmbeddings.remove')).toBeNull();
+    fireEvent.click(await screen.findByText('vector.duplicateEmbeddings.check'));
+    await screen.findByText('vector.duplicateEmbeddings.none');
+    expect(screen.queryByText('vector.duplicateEmbeddings.remove')).toBeNull();
+  });
+
+  it('removes duplicates, reports the counts, and re-checks', async () => {
+    mockGetDuplicateEmbeddings
+      .mockResolvedValueOnce({ duplicateInteractions: 2, duplicatesWithExpertFeedback: 1, extraEmbeddings: 3, maxCopies: 3 })
+      .mockResolvedValueOnce({ duplicateInteractions: 0, duplicatesWithExpertFeedback: 0, extraEmbeddings: 0, maxCopies: 0 });
+    mockRemoveDuplicateEmbeddings.mockResolvedValue({
+      duplicateInteractions: 2, deletedEmbeddings: 3, deletedSentenceEmbeddings: 9,
+    });
+
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    renderWithRouter(<VectorPage lang="en" />);
+    fireEvent.click(await screen.findByText('vector.duplicateEmbeddings.check'));
+    fireEvent.click(await screen.findByText('vector.duplicateEmbeddings.remove'));
+
+    expect(window.confirm).toHaveBeenCalledWith('vector.duplicateEmbeddings.removeConfirm');
+    await screen.findByText('vector.duplicateEmbeddings.none');
+    expect(mockGetDuplicateEmbeddings).toHaveBeenCalledTimes(2);
+    // Nothing left to remove, so the button goes away — and focus lands on
+    // the outcome message rather than dropping to <body>.
+    expect(screen.queryByText('vector.duplicateEmbeddings.remove')).toBeNull();
+    const message = screen.getByText('vector.duplicateEmbeddings.removeSuccess');
+    await waitFor(() => expect(message.closest('[tabindex="-1"]')).toBe(document.activeElement));
+  });
+
+  it('does nothing when the confirm is cancelled', async () => {
+    mockGetDuplicateEmbeddings.mockResolvedValue({
+      duplicateInteractions: 2, duplicatesWithExpertFeedback: 1, extraEmbeddings: 3, maxCopies: 3,
+    });
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+    renderWithRouter(<VectorPage lang="en" />);
+    fireEvent.click(await screen.findByText('vector.duplicateEmbeddings.check'));
+    fireEvent.click(await screen.findByText('vector.duplicateEmbeddings.remove'));
+
+    expect(mockRemoveDuplicateEmbeddings).not.toHaveBeenCalled();
+  });
+
+  it('disables the check button while a removal is running', async () => {
+    mockGetDuplicateEmbeddings.mockResolvedValue({
+      duplicateInteractions: 2, duplicatesWithExpertFeedback: 1, extraEmbeddings: 3, maxCopies: 3,
+    });
+    mockRemoveDuplicateEmbeddings.mockReturnValue(new Promise(() => {}));
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    renderWithRouter(<VectorPage lang="en" />);
+    fireEvent.click(await screen.findByText('vector.duplicateEmbeddings.check'));
+    fireEvent.click(await screen.findByText('vector.duplicateEmbeddings.remove'));
+
+    await screen.findByText('vector.duplicateEmbeddings.removing');
+    expect(screen.getByText('vector.duplicateEmbeddings.check').disabled).toBe(true);
+  });
+
+  it('announces a failed removal as an error', async () => {
+    mockGetDuplicateEmbeddings.mockResolvedValue({
+      duplicateInteractions: 2, duplicatesWithExpertFeedback: 1, extraEmbeddings: 3, maxCopies: 3,
+    });
+    mockRemoveDuplicateEmbeddings.mockRejectedValue(new Error('boom'));
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    renderWithRouter(<VectorPage lang="en" />);
+    fireEvent.click(await screen.findByText('vector.duplicateEmbeddings.check'));
+    fireEvent.click(await screen.findByText('vector.duplicateEmbeddings.remove'));
+
+    await waitForAnnouncement('vector.duplicateEmbeddings.removeFailed', 'assertive');
+    // Still offered, so it can be re-run.
+    expect(screen.getByText('vector.duplicateEmbeddings.remove')).toBeTruthy();
+  });
+});
+
 describe('VectorPage metadata backfill job status, discovered by polling', () => {
   afterEach(() => {
     cleanup();
@@ -848,6 +985,8 @@ describe('VectorPage metadata lookup table — one row per embedding, mismatches
     metadataPageLanguage: 'en',
     interactionLanguage: 'fr',
     metadataInteractionLanguage: 'fr',
+    contextDepartment: 'TBS-SCT',
+    metadataDepartment: 'TBS-SCT',
     metadataStatus: 'metadataMatches',
     metadataExpertFeedbackNeverStale: false,
   };
@@ -873,7 +1012,7 @@ describe('VectorPage metadata lookup table — one row per embedding, mismatches
   };
   const cells = (table) => [...table.querySelectorAll('tbody tr:first-child td')];
 
-  it('has eight columns, one row per embedding', async () => {
+  it('has nine columns, one row per embedding', async () => {
     const table = await lookUp([baseRow, { ...baseRow, rowNumber: 2, interactionDisplayId: '8', interactionObjectId: 'int-2', embeddingId: 'emb-2', embeddingInteractionId: 'int-2' }]);
     const headers = [...table.querySelectorAll('thead th')].map((th) => th.textContent);
     expect(headers).toEqual([
@@ -885,6 +1024,7 @@ describe('VectorPage metadata lookup table — one row per embedding, mismatches
       'vector.metadataLookup.columns.score',
       'vector.metadataLookup.columns.pageLanguage',
       'vector.metadataLookup.columns.interactionLanguage',
+      'admin.common.columns.department',
     ]);
     expect(table.querySelectorAll('tbody tr')).toHaveLength(2);
   });
@@ -897,6 +1037,17 @@ describe('VectorPage metadata lookup table — one row per embedding, mismatches
     expect(pageLang.textContent).toBe('en');
     expect(interactionLang.textContent).toBe('fr');
     expect(table.querySelector('.metadata-mismatch')).toBeNull();
+  });
+
+  it('shows the department, marking a mismatch when the embedding was never given one', async () => {
+    const table = await lookUp([
+      baseRow,
+      { ...baseRow, rowNumber: 2, interactionObjectId: 'int-2', embeddingId: 'emb-2', embeddingInteractionId: 'int-2', metadataDepartment: null, metadataStatus: 'missingMetadata' },
+    ]);
+    const [first, second] = [...table.querySelectorAll('tbody tr')].map((tr) => tr.querySelectorAll('td')[8]);
+    expect(first.textContent).toBe('TBS-SCT');
+    expect(first.querySelector('.metadata-mismatch')).toBeNull();
+    expect(second.querySelector('.metadata-mismatch')).toBeTruthy();
   });
 
   it('marks a mismatch with words for screen readers, not colour alone', async () => {
