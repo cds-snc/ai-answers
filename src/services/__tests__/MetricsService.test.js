@@ -74,28 +74,4 @@ describe('MetricsService.calculateMetrics', () => {
     expect(metrics.totalQuestionsFr).toBe(1);
     expect(metrics.answerTypes['clarifying-question'].fr).toBe(1);
   });
-
-  it('counts public feedback stored only on the recovery pointer', () => {
-    const logs = [{
-      chatId: 'chat3',
-      pageLanguage: 'en',
-      interactions: [{
-        publicFeedback: null,
-        publicFeedbackRecover: {
-          feedback: 'yes',
-          publicFeedbackReason: 'Saved me time',
-          publicFeedbackScore: 3,
-        },
-      }, {
-        publicFeedback: { feedback: 'no', publicFeedbackReason: 'The link was broken', publicFeedbackScore: 10 },
-        publicFeedbackRecover: { feedback: 'yes', publicFeedbackReason: 'Saved me time', publicFeedbackScore: 3 },
-      }],
-    }];
-
-    const metrics = MetricsService.calculateMetrics(logs);
-    expect(metrics.publicFeedbackTotals.yes).toBe(1);
-    expect(metrics.publicFeedbackTotals.no).toBe(1);
-    expect(metrics.publicFeedbackTotals.totalQuestionsWithFeedback).toBe(2);
-    expect(metrics.publicFeedbackReasons.yes['Saved me time']).toBe(1);
-  });
 });

@@ -63,7 +63,6 @@ const RELATION_CHECKS = {
     { field: 'answer', target: 'answer' },
     { field: 'expertFeedback', target: 'expertfeedback' },
     { field: 'publicFeedback', target: 'publicfeedback' },
-    { field: 'publicFeedbackRecover', target: 'publicfeedback' },
     { field: 'autoEval', target: 'eval' },
     { field: 'context', target: 'context' }
   ],
@@ -108,8 +107,7 @@ const ORPHAN_CHECKS = {
     { parent: 'eval', field: 'expertFeedback' }
   ],
   publicfeedback: [
-    { parent: 'interaction', field: 'publicFeedback' },
-    { parent: 'interaction', field: 'publicFeedbackRecover' }
+    { parent: 'interaction', field: 'publicFeedback' }
   ],
   eval: [
     { parent: 'interaction', field: 'autoEval' }
@@ -545,7 +543,6 @@ function buildReachability(index) {
     changed = markRefsFromReachableParents(index, reachable, 'interaction', 'answer', 'answer') || changed;
     changed = markRefsFromReachableParents(index, reachable, 'interaction', 'expertfeedback', 'expertFeedback') || changed;
     changed = markRefsFromReachableParents(index, reachable, 'interaction', 'publicfeedback', 'publicFeedback') || changed;
-    changed = markRefsFromReachableParents(index, reachable, 'interaction', 'publicfeedback', 'publicFeedbackRecover') || changed;
     changed = markRefsFromReachableParents(index, reachable, 'interaction', 'eval', 'autoEval') || changed;
     changed = markRefsFromReachableParents(index, reachable, 'interaction', 'context', 'context') || changed;
     changed = markRefsFromReachableParents(index, reachable, 'answer', 'citation', 'citation') || changed;

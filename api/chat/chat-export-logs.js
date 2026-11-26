@@ -12,7 +12,6 @@ import {
 } from '../../middleware/auth.js';
 import { getChatFilterConditions, getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getPartnerContentIssueAggregationExpression, getHasCitationErrorAggregationExpression } from '../util/chat-filters.js';
 import { requireObjectIdString, requireString } from '../util/db-query.js';
-import { foldPublicFeedbackRecover, publicFeedbackIdStage } from '../util/public-feedback-ref.js';
 import ExcelJS from 'exceljs';
 import { format as csvFormat } from 'fast-csv';
 import { flatten } from 'flat';
@@ -263,7 +262,6 @@ function getPopulateOptions(view) {
         { path: 'context' },
         { path: 'expertFeedback', model: 'ExpertFeedback', select: '-__v -_id' },
         { path: 'publicFeedback', model: 'PublicFeedback', select: '-__v -_id' },
-        { path: 'publicFeedbackRecover', model: 'PublicFeedback', select: '-__v -_id' },
         { path: 'question', select: '-embedding -_id' },
         {
             path: 'answer',
@@ -629,7 +627,6 @@ export async function chatExportHandler(req, res) {
 
             // Expert/Public Feedback
             pipeline.push({ $lookup: { from: 'expertfeedbacks', localField: 'interactions.expertFeedback', foreignField: '_id', as: 'interactions.expertFeedback_doc' } });
-            pipeline.push(publicFeedbackIdStage('interactions'));
             pipeline.push({ $lookup: { from: 'publicfeedbacks', localField: 'interactions.publicFeedback', foreignField: '_id', as: 'interactions.publicFeedback_doc' } });
 
             // Question/Answer
@@ -663,7 +660,6 @@ export async function chatExportHandler(req, res) {
                     'interactions.context_doc': 0,
                     'interactions.expertFeedback_doc': 0,
                     'interactions.publicFeedback_doc': 0,
-                    'interactions.publicFeedbackRecover': 0,
                     'interactions.question_doc': 0,
                     'interactions.answer_doc': 0,
                     'interactions.answer.citation_doc': 0
@@ -767,7 +763,6 @@ export async function chatExportHandler(req, res) {
             // aggregate returns plain objects, find().lean() returns plain objects.
             const interactions = chat.interactions || [];
             for (const interaction of interactions) {
-                foldPublicFeedbackRecover(interaction);
                 const row = flattenInteraction(chat, interaction, view);
                 flatRows.push(row);
                 Object.keys(row).forEach(k => dynamicKeys.add(k));

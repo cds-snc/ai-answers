@@ -3,7 +3,6 @@ import { Chat } from '../../models/chat.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 import { getPartnerEvalAggregationExpression, getAiEvalAggregationExpression, getHasCitationErrorAggregationExpression } from '../util/chat-filters.js';
 import { parseRequestFilters, executeWithRetry } from './metrics-common.js';
-import { publicFeedbackIdStage } from '../util/public-feedback-ref.js';
 
 /**
  * Builds the shared base pipeline stages that all public feedback queries use.
@@ -30,7 +29,6 @@ function buildBasePipeline(dateFilter, extraFilters = [], departmentFilter = [],
                 as: 'ctx'
             }
         },
-        publicFeedbackIdStage('interactions'),
         {
             $lookup: {
                 from: 'publicfeedbacks',

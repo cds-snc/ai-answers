@@ -36,9 +36,7 @@ const PublicFeedbackPanel = ({ message, t, answerNumber }) => {
     useEffect(() => {
         if (!message) return;
         const interactionForFetch = message.interaction || {};
-        // publicFeedbackRecover is the same record while the live pointer
-        // is null. The panel still fetches it; the id alone is not the text.
-        if (!interactionForFetch.publicFeedback && !interactionForFetch.publicFeedbackRecover && !message.publicFeedback) return;
+        if (!interactionForFetch.publicFeedback && !message.publicFeedback) return;
         handleToggle();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [message]);
@@ -52,7 +50,7 @@ const PublicFeedbackPanel = ({ message, t, answerNumber }) => {
     const fetchedPublicFeedback = data && (data.publicFeedback || data);
     const publicFeedback = fetchedPublicFeedback || interaction.publicFeedback || message.publicFeedback || {};
 
-    if (!interaction.publicFeedback && !interaction.publicFeedbackRecover && !message.publicFeedback) return null;
+    if (!interaction.publicFeedback && !message.publicFeedback) return null;
 
     const baseTitle = t('reviewPanels.publicFeedbackTitle');
     const publicTitle = withAnswerNumber(baseTitle);

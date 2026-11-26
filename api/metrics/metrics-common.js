@@ -1,6 +1,5 @@
 import { resolveReviewerMatch } from '../util/reviewer-filter.js';
 import { getChatFilterConditions } from '../util/chat-filters.js';
-import { publicFeedbackIdStage } from '../util/public-feedback-ref.js';
 
 const DATE_TIME_REGEX = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?)?$/;
 
@@ -251,7 +250,6 @@ export function addExpertFeedbackLookup(pipeline) {
 export function addPublicFeedbackLookup(pipeline) {
     return [
         ...pipeline,
-        publicFeedbackIdStage('interactions'),
         {
             $lookup: {
                 from: 'publicfeedbacks',

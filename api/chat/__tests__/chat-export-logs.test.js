@@ -267,39 +267,6 @@ describe('chat-export-logs API', () => {
         expect(responseData.map((row) => row.chatId)).toEqual(['chat-b', 'chat-a']);
     });
 
-    it('exports feedback that is only on the recovery pointer', async () => {
-        req.query.format = 'json';
-        Chat.find.mockReturnValue({
-            populate: vi.fn().mockReturnValue({
-                lean: vi.fn().mockResolvedValue([{
-                    chatId: 'recovered-feedback',
-                    interactions: [{
-                        interactionId: 'i1',
-                        context: { searchQuery: 'query' },
-                        answer: { content: 'answer' },
-                        question: { question: 'question' },
-                        expertFeedback: {},
-                        publicFeedback: null,
-                        publicFeedbackRecover: {
-                            feedback: 'yes',
-                            publicFeedbackReason: 'Saved me time',
-                            publicFeedbackScore: 3,
-                        },
-                        autoEval: { expertFeedback: { totalScore: 1 } },
-                    }],
-                }]),
-            }),
-        });
-
-        await handler(req, res);
-
-        const row = res.json.mock.calls[0][0][0];
-        expect(row['publicFeedback.feedback']).toBe('yes');
-        expect(row['publicFeedback.publicFeedbackReason']).toBe('Saved me time');
-        expect(row['publicFeedback.publicFeedbackScore']).toBe(3);
-        expect(row.publicFeedbackRecover).toBeUndefined();
-    });
-
     it('exports an empty Q&A matches field when no matches were persisted', async () => {
         req.query.format = 'json';
         const mockChats = [{

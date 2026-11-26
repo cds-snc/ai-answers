@@ -74,16 +74,13 @@ async function buildExpertEvalChatsExportScope(collections, { startDate, endDate
 
   const interactions = chatInteractionIds.length
     ? await Interaction.find({ _id: { $in: chatInteractionIds } })
-      .select('_id question answer expertFeedback publicFeedback publicFeedbackRecover autoEval context')
+      .select('_id question answer expertFeedback publicFeedback autoEval context')
       .lean()
     : [];
 
   const questionIds = uniqueObjectIds(interactions.map(interaction => interaction.question));
   const answerIds = uniqueObjectIds(interactions.map(interaction => interaction.answer));
-  const publicFeedbackIds = uniqueObjectIds(interactions.flatMap(interaction => [
-    interaction.publicFeedback,
-    interaction.publicFeedbackRecover,
-  ]));
+  const publicFeedbackIds = uniqueObjectIds(interactions.map(interaction => interaction.publicFeedback));
   const autoEvalIds = uniqueObjectIds(interactions.map(interaction => interaction.autoEval));
   const contextIds = uniqueObjectIds(interactions.map(interaction => interaction.context));
 

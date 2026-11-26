@@ -66,14 +66,6 @@ const InteractionSchema = new mongoose.Schema({
     ref: 'PublicFeedback',
     default: null
   },
-  // Written in the same update that clears publicFeedback. The id survives
-  // a process stop between that clear and the write that puts it back, so
-  // the next request can link the saved document instead of inserting another.
-  publicFeedbackRecover: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'PublicFeedback',
-    default: null
-  },
   autoEval: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Eval',
@@ -99,7 +91,7 @@ InteractionSchema.pre('deleteMany', async function () {
   const answerIds = interactions.map(i => i.answer).filter(Boolean);
   const questionIds = interactions.map(i => i.question).filter(Boolean);
   const expertFeedbackIds = interactions.map(i => i.expertFeedback).filter(Boolean);
-  const publicFeedbackIds = interactions.flatMap(i => [i.publicFeedback, i.publicFeedbackRecover]).filter(Boolean);
+  const publicFeedbackIds = interactions.map(i => i.publicFeedback).filter(Boolean);
   const contextIds = interactions.map(i => i.context).filter(Boolean);
 
   // Delete all related documents

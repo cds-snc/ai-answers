@@ -63,39 +63,6 @@ function interactionIdString(value) {
   return value;
 }
 
-// 409 only when the pointer names a stored document. The other save can
-// still fail. A 409 would close the form, and the retry that drops a
-// dangling pointer would never run. This read does not change the pointer.
-async function respondFromPointer(res, interactionObjectId) {
-  const current = await Interaction.findOne(
-    { _id: interactionObjectId },
-    { publicFeedback: 1 }
-  ).lean();
-  if (!current) {
-    return res.status(404).json({ message: 'Interaction not found' });
-  }
-  if (current.publicFeedback && await PublicFeedback.exists({ _id: current.publicFeedback })) {
-    return res.status(409).json({ message: 'Public feedback already recorded' });
-  }
-  return res.status(500).json({ message: 'Failed to log public feedback' });
-}
-
-// 409 only when this update linked the stored document. The filter is
-// publicFeedback: null, so another request can claim that slot between
-// the exists() check and this write. A miss is re-read: 409 only when
-// the pointer that remains names a stored document, otherwise 500 so
-// the form stays open. The claimer's save can still throw.
-async function linkStoredFeedback(res, interactionObjectId, pointerId) {
-  const restored = await Interaction.updateOne(
-    { _id: interactionObjectId, publicFeedback: null },
-    { $set: { publicFeedback: pointerId, publicFeedbackRecover: null } }
-  );
-  if (restored.matchedCount > 0) {
-    return res.status(409).json({ message: 'Public feedback already recorded' });
-  }
-  return respondFromPointer(res, interactionObjectId);
-}
-
 async function feedbackPersistPublicHandler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method Not Allowed' });
@@ -137,109 +104,30 @@ async function feedbackPersistPublicHandler(req, res) {
     }
     // One public feedback record per interaction. Replacing the pointer
     // leaves the earlier document with nothing pointing at it, and the
-    // metrics then show the replacement.
-    // A claim can outlive the save: the save failed and clearing the
-    // pointer failed too, or the process stopped between the two writes.
-    // The pointer then names a document that was never stored. Drop it
-    // and save this request, so a retry does not report the feedback as
-    // already recorded. The other request's insert can commit after the
-    // check and before the clear. Put the same id back when the document
-    // is there, and do not insert another one. The clear keeps that id
-    // across the second read: a stop before the put-back still has it.
-    // Once that read shows no document, the id is dropped. A recovery
-    // pointer names a stored document, or it is empty.
-    if (!existingInteraction.publicFeedback && existingInteraction.publicFeedbackRecover) {
-      const recoverId = existingInteraction.publicFeedbackRecover;
-      if (await PublicFeedback.exists({ _id: recoverId })) {
-        return linkStoredFeedback(res, existingInteraction._id, recoverId);
-      }
-      await Interaction.updateOne(
-        { _id: existingInteraction._id, publicFeedback: null, publicFeedbackRecover: recoverId },
-        { $set: { publicFeedbackRecover: null } }
-      );
-    }
+    // metrics then show the replacement. Two requests can both read this
+    // as empty; the update below is what keeps the second one out.
     if (existingInteraction.publicFeedback) {
-      const pointerId = existingInteraction.publicFeedback;
-      const saved = await PublicFeedback.exists({ _id: pointerId });
-      if (saved) {
-        return res.status(409).json({ message: 'Public feedback already recorded' });
-      }
-      await Interaction.updateOne(
-        { _id: existingInteraction._id, publicFeedback: pointerId },
-        { $set: { publicFeedback: null, publicFeedbackRecover: pointerId } }
-      );
-      if (await PublicFeedback.exists({ _id: pointerId })) {
-        return linkStoredFeedback(res, existingInteraction._id, pointerId);
-      }
-      await Interaction.updateOne(
-        { _id: existingInteraction._id, publicFeedback: null, publicFeedbackRecover: pointerId },
-        { $set: { publicFeedbackRecover: null } }
-      );
+      return res.status(409).json({ message: 'Public feedback already recorded' });
     }
 
-    // The id exists as soon as the document is constructed, so the interaction
-    // can point at it before the insert. Claiming first means a failed insert
-    // can drop the pointer and a retry stores one record. Inserting first
-    // leaves an orphan when the claim throws, and the retry attaches a second
-    // document. Null in the filter is a check-and-set, same as question
-    // assignment: two requests that both passed the read above cannot both claim.
     const publicFeedbackDoc = new PublicFeedback(fields);
-    const claimed = await Interaction.findOneAndUpdate(
+    await publicFeedbackDoc.save();
+    const linked = await Interaction.updateOne(
       { _id: existingInteraction._id, publicFeedback: null },
-      { $set: { publicFeedback: publicFeedbackDoc._id, publicFeedbackRecover: null } },
-      { new: true }
+      { $set: { publicFeedback: publicFeedbackDoc._id } }
     );
-    if (!claimed) {
-      // This request did not claim the id. The other request clears the
-      // pointer when its own save throws.
-      return respondFromPointer(res, existingInteraction._id);
-    }
-    try {
-      await publicFeedbackDoc.save();
-    } catch (saveError) {
-      try {
-        // save() can throw after the insert is acknowledged (duplicate key,
-        // connection drop). Keep the id only when that document is stored.
-        // A throw before the insert clears both pointers, so the recovery
-        // field does not name an id that was never written.
-        const stored = await PublicFeedback.exists({ _id: publicFeedbackDoc._id });
-        await Interaction.updateOne(
-          { _id: existingInteraction._id, publicFeedback: publicFeedbackDoc._id },
-          { $set: { publicFeedback: null, publicFeedbackRecover: stored ? publicFeedbackDoc._id : null } }
-        );
-      } catch (clearError) {
-        console.error('Error clearing public feedback after a failed save:', clearError);
-      }
-      throw saveError;
-    }
-    // The cleanup above can clear this claim while the insert is in
-    // flight: it saw no document yet, dropped the pointer, and claimed
-    // its own id. Keep this document only when the interaction names it.
-    // An empty pointer is that clear landing before the other claim, so
-    // attach this document there. A different id stays as it is; this
-    // document is removed and the answer follows the pointer that remains.
-    // Linking clears the recovery id the clear wrote, so the next request
-    // does not treat this document as still unlinked.
-    const linked = await Interaction.findOneAndUpdate(
-      {
-        _id: existingInteraction._id,
-        $or: [
-          { publicFeedback: publicFeedbackDoc._id },
-          { publicFeedback: null },
-        ],
-      },
-      { $set: { publicFeedback: publicFeedbackDoc._id, publicFeedbackRecover: null } },
-      { new: true }
-    );
-    if (!linked) {
+    if (!linked.matchedCount) {
+      // The other request linked its own document. This one is unreferenced.
       await PublicFeedback.deleteOne({ _id: publicFeedbackDoc._id });
-      return respondFromPointer(res, existingInteraction._id);
+      return res.status(409).json({ message: 'Public feedback already recorded' });
     }
 
     res.status(200).json({ message: 'Public feedback logged successfully' });
   } catch (error) {
     // Logged here. The response stays generic so a database error
-    // does not reach the client.
+    // does not reach the client. A stop after the insert and before the
+    // link leaves that document unreferenced; the integrity check reports it,
+    // and a retry can still link a new one because the pointer is empty.
     console.error('Error saving public feedback:', error);
     res.status(500).json({ message: 'Failed to log public feedback' });
   }

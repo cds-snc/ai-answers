@@ -454,12 +454,10 @@ class MetricsService {
           }
         }
 
-        // Process public feedback. The recovery pointer holds the same
-        // document while publicFeedback is null, until a retry links it.
-        const storedPublicFeedback = interaction.publicFeedback || interaction.publicFeedbackRecover;
-        if (storedPublicFeedback && typeof storedPublicFeedback === 'object') {
-          const feedbackType = storedPublicFeedback.feedback === 'yes' ? 'yes' : 'no';
-          const reason = storedPublicFeedback.publicFeedbackReason || 'other';
+        // Process public feedback
+        if (interaction.publicFeedback) {
+          const feedbackType = interaction.publicFeedback.feedback === 'yes' ? 'yes' : 'no';
+          const reason = interaction.publicFeedback.publicFeedbackReason || 'other';
 
           // Count by reason and feedback type
           if (!metrics.publicFeedbackReasons[feedbackType][reason]) {
