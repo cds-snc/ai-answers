@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { GraphState } from '../../../agents/graphs/graphState.js';
 
 const mockFetch = vi.fn();
 const mockGetVisitorId = vi.fn();
@@ -97,6 +98,17 @@ describe('GraphClient', () => {
       },
     });
     expect(mockSendStatusUpdate).toHaveBeenCalled();
+
+    // The server passes the client's input to the graph, and LangGraph
+    // silently drops a key with no state channel (agents/graphs/graphState.js).
+    // historySignature and visitorId are read by the session middleware, not the graph.
+    const sentInput = JSON.parse(mockFetch.mock.calls[0][1].body).input;
+    const readBeforeGraph = ['historySignature', 'visitorId'];
+    const channels = Object.keys(GraphState.spec);
+    for (const key of Object.keys(sentInput).filter((k) => !readBeforeGraph.includes(k))) {
+      expect(channels, `input field "${key}"`).toContain(key);
+    }
+
     expect(consoleDebugSpy).toHaveBeenCalledWith(
       '[chat-graph-run status]',
       expect.objectContaining({

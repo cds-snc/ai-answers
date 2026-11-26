@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import chatGraphRunHandler, { setNdjsonHeaders, setStreamingHeaders } from '../chat-graph-run.js';
 import ConversationIntegrityService from '../../../services/ConversationIntegrityService.js';
+import { GraphState } from '../../../agents/graphs/graphState.js';
 
 const mocks = vi.hoisted(() => ({
   settingsGet: vi.fn(),
@@ -304,6 +305,21 @@ describe('chatGraphRunHandler transport setting', () => {
     expect(mocks.getGraphApp).toHaveBeenLastCalledWith('GenericGraph');
     expect(mocks.streamInput.selectedAI).toBe('openai-gpt51');
     expect(mocks.streamInput.searchProvider).toBe('google');
+  });
+
+  // LangGraph silently drops an input key with no state channel. The request
+  // body here holds only channel fields, so this catches a field the server
+  // adds to the input without adding it to agents/graphs/graphState.js.
+  it('sends the graph only fields that have a state channel', async () => {
+    mockSettingsTransport('sse');
+    setupGraphStream();
+
+    await chatGraphRunHandler(createRequest(), createResponse());
+
+    const channels = Object.keys(GraphState.spec);
+    for (const key of Object.keys(mocks.streamInput)) {
+      expect(channels, `input field "${key}"`).toContain(key);
+    }
   });
 
   it('applies scenario overrides for the signed-in user, not the user ID the client sent', async () => {

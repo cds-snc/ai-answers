@@ -1,4 +1,5 @@
-import { StateGraph, START, END, Annotation } from '@langchain/langgraph';
+import { StateGraph, START, END } from '@langchain/langgraph';
+import { GraphState } from './graphState.js';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 import { logGraphEvent } from './GraphEventLogger.js';
 import { GraphWorkflowHelper } from './workflows/GraphWorkflowHelper.js';
@@ -16,31 +17,6 @@ const WorkflowStatus = {
 };
 
 const workflow = new GraphWorkflowHelper();
-
-const GraphState = Annotation.Root({
-  chatId: Annotation(),
-  userMessage: Annotation(),
-  userMessageId: Annotation(),
-  conversationHistory: Annotation(),
-  lang: Annotation(),
-  department: Annotation(),
-  referringUrl: Annotation(),
-  serviceProfileId: Annotation(),
-  selectedAI: Annotation(),
-  translationF: Annotation(),
-  searchProvider: Annotation(),
-  overrideUserId: Annotation(),
-  startTime: Annotation(),
-  redactedText: Annotation(),
-  translationData: Annotation(),
-  cleanedHistory: Annotation(),
-  context: Annotation(),
-  usedExistingContext: Annotation(),
-  answer: Annotation(),
-  finalCitationUrl: Annotation(),
-  status: Annotation(),
-  result: Annotation(),
-});
 
 const graph = new StateGraph(GraphState);
 

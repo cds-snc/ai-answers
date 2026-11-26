@@ -334,13 +334,19 @@ As of 2026-11-26, on branch `login-assist-flow` unless noted.
 | Vision revised (`platform-vision.md`) and this plan updated | Committed |
 | **PR (a)**: service profiles with only `default`, `serviceProfileId` passed through all 5 graphs and the batch runner, `<final-turn>` reads the profile's `maxTurns` | Committed (`76953d56`) |
 | **`<final-turn>` count fix**: the tag was sent on turn 2 as well as turn 3, because history was counted per message, not per answer (bug since March 2026) | Separate PR #1994 (`fix/final-turn-count`). Tested on preview: turn 2 can ask a clarifying question again. |
-| **Server-side turn cap** (409 past `maxTurns`) | Committed (`cd1c724a`). That commit also has a code-review cleanup; undoing it is uncommitted. |
+| **Server-side turn cap** (409 past `maxTurns`) | Committed (`cd1c724a`). |
+| PR (a) preview testing | Passed 2026-11-26: 3-turn public chat (turn 3 acts as the last turn), one question on each of the 5 workflows, an experimental batch and a batches-page batch. |
 | `login.canada.ca` access for `downloadWebPage` | Fixed by the CanadaLogin team (checked 2026-11-26). The help-page snapshot workaround (`canadalogin-help-snapshots` branch) is dropped. |
+| **Shared graph state** (Next item 2) | Uncommitted, on branch `login-assist-graph-state`, stacked on `login-assist-flow`. `agents/graphs/graphState.js` is the one `GraphState` all 5 graphs import. New test `agents/graphs/__tests__/graphState.test.js` checks every registered graph has exactly the shared channels. The `chat-graph-run`, `ExperimentalBatchService` and `GraphClient` tests check that every field in the real graph input has a channel (a fake `portal` field on the server input made the chat test fail, as it should). Graph, chat, batch and client tests pass. Pipeline docs updated. `main` (AIA-018) still merges in cleanly; that merge is left for Lisa. |
 
 **Next:**
-1. Commit the cleanup undo on both branches. Merge PR #1994, then merge `main` into this branch.
-2. Optional, before (b): one shared graph-state definition for the 5 graphs, so a new
-   profile field is one edit and not five. Today a graph that misses a field drops it silently.
+1. ~~Commit the cleanup undo, merge PR #1994, merge `main` into this branch.~~ Done.
+2. ~~Optional, before (b): one shared graph-state definition for the 5 graphs.~~ Done on
+   `login-assist-graph-state` (see table). Committed, with `login-assist-flow` and
+   `main` (AIA-018) merged in; tests pass (323). To finish: merge PR (a), then open this
+   PR against `main`. Preview builds only for PRs into `main` or `feature/*`, not for a
+   PR stacked on `login-assist-flow`. Preview test: one question per workflow, one
+   experimental batch, one batches-page batch.
 3. PR (b): the `canadalogin` profile, the portal registry and the `Chat.mode`/`portal` fields.
    This needs the portal help-page URLs, or demo-page URLs to start with.
 4. PR (c): the client reads the cap from the server. Must ship before any profile has a
