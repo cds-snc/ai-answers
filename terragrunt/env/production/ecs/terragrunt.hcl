@@ -80,6 +80,7 @@ dependency "ssm" {
     adobe_analytics_url_arn            = ""
     session_secret_arn                 = ""
     conversation_integrity_secret_arn  = ""
+    fp_pepper_arn                      = ""
     cross_account_bedrock_role_ssm_arn = ""
     bedrock_region_ssm_arn             = ""
   }
@@ -130,6 +131,7 @@ inputs = {
   adobe_analytics_url_arn            = dependency.ssm.outputs.adobe_analytics_url_arn
   session_secret_arn                 = dependency.ssm.outputs.session_secret_arn
   conversation_integrity_secret_arn  = dependency.ssm.outputs.conversation_integrity_secret_arn
+  fp_pepper_arn                      = dependency.ssm.outputs.fp_pepper_arn
   cross_account_bedrock_role_ssm_arn = dependency.ssm.outputs.cross_account_bedrock_role_ssm_arn
   bedrock_region_ssm_arn             = dependency.ssm.outputs.bedrock_region_ssm_arn
   redis_url                          = dependency.elasticache.outputs.redis_url

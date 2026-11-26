@@ -161,6 +161,17 @@ resource "aws_ssm_parameter" "conversation_integrity_secret" {
   }
 }
 
+resource "aws_ssm_parameter" "fp_pepper" {
+  name  = "fp_pepper"
+  type  = "SecureString"
+  value = var.fp_pepper
+
+  tags = {
+    CostCentre = var.billing_code
+    Terraform  = true
+  }
+}
+
 resource "aws_ssm_parameter" "cross_account_bedrock_role" {
   name  = "cross_account_bedrock_role"
   type  = "SecureString"

@@ -121,6 +121,11 @@ variable "session_secret_arn" {
   type        = string
 }
 
+variable "fp_pepper_arn" {
+  description = "ARN for the fp_pepper SSM parameter"
+  type        = string
+}
+
 variable "s3_bucket_name_ssm_arn" {
   description = "ARN for the s3_bucket_name SSM parameter"
   type        = string

@@ -80,6 +80,11 @@ variable "conversation_integrity_secret_arn" {
   type        = string
 }
 
+variable "fp_pepper_arn" {
+  description = "The ARN of the visitor fingerprint pepper SSM parameter"
+  type        = string
+}
+
 variable "bedrock_invoke_role_arn" {
   description = "The ARN of the cross-account Bedrock invoke role to assume"
   type        = string

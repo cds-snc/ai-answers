@@ -82,6 +82,11 @@ output "conversation_integrity_secret_arn" {
   value       = aws_ssm_parameter.conversation_integrity_secret.arn
 }
 
+output "fp_pepper_arn" {
+  description = "ARN of the visitor fingerprint pepper parameter"
+  value       = aws_ssm_parameter.fp_pepper.arn
+}
+
 output "cross_account_bedrock_role_ssm_arn" {
   description = "ARN of the cross-account Bedrock role SSM parameter"
   value       = aws_ssm_parameter.cross_account_bedrock_role.arn

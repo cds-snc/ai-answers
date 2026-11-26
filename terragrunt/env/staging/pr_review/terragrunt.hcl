@@ -49,6 +49,7 @@ dependency "ssm" {
     bedrock_region_ssm_arn               = ""
     redis_url_arn                        = ""
     conversation_integrity_secret_arn    = ""
+    fp_pepper_arn                        = ""
     session_secret_arn                   = ""
   }
 }
@@ -78,6 +79,7 @@ inputs = {
   bedrock_region_ssm_arn                 = dependency.ssm.outputs.bedrock_region_ssm_arn
   redis_url_arn                          = dependency.ssm.outputs.redis_url_arn
   conversation_integrity_secret_arn      = dependency.ssm.outputs.conversation_integrity_secret_arn
+  fp_pepper_arn                          = dependency.ssm.outputs.fp_pepper_arn
   session_secret_arn                     = dependency.ssm.outputs.session_secret_arn
   s3_bucket_name_ssm_arn                 = dependency.s3.outputs.s3_bucket_name_ssm_arn
   s3_bucket_arn                          = dependency.s3.outputs.bucket_arn

@@ -86,6 +86,12 @@ variable "conversation_integrity_secret" {
   type        = string
 }
 
+variable "fp_pepper" {
+  description = "The pepper for hashing visitor fingerprints"
+  sensitive   = true
+  type        = string
+}
+
 # Temporary dummy variable to trigger workflow
 variable "dummy2_trigger" {
   type        = string

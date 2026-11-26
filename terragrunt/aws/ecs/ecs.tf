@@ -57,6 +57,10 @@ locals {
       "valueFrom" = var.conversation_integrity_secret_arn
     },
     {
+      "name"      = "FP_PEPPER"
+      "valueFrom" = var.fp_pepper_arn
+    },
+    {
       "name"      = "BEDROCK_ROLE_ARN"
       "valueFrom" = var.cross_account_bedrock_role_ssm_arn
     },
