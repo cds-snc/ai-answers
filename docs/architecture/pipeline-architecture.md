@@ -359,6 +359,12 @@ verified answer is found
 - Identify relevant URLs
 - Parse the institution code / `abbrKey` (e.g., `EDSC-ESDC`, `CRA-ARC`)
 - The `abbrKey` is what loads that institution's scenarios into the answer prompt (step 7)
+- `parseContextMessage` keeps the department only if it is an `abbrKey` in
+  `departments_EN.js`/`departments_FR.js`, and the URL only if `isGovernmentUrl` accepts
+  it (the citation host check). Anything else becomes `''` and is logged as
+  `Context agent department rejected`. Both values go into the answer agent's system
+  prompt, and the prompts treat `<department-url>`'s domain as an approved source, so a
+  question that steers the context agent must not be able to set them.
 - Categorizing *what the question was about* is not done here — that is the program/action
   classification, which runs after the answer
   ([After the Answer](#after-the-answer-evaluation-and-the-feedback-loop))
@@ -566,8 +572,8 @@ finishes) and emitted as a `result` SSE event with `chatId` merged in:
     citationUrl: string
   },
   context: {
-    department: string,
-    departmentUrl: string,
+    department: string,      // a listed abbrKey or '' — parseContextMessage drops anything else
+    departmentUrl: string,   // that department's EN/FR URL from the list, or ''
     searchResults: array,
     similarQuestions: string,   // injected eval block (GenericWithQAGraph)
     qaMatches: array            // matched past Q/A, for ChatViewer

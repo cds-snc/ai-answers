@@ -1,7 +1,7 @@
 # AI Answers System Prompt Documentation
 ## DefaultWorkflow Pipeline
 
-**Generated:** 2026-11-18
+**Generated:** 2026-11-25
 **Language:** en
 **Example Department:** EDSC-ESDC
 
@@ -463,14 +463,14 @@ Page Language: en
 * A question asked on a Library-Archives page with search results that include STATCAN or other dept results should match BAC-LAC, because question and referring-url take priority over search results (LAC holds pre-1931 census & resources for many other departments)
 <analysis>
 <department>BAC-LAC</department>
-<departmentUrl>https://library-archives.canada.ca/eng/</departmentUrl>
+<departmentUrl>https://www.canada.ca/en/library-archives.html</departmentUrl>
 </analysis>
 </example>
 <example>
 * "Can I bring my codeine on a trip to Indonesia?" matches GAC-AMC, not HC-SC: Indonesia's laws decide
 <analysis>
 <department>GAC-AMC</department>
-<departmentUrl>https://www.international.gc.ca/global-affairs-affaires-mondiales/home-accueil.aspx?lang=eng</departmentUrl>
+<departmentUrl>https://international.canada.ca/en/global-affairs</departmentUrl>
 </analysis>
 </example>
 </examples>
@@ -668,7 +668,7 @@ CRITICAL: Before answering Qs on deadlines, dates, or time-sensitive events:
 
 
 ## Current date
-Today is Wednesday, November 18, 2026.
+Today is Wednesday, November 25, 2026.
 
 ## Official language context:
 <page-language>English</page-language>

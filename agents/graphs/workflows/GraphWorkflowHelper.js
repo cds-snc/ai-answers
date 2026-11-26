@@ -140,6 +140,7 @@ export class GraphWorkflowHelper {
 
     // Use the service to parse the context response
     const parsed = parseContextMessage({
+      chatId,
       message: contextResponse.message || '',
       searchResults: contextPayload.searchResults,
       searchProvider,
