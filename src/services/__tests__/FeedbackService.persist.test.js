@@ -44,6 +44,19 @@ describe('FeedbackService persist', () => {
     });
   });
 
+  it('sends a numeric message id as a string', async () => {
+    AuthService.fetch.mockResolvedValue(ok({ message: 'Public feedback logged successfully' }));
+
+    await FeedbackService.persistPublicFeedback({
+      chatId: 'chat-1',
+      interactionId: 1,
+      publicFeedback: { feedback: 'yes', publicFeedbackReason: 'clear', publicFeedbackScore: 1 },
+    });
+
+    const [, options] = AuthService.fetch.mock.calls[0];
+    expect(JSON.parse(options.body).interactionId).toBe('1');
+  });
+
   it('keeps the status when public feedback was already recorded', async () => {
     AuthService.fetch.mockResolvedValue(failed(409, { message: 'Public feedback already recorded' }));
 

@@ -1,9 +1,26 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { useInlineFormError } from '../../hooks/useInlineFormError.js';
+import { useFocusOnChange } from '../../hooks/useFocusOnChange.js';
 import FeedbackInlineError from './FeedbackInlineError.js';
+import StatusMessage from '../admin/StatusMessage.js';
 import FeedbackService from '../../services/FeedbackService.js';
 import { FEEDBACK_OPTIONS } from '../../constants/UserFeedbackOptions.js';
+
+// 409 means this interaction already has feedback. 403 means the session
+// that opened the chat is gone (it expires after inactivity, and signing
+// in replaces it); reloading starts a new session that does not own this
+// chat, so the feedback cannot be saved. Other 4xx responses are final
+// too. Only a 5xx, or a request that never got a status, is worth retrying.
+function saveFailureFor(err) {
+  if (err?.status === 403) {
+    return { key: 'homepage.publicFeedback.sessionEnded', retryable: false };
+  }
+  if (typeof err?.status === 'number' && err.status < 500) {
+    return { key: 'homepage.publicFeedback.saveFailed', retryable: false };
+  }
+  return { key: 'homepage.publicFeedback.saveError', retryable: true };
+}
 
 
 const PublicFeedbackComponent = ({
@@ -17,14 +34,12 @@ const PublicFeedbackComponent = ({
 }) => {
   const { t } = useTranslations(lang);
   const [selected, setSelected] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveFailure, setSaveFailure] = useState(null);
+  const [saveErrorNonce, setSaveErrorNonce] = useState(0);
+  const savingRef = useRef(false);
+  const saveErrorRef = useFocusOnChange(saveErrorNonce);
   const { hasError, errorCount, errorRef, triggerError, clearError } = useInlineFormError();
-  const {
-    hasError: saveFailed,
-    errorCount: saveErrorCount,
-    errorRef: saveErrorRef,
-    triggerError: triggerSaveError,
-    clearError: clearSaveError,
-  } = useInlineFormError();
 
   const options = (isPositive ? FEEDBACK_OPTIONS.YES : FEEDBACK_OPTIONS.NO).map(opt => ({
     ...opt,
@@ -36,10 +51,11 @@ const PublicFeedbackComponent = ({
   const handleOptionChange = (id) => {
     setSelected(id);
     clearError();
-    clearSaveError();
+    if (saveFailure?.retryable) setSaveFailure(null);
   };
 
   const handleSend = async () => {
+    if (savingRef.current || saveFailure?.retryable === false) return;
     if (!selected) {
       triggerError();
       return;
@@ -52,20 +68,25 @@ const PublicFeedbackComponent = ({
       publicFeedbackReason: option.label,   // Use the option's label
       publicFeedbackScore: option.score,    // Use the option's score
     };
+    savingRef.current = true;
+    setSaving(true);
+    if (saveFailure?.retryable) setSaveFailure(null);
     try {
       await FeedbackService.persistPublicFeedback({ chatId, interactionId: userMessageId, publicFeedback: feedbackPayload });
     } catch (err) {
       // 409 means this interaction already has feedback: the first request
-      // stored it and the response was lost, or a second click lost the race.
-      // Show the thank-you. Any other failure stored nothing the person can
-      // see, so keep the form and let them try again.
+      // stored it and the response was lost. Show the thank-you.
       if (err.status === 409) {
         onSubmit(feedbackPayload);
         return;
       }
       console.error('Failed to persist public feedback', err);
-      triggerSaveError();
+      setSaveFailure(saveFailureFor(err));
+      setSaveErrorNonce((n) => n + 1);
       return;
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
     }
     onSubmit(feedbackPayload);
   };
@@ -128,18 +149,21 @@ const PublicFeedbackComponent = ({
               </li>
             ))}
           </ul>
-          {saveFailed && (
-            <FeedbackInlineError
-              id="public-feedback-save-error"
-              message={t('homepage.publicFeedback.saveError')}
-              errorCount={saveErrorCount}
-              inputRef={saveErrorRef}
-            />
-          )}
-          <button type="submit" className="btn-primary mt-150">
+          <button type="submit" className="btn-primary mt-150" disabled={saving || saveFailure?.retryable === false}>
             {t('homepage.publicFeedback.send')}
           </button>
         </fieldset>
+        {saveFailure && (
+          <StatusMessage
+            variant="error"
+            message={t(saveFailure.key)}
+            nonce={saveErrorNonce}
+            announce={false}
+            announcedVia="focus"
+            tabIndex={-1}
+            ref={saveErrorRef}
+          />
+        )}
       </div>
     </form>
   );

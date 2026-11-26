@@ -34,7 +34,12 @@ class FeedbackService {
   }
 
   static async persistPublicFeedback({ chatId, interactionId, publicFeedback }) {
-    if (!chatId || !interactionId || !publicFeedback) {
+    // The chat page's message id is a counter. The interaction stores it
+    // as a string, and the feedback endpoint only accepts a string.
+    const persistedInteractionId = typeof interactionId === 'number' && Number.isFinite(interactionId)
+      ? String(interactionId)
+      : interactionId;
+    if (!chatId || !persistedInteractionId || !publicFeedback) {
       throw new Error('Missing required fields');
     }
     // Format public feedback fields as in DataStoreService
@@ -50,7 +55,7 @@ class FeedbackService {
       },
       body: JSON.stringify({
         chatId,
-        interactionId,
+        interactionId: persistedInteractionId,
         publicFeedback: formattedPublicFeedback
       })
     });

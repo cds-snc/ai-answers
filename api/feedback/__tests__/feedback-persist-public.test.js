@@ -219,6 +219,18 @@ describe('feedback-persist-public', () => {
     expect(await PublicFeedback.countDocuments()).toBe(0);
   });
 
+  it('accepts the numeric interaction id the chat UI sends', async () => {
+    const interaction = await Interaction.create({ interactionId: '1' });
+    await Chat.create({ chatId: CHAT_ID, interactions: [interaction._id] });
+
+    const res = await run({ ...validBody(), interactionId: 1 });
+
+    expect(res.statusCode).toBe(200);
+    const updated = await Interaction.findById(interaction._id);
+    expect(updated.publicFeedback).toBeTruthy();
+    expect(await PublicFeedback.countDocuments()).toBe(1);
+  });
+
   it('returns a generic message when saving throws and leaves the interaction free for a retry', async () => {
     const { interaction } = await seedChat();
     const save = vi.spyOn(PublicFeedback.prototype, 'save').mockRejectedValueOnce(new Error('E11000 duplicate key secret'));
@@ -231,6 +243,31 @@ describe('feedback-persist-public', () => {
     }
     const updated = await Interaction.findById(interaction._id);
     expect(updated.publicFeedback).toBeFalsy();
+    expect(await PublicFeedback.countDocuments()).toBe(0);
+
+    const retry = await run(validBody());
+    expect(retry.statusCode).toBe(200);
+    const saved = await PublicFeedback.find();
+    expect(saved).toHaveLength(1);
+    const afterRetry = await Interaction.findById(interaction._id);
+    expect(afterRetry.publicFeedback.toString()).toBe(saved[0]._id.toString());
+  });
+
+  it('stores feedback on retry when a failed save left a pointer to a missing document', async () => {
+    const { interaction } = await seedChat();
+    const save = vi.spyOn(PublicFeedback.prototype, 'save').mockRejectedValueOnce(new Error('E11000 duplicate key secret'));
+    const clear = vi.spyOn(Interaction, 'updateOne').mockRejectedValueOnce(new Error('undo failed'));
+    try {
+      const res = await run(validBody());
+      expect(res.statusCode).toBe(500);
+      expect(res.payload).toEqual({ message: 'Failed to log public feedback' });
+    } finally {
+      save.mockRestore();
+      clear.mockRestore();
+    }
+
+    const stuck = await Interaction.findById(interaction._id);
+    expect(stuck.publicFeedback).toBeTruthy();
     expect(await PublicFeedback.countDocuments()).toBe(0);
 
     const retry = await run(validBody());

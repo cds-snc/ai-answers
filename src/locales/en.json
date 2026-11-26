@@ -37,6 +37,8 @@
       "question": "Was this helpful?",
       "selectionRequired": "Please select a reason.",
       "saveError": "We couldn't save your feedback. Try again.",
+      "saveFailed": "We couldn't save your feedback.",
+      "sessionEnded": "We couldn't save your feedback. Your session has ended.",
       "requiredLabel": "required",
       "yes": {
         "title": "Tell us more",

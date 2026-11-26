@@ -49,6 +49,14 @@ function publicFeedbackFields(input) {
   };
 }
 
+// The chat page's message id is a counter, so the form posts a number.
+// The interaction stores that same id as a string ("1"). A finite number
+// is that id; anything else still has to be a plain string.
+function interactionIdString(value) {
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  return value;
+}
+
 async function feedbackPersistPublicHandler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method Not Allowed' });
@@ -57,20 +65,24 @@ async function feedbackPersistPublicHandler(req, res) {
   try {
     await dbConnect();
     let { chatId, interactionId, publicFeedback } = req.body || {};
-    // A whitespace-only chatId is missing, not an authorization failure.
-    // Trimming first keeps it from falling through to the session check.
-    const sessionChatId = typeof chatId === 'string' ? chatId.trim() : '';
-    if (!sessionChatId || !interactionId || !publicFeedback) {
+    // One trimmed chatId for the session check and the query. A missing or
+    // whitespace value is a bad request, not an authorization failure.
+    try {
+      chatId = requireString(chatId, 'chatId');
+      interactionId = requireString(interactionIdString(interactionId), 'interactionId');
+    } catch {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+    if (!publicFeedback) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
     // chat-graph-run stores the chatId on the session that opened it.
     // Knowing the ids (they show up in dashboards and exports) is not enough
-    // to write feedback for that conversation.
-    if (!chatIdBelongsToSession(req, sessionChatId)) {
+    // to write feedback for that conversation. The session expires, and
+    // signing in replaces it; the form treats this 403 as final.
+    if (!chatIdBelongsToSession(req, chatId)) {
       return res.status(403).json({ error: 'invalid_chatId', message: 'ChatId does not belong to session' });
     }
-    chatId = requireString(chatId, 'chatId');
-    interactionId = requireString(interactionId, 'interactionId');
     const fields = publicFeedbackFields(publicFeedback);
     if (!fields) {
       return res.status(400).json({ message: 'Invalid public feedback' });
@@ -87,8 +99,20 @@ async function feedbackPersistPublicHandler(req, res) {
     // One public feedback record per interaction. Replacing the pointer
     // leaves the earlier document with nothing pointing at it, and the
     // metrics then show the replacement.
+    // A claim can outlive the save: the save failed and clearing the
+    // pointer failed too, or the process stopped between the two writes.
+    // The pointer then names a document that was never stored. Drop it
+    // and save this request, so a retry does not report the feedback as
+    // already recorded.
     if (existingInteraction.publicFeedback) {
-      return res.status(409).json({ message: 'Public feedback already recorded' });
+      const saved = await PublicFeedback.exists({ _id: existingInteraction.publicFeedback });
+      if (saved) {
+        return res.status(409).json({ message: 'Public feedback already recorded' });
+      }
+      await Interaction.updateOne(
+        { _id: existingInteraction._id, publicFeedback: existingInteraction.publicFeedback },
+        { $set: { publicFeedback: null } }
+      );
     }
 
     // The id exists as soon as the document is constructed, so the interaction
