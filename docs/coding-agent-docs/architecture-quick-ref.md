@@ -8,6 +8,7 @@ Read this before backend, pipeline, agent, or service work.
 |-----------|---------|
 | `agents/graphs/` | LangGraph state-machine workflows (nodes, edges, state) |
 | `agents/graphs/workflows/` | `GraphWorkflowHelper.js` — shared node implementations |
+| `agents/graphs/nodes/` | `questionNodes.js` — the `redact` and `translate` nodes every graph uses; keeps question text out of logs until `postTranslateGuard` passes (AIA-018) |
 | `agents/graphs/services/` | Graph-internal services (redaction, translation, answer/context helpers) |
 | `agents/graphs/guardrails/` | Query-blocking guardrails and shared block-type errors/constants |
 | `agents/prompts/` | System prompt assembly and base prompt text |

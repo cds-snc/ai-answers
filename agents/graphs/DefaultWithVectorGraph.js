@@ -2,9 +2,10 @@ import { StateGraph, START, END } from '@langchain/langgraph';
 import { GraphState } from './graphState.js';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 import { logGraphEvent } from './GraphEventLogger.js';
-import { GraphWorkflowHelper, RedactionError, ShortQueryValidation } from './workflows/GraphWorkflowHelper.js';
+import { GraphWorkflowHelper, ShortQueryValidation } from './workflows/GraphWorkflowHelper.js';
 
 import { graphRequestContext } from './requestContext.js';
+import { createRedactNode, createTranslateNode } from './nodes/questionNodes.js';
 
 const WorkflowStatus = {
   MODERATING_QUESTION: 'moderatingQuestion',
@@ -62,45 +63,9 @@ graph.addNode('validate', async (state) => {
   }
 });
 
-graph.addNode('redact', async (state) => {
-  try {
-    // Emit input log for redact node
-    logGraphEvent('info', 'node:redact input', state.chatId, {
-      lang: state.lang,
-      selectedAI: state.selectedAI,
-    });
+graph.addNode('redact', createRedactNode(workflow));
 
-    const { redactedText } = await workflow.processRedaction(state.userMessage, state.lang, state.chatId, state.selectedAI);
-
-    const out = { redactedText };
-    // Emit output log for redact node
-    // Never log the question text before postTranslateGuard: it may still be blocked (AIA-018).
-    logGraphEvent('info', 'node:redact output', state.chatId, {});
-    return out;
-  } catch (error) {
-    if (error instanceof RedactionError) {
-      throw error;
-    }
-    throw error;
-  }
-});
-
-graph.addNode('translate', async (state) => {
-  // Emit input log for translate node
-  const translationContext = workflow.buildTranslationContext(state.conversationHistory);
-  logGraphEvent('info', 'node:translate input', state.chatId, {
-    translationContext,
-    selectedAI: state.selectedAI,
-  });
-
-  const translationData = await workflow.translateQuestion({ text: state.redactedText, lang: 'en', selectedAI: state.selectedAI, translationContext, chatId: state.chatId });
-  await workflow.postTranslateGuard(translationData, state.chatId, state.selectedAI);
-
-  const out = { translationData };
-  // Emit output log for translate node
-  logGraphEvent('info', 'node:translate output', state.chatId, out);
-  return out;
-});
+graph.addNode('translate', createTranslateNode(workflow));
 
 graph.addNode('contextNode', async (state) => {
   // Emit input log for context node
@@ -368,10 +333,6 @@ graph.addEdge('persistNode', END);
 
 
 export const defaultWithVectorGraphApp = graph.compile();
-
-export async function runDefaultWithVectorGraph(input) {
-  return defaultWithVectorGraphApp.invoke(input);
-}
 
 
 

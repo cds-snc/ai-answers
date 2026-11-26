@@ -11,7 +11,11 @@ import FeedbackService from '../FeedbackService.js';
 import AuthService from '../AuthService.js';
 
 function ok(body) {
-  return { ok: true, json: () => Promise.resolve(body) };
+  return { ok: true, status: 200, json: () => Promise.resolve(body) };
+}
+
+function failed(status, body) {
+  return { ok: false, status, json: () => Promise.resolve(body) };
 }
 
 describe('FeedbackService persist', () => {
@@ -37,6 +41,53 @@ describe('FeedbackService persist', () => {
       chatId: 'chat-1',
       interactionId: 'int-1',
       publicFeedback: { feedback: 'yes' },
+    });
+  });
+
+  it('sends a numeric message id as a string', async () => {
+    AuthService.fetch.mockResolvedValue(ok({ message: 'Public feedback logged successfully' }));
+
+    await FeedbackService.persistPublicFeedback({
+      chatId: 'chat-1',
+      interactionId: 1,
+      publicFeedback: { feedback: 'yes', publicFeedbackReason: 'clear', publicFeedbackScore: 1 },
+    });
+
+    const [, options] = AuthService.fetch.mock.calls[0];
+    expect(JSON.parse(options.body).interactionId).toBe('1');
+  });
+
+  it('keeps the status when public feedback was already recorded', async () => {
+    AuthService.fetch.mockResolvedValue(failed(409, { message: 'Public feedback already recorded' }));
+
+    const error = await FeedbackService.persistPublicFeedback({
+      chatId: 'chat-1',
+      interactionId: 'int-1',
+      publicFeedback: { feedback: 'yes', publicFeedbackReason: 'clear', publicFeedbackScore: 1 },
+    }).then(() => null, (err) => err);
+
+    expect(error).toMatchObject({
+      message: 'Public feedback already recorded',
+      status: 409,
+    });
+  });
+
+  it('keeps the status when the public feedback error body is not JSON', async () => {
+    AuthService.fetch.mockResolvedValue({
+      ok: false,
+      status: 500,
+      json: () => Promise.reject(new Error('not json')),
+    });
+
+    const error = await FeedbackService.persistPublicFeedback({
+      chatId: 'chat-1',
+      interactionId: 'int-1',
+      publicFeedback: { feedback: 'yes', publicFeedbackReason: 'clear', publicFeedbackScore: 1 },
+    }).then(() => null, (err) => err);
+
+    expect(error).toMatchObject({
+      message: 'Failed to persist public feedback',
+      status: 500,
     });
   });
 
