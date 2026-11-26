@@ -32,7 +32,10 @@ const buildFeedbackDoc = (fields) => ({ lastEditedAt: null, ...fields });
 // Like the database: returns the document as it was, when the filter matches.
 const updateLike = (doc) => mockFindOneAndUpdate.mockImplementation(async (filter) => {
   const sameId = String(filter._id) === String(doc._id);
-  const sameEdit = String(filter.lastEditedAt) === String(doc.lastEditedAt);
+  // Never edited: the handler sends an $or of "null" and "missing".
+  const sameEdit = filter.$or
+    ? doc.lastEditedAt == null
+    : String(filter.lastEditedAt) === String(doc.lastEditedAt);
   return sameId && sameEdit ? doc : null;
 });
 
@@ -341,6 +344,20 @@ describe('feedback-update-expert API', () => {
 
     expect(res.status).toHaveBeenCalledWith(200);
     expect(mockFindOneAndUpdate.mock.calls[0][0]).toEqual({ _id: doc._id, lastEditedAt: editedAt });
+  });
+
+  it('matches a never-edited evaluation whether lastEditedAt is null or missing', async () => {
+    const doc = buildFeedbackDoc({ _id: interaction.expertFeedback, type: '', expertEmail: 'author@canada.ca' });
+    mockFeedbackFindById.mockResolvedValue(doc);
+    updateLike(doc);
+
+    await handler(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(mockFindOneAndUpdate.mock.calls[0][0]).toEqual({
+      _id: doc._id,
+      $or: [{ lastEditedAt: null }, { lastEditedAt: { $exists: false } }],
+    });
   });
 
   it('returns 400 for an expectedLastEditedAt that is not a date', async () => {
