@@ -147,6 +147,6 @@ La réponse en vaut 75 et la citation 25, parce qu'il s'agit d'un outil de répo
 
 - [Intégration des partenaires](/fr/comment-faire/integration-des-partenaires) : le choix des questions à évaluer et le reste du rôle de partenaire
 - [Réponses informées par les évaluations](/fr/comment-faire/reponses-informees-par-evaluations) : comment vos évaluations façonnent les réponses futures
-- [Utiliser les évaluations pour améliorer les réponses](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md#utiliser-les-évaluations-pour-améliorer-les-réponses) : le résumé public dans la fiche de système
+- [Utiliser les évaluations pour améliorer les réponses](/fr/fiche-systeme#utiliser-les-évaluations-pour-améliorer-les-réponses) : le résumé public dans la fiche de système
 - [Mécanique de récupération, seuils, modes de défaillance](https://github.com/cds-snc/ai-answers/blob/main/docs/architecture/using-evals-for-answers.md) (en anglais)
 - [Processus d'évaluation par les experts, avec captures d'écran](https://github.com/cds-snc/ai-answers/blob/main/docs/pdf/fr-reponses-ai-integration-evaluations.pdf)

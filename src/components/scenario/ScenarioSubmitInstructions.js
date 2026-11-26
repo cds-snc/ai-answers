@@ -1,6 +1,7 @@
 import React from 'react';
 import { GcdsLink } from '@gcds-core/components-react';
 import { getPath } from '../../utils/routes.js';
+import { AI_ANSWERS_TEAM_EMAIL } from '../../config/teamContact.js';
 
 // Shared, plain/unwrapped content — the editor page
 // (src/pages/ScenarioOverridesPage.js) renders this as-is; the chat page
@@ -15,9 +16,9 @@ import { getPath } from '../../utils/routes.js';
 // editor page itself, where that link wouldn't make sense since you're
 // already there.
 
-// Contact address for submitting a tested scenario - a real mailbox, not a
-// generic team alias, so it's the same address both languages point to.
-const SCENARIO_SUBMISSION_EMAIL = 'RIA-AIA@servicecanada.gc.ca';
+// Contact address for submitting a tested scenario - the AI Answers team
+// mailbox, same address in both languages.
+const SCENARIO_SUBMISSION_EMAIL = AI_ANSWERS_TEAM_EMAIL;
 
 const ScenarioSubmitInstructions = ({ t, lang, departmentKey }) => {
   // The visible email address itself is the link (not "Contact the AI

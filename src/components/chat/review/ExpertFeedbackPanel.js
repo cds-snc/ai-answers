@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useId, useRef } from 'react';
 import { GcdsButton, GcdsLink } from '@gcds-core/components-react';
 import FeedbackService from '../../../services/FeedbackService.js';
-import ClientLoggingService from '../../../services/ClientLoggingService.js';
 import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
 import { formatNumber } from '../../../utils/numberFormat.js';
 import { formatLocaleDate } from '../../../utils/formatLocaleDate.js';
@@ -85,7 +84,6 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
             } else {
                 message.expertFeedback = undefined;
             }
-            await ClientLoggingService.info(interactionId, 'Expert feedback deleted', {});
             // The mutation above only updates this shared `message` object in
             // place - it doesn't tell React anything changed, so
             // ChatInterface.js's own `!message.interaction.expertFeedback`
@@ -135,11 +133,6 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
         // table's rows read message.interaction.expertFeedback, owned by
         // ChatAppContainer.js.
         onUpdated?.(result.expertFeedback);
-        try {
-            await ClientLoggingService.info(interactionId, 'Expert feedback edited', {});
-        } catch (logErr) {
-            // Logging only - the save already succeeded.
-        }
     }, [interactionId, data, onUpdated]);
 
     const handleNeverStaleToggle = useCallback(async () => {
@@ -172,11 +165,6 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
             updatingNeverStaleRef.current = false;
         }
         setNeverStaleStatus(newVal ? 'on' : 'off');
-        try {
-            await ClientLoggingService.info(interactionId, 'Expert feedback neverStale toggled', { neverStale: newVal });
-        } catch (logErr) {
-            // Logging only - the save already succeeded.
-        }
     }, [data, message, interactionId]);
 
     if (!message) return null;

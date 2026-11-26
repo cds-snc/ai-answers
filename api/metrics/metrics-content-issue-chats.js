@@ -60,6 +60,7 @@ function buildContentIssueChatsPipeline(dateFilter, extraFilters = [], departmen
                 pageLanguage: 1,
                 createdAt: 1,
                 interactionId: '$interactions._id',
+                questionNumber: 1,
                 status: { $cond: ['$hasErrorSignal', 'hasError', 'needsImprovement'] }
             }
         },
@@ -89,6 +90,7 @@ async function getContentIssueChatsMetrics(req, res) {
             interactionId: r.interactionId ? String(r.interactionId) : '',
             pageLanguage: r.pageLanguage || '',
             createdAt: r.createdAt,
+            questionNumber: r.questionNumber,
             status: r.status
         }));
 

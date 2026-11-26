@@ -6,7 +6,6 @@ import React from 'react';
 import { cleanup, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ExpertFeedbackPanel from '../ExpertFeedbackPanel.js';
 import FeedbackService from '../../../../services/FeedbackService.js';
-import ClientLoggingService from '../../../../services/ClientLoggingService.js';
 import { waitForAnnouncement } from '../../../../../test/liveAnnouncer.js';
 
 // EN/FR-official-languages display rule (shown as-is; non-EN/FR collapses to
@@ -25,9 +24,6 @@ const mockT = (key) => TRANSLATIONS[key] || key;
 
 vi.mock('../../../../services/FeedbackService.js', () => ({
   default: { getExpertFeedback: vi.fn(), deleteExpertFeedback: vi.fn(), setExpertNeverStale: vi.fn(), updateExpertFeedback: vi.fn() },
-}));
-vi.mock('../../../../services/ClientLoggingService.js', () => ({
-  default: { info: vi.fn() },
 }));
 vi.mock('../../../../hooks/useTranslations.js', () => ({ useTranslations: () => ({ t: (key) => key }) }));
 vi.mock('@gcds-core/components-react', () => ({
@@ -314,19 +310,6 @@ describe('ExpertFeedbackPanel edit', () => {
     expect(await screen.findByRole('table')).toBeTruthy();
   });
 
-  it('does not report a failed save when only the log entry afterwards fails', async () => {
-    vi.mocked(FeedbackService.updateExpertFeedback).mockResolvedValue({ expertFeedback: ownedFeedback });
-    vi.mocked(ClientLoggingService.info).mockRejectedValueOnce(new Error('log down'));
-    renderOpen();
-
-    fireEvent.click(await findEditButton());
-    changeSentenceOne();
-    fireEvent.click(saveButton());
-
-    expect(await screen.findByText('reviewPanels.expertFeedbackUpdated')).toBeTruthy();
-    expect(screen.queryByText('log down')).toBeNull();
-  });
-
   it('shows the edit time only, when the expert edited their own evaluation', async () => {
     ownedFeedback.lastEditedBy = 'author@canada.ca';
     ownedFeedback.lastEditedAt = '2026-10-07T15:40:00Z';
@@ -400,17 +383,6 @@ describe('ExpertFeedbackPanel edit', () => {
     expect(screen.queryByText('reviewPanels.neverStaleOn')).toBeNull();
   });
 
-  it('still confirms Never stale when only the log entry afterwards fails', async () => {
-    vi.mocked(FeedbackService.setExpertNeverStale).mockResolvedValue({});
-    vi.mocked(ClientLoggingService.info).mockRejectedValueOnce(new Error('log down'));
-    renderOpen();
-    const checkbox = await screen.findByRole('checkbox', { name: 'reviewPanels.neverStale' });
-
-    fireEvent.click(checkbox);
-    expect(await screen.findByText('reviewPanels.neverStaleOn')).toBeTruthy();
-    expect(checkbox.checked).toBe(true);
-  });
-
   it('keeps Never stale enabled while its save is in flight, and ignores a second toggle', async () => {
     let resolveToggle;
     vi.mocked(FeedbackService.setExpertNeverStale).mockReturnValue(new Promise((r) => { resolveToggle = r; }));
@@ -426,6 +398,6 @@ describe('ExpertFeedbackPanel edit', () => {
     expect(document.activeElement).toBe(checkbox);
     expect(FeedbackService.setExpertNeverStale).toHaveBeenCalledTimes(1);
     resolveToggle({});
-    await waitFor(() => expect(ClientLoggingService.info).toHaveBeenCalled());
+    expect(await screen.findByText('reviewPanels.neverStaleOn')).toBeTruthy();
   });
 });

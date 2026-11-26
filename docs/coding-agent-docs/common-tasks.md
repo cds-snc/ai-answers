@@ -38,10 +38,22 @@ behind auth, so don't put anything there that shouldn't be public.
 |---|---|---|
 | About | `public/content/about-{en,fr}.md` | Named `##` sections, picked out by key in `AboutPage.js` |
 | Admin how-to guides | `public/content/admin/*.md` | The whole document, via `HowToPage.js` |
+| System card | `SYSTEM_CARD.md` / `SYSTEM_CARD_FR.md` at the repo root | The whole document, via `SystemCardPage.js` |
 
-Both use `useMarkdownWithFrontmatter(filename, contentDir)`, which fetches the
+All three use `useMarkdownWithFrontmatter(filename, contentDir)`, which fetches the
 file, splits the YAML frontmatter, and also exposes `sections` keyed by `##`
 heading.
+
+### System card
+
+Source is the root `SYSTEM_CARD*.md`, not `public/`. The `systemCard` plugin in
+`vite.config.js` builds the page's markdown from it (see `src/config/systemCard.js`).
+
+- Don't add frontmatter: GitHub shows it as a table. The build adds `title` (from
+  the `#` heading) and `description` (`SYSTEM_CARD_DESCRIPTIONS`).
+- Linked images and PDFs are served by the app; other repo links go to GitHub.
+- A missing image or PDF shows as "unavailable" and fails
+  `systemCardMarkdown.test.js`. It never fails the build.
 
 ### Frontmatter contract
 
@@ -124,7 +136,7 @@ Model selection is decoupled from workflow: graphs define the pipeline, the
 
 **How it's wired:**
 - `SettingsService` (`services/SettingsService.js`) is the single source of truth: it loads all settings on startup and seeds `SETTING_DEFAULTS` if missing. Add any new required setting there. Every consumer — public/authenticated settings APIs, `api/chat/chat-graph-run.js` (which injects the model into the graph input) — reads that cache. Never hardcode a model default in a UI component.
-- Unauthenticated users get the default; authenticated admins can override via the chat Options dropdown.
+- In chat, only admins can override the default (chat Options dropdown); everyone else, partners included, runs the defaults. Batch questions run the workflow, model and search service saved on their batch.
 - The family setting is routed per step by `AgentFactory.js`: translation and query-rewrite use a mini model, PII is pinned to `gpt-4o` so it stays in-region (Canada East), and context and answer use the full model. Evaluation/safety agents have their own model config there and are unaffected by the setting.
 
 ## Modifying the Pipeline

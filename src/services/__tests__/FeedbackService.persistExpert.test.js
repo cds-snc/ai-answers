@@ -2,7 +2,6 @@ import { describe, it, expect, vi } from 'vitest';
 
 const { mockFetch } = vi.hoisted(() => ({ mockFetch: vi.fn() }));
 vi.mock('../AuthService.js', () => ({ default: { fetch: mockFetch } }));
-vi.mock('../ClientLoggingService.js', () => ({ default: { info: vi.fn() } }));
 
 import FeedbackService from '../FeedbackService.js';
 

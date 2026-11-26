@@ -53,6 +53,7 @@ const TABLE_STORAGE_KEY = `chatDashboard_tableState_v2_`;
 function resolveAssignStatusMessage(status, t) {
   if (status.loadFailed) return t('admin.chatDashboard.assign.loadError');
   if (status.unassignFailed) return t('admin.chatDashboard.assign.unassignError');
+  if (status.assignmentChanged) return t('admin.chatDashboard.assign.unassignErrorChanged');
   if (status.unassigned) return t('admin.chatDashboard.assign.unassigned');
   if (status.isError) {
     const byCode = {

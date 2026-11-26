@@ -4,6 +4,9 @@ import { logGraphEvent } from './GraphEventLogger.js';
 import { GraphWorkflowHelper } from './workflows/GraphWorkflowHelper.js';
 import QuestionAnswerService from '../../services/QuestionAnswerService.js';
 import { graphRequestContext } from './requestContext.js';
+import { createRedactNode, createTranslateNode } from './nodes/questionNodes.js';
+import { EVAL_INFORMED_WORKFLOW, EVAL_INFORMED_RECENCY_DAYS } from '../../src/config/workflows.js';
+import { normalizeMatchDepartment } from '../../services/matchDepartment.js';
 
 const WorkflowStatus = {
   MODERATING_QUESTION: 'moderatingQuestion',
@@ -78,38 +81,9 @@ graph.addNode('validate', async (state) => {
   }
 });
 
-graph.addNode('redact', async (state) => {
-  try {
-    logGraphEvent('info', 'node:redact input', state.chatId, {
-      lang: state.lang,
-      selectedAI: state.selectedAI,
-    });
+graph.addNode('redact', createRedactNode(workflow));
 
-    const { redactedText } = await workflow.processRedaction(state.userMessage, state.lang, state.chatId, state.selectedAI);
-
-    const out = { redactedText };
-    logGraphEvent('info', 'node:redact output', state.chatId, out);
-    return out;
-  } catch (error) {
-    throw error;
-  }
-});
-
-graph.addNode('translate', async (state) => {
-  const translationContext = workflow.buildTranslationContext ? workflow.buildTranslationContext(state.conversationHistory) : null;
-  logGraphEvent('info', 'node:translate input', state.chatId, {
-    redactedText: state.redactedText,
-    translationContext,
-    selectedAI: state.selectedAI,
-  });
-
-  const translationData = await workflow.translateQuestion(state.redactedText, 'en', state.selectedAI, translationContext);
-  await workflow.postTranslateGuard(translationData, state.chatId, state.selectedAI);
-
-  const out = { translationData, status: WorkflowStatus.BUILDING_CONTEXT };
-  logGraphEvent('info', 'node:translate output', state.chatId, out);
-  return out;
-});
+graph.addNode('translate', createTranslateNode(workflow, { status: WorkflowStatus.BUILDING_CONTEXT }));
 
 graph.addNode('contextNode', async (state) => {
   logGraphEvent('info', 'node:context input', state.chatId, {
@@ -144,22 +118,34 @@ graph.addNode('contextNode', async (state) => {
 });
 
 graph.addNode('similarQuestions', async (state) => {
+  // Examples only come from the department context matched for this question:
+  // generic wording ("when is the deadline?") otherwise matches evals from
+  // unrelated departments. No matched department -> no examples at all.
+  // Normalized here, not only in the vector layer: a whitespace-only value must
+  // hit the skip below, not reach the services as "no filter".
+  const department = normalizeMatchDepartment(state.context?.department);
   logGraphEvent('info', 'node:similarQuestions input', state.chatId, {
     lang: state.lang,
+    department,
   });
+  if (!department) {
+    logGraphEvent('info', 'node:similarQuestions skipped', state.chatId, { reason: 'noContextDepartment' });
+    return { context: { ...state.context, similarQuestions: '' } };
+  }
 
   let similarQuestions = '';
   let similarQuestionsDebug = null;
   try {
     const similarResult = await QuestionAnswerService.getSimilarQuestionsContext(state.userMessage, {
       k: 3,
+      department,
       threshold: 0.75,
       expertFeedbackRating: 100,
       expertFeedbackComparison: 'lte',
       language: state.lang,
       interactionLanguage: state.context?.originalLang || state.translationData?.originalLanguage || state.lang,
       includeQuestionFlow: true,
-      recencyDays: 365,
+      recencyDays: EVAL_INFORMED_RECENCY_DAYS,
       useDenormalizedPreFilter: true,
       returnDebugData: true,
     });
@@ -251,7 +237,6 @@ graph.addNode('verifyNode', async (state) => {
       context: state.context,
       question: state.userMessage,
       citationUrl: finalCitationUrl ?? state.finalCitationUrl ?? null,
-      historySignature: state.answer?.historySignature ?? null,
     },
   };
   logGraphEvent('info', 'node:verify output', state.chatId, {
@@ -283,7 +268,7 @@ graph.addNode('persistNode', async (state) => {
     finalCitationUrl,
     context: contextData,
     chatId: state.chatId,
-    workflow: 'GenericWithQAGraph',
+    workflow: EVAL_INFORMED_WORKFLOW,
     pageLanguage: state.lang,
     responseTime: totalResponseTime,
     searchProvider: state.searchProvider,
@@ -312,9 +297,5 @@ graph.addEdge('verifyNode', 'persistNode');
 graph.addEdge('persistNode', END);
 
 export const genericWithQAGraphApp = graph.compile();
-
-export async function runGenericWithQAGraph(input) {
-  return genericWithQAGraphApp.invoke(input);
-}
 
 export default genericWithQAGraphApp;

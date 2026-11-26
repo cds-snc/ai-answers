@@ -34,7 +34,7 @@ export const useRouteChangeFocus = (routeKey, { skip = false } = {}) => {
     // TODO(a11y): this back-off is sync-only, and can be defeated by more
     // than the async case documented above - a child's own mount-time
     // useEffect that moves focus via a *state update* (e.g.
-    // ResetCompletePage.js's invalidLinkCount -> useFocusOnChange) also runs
+    // ResetCompletePage.js's statusNonce -> useFocusOnChange) also runs
     // after this effect, for the same "effects run child-before-parent, but
     // this one still isn't done yet" reason. Confirmed latent, not live
     // today - ResetCompletePage.js isn't currently reached via navigate() -

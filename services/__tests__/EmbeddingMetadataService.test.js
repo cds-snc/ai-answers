@@ -5,6 +5,8 @@ const {
   mockUpdateMany,
   mockEmbeddingAggregate,
   mockEmbeddingFind,
+  mockEmbeddingDeleteMany,
+  mockSentenceEmbeddingDeleteMany,
   mockChatFind,
   mockChatFindOne,
   mockInteractionFind,
@@ -12,10 +14,13 @@ const {
   mockInteractionCountDocuments,
   mockExpertFeedbackFind,
   mockExpertFeedbackFindById,
+  mockContextFindById,
 } = vi.hoisted(() => ({
   mockUpdateMany: vi.fn(),
   mockEmbeddingAggregate: vi.fn(),
   mockEmbeddingFind: vi.fn(),
+  mockEmbeddingDeleteMany: vi.fn(),
+  mockSentenceEmbeddingDeleteMany: vi.fn(),
   mockChatFind: vi.fn(),
   mockChatFindOne: vi.fn(),
   mockInteractionFind: vi.fn(),
@@ -23,6 +28,7 @@ const {
   mockInteractionCountDocuments: vi.fn(),
   mockExpertFeedbackFind: vi.fn(),
   mockExpertFeedbackFindById: vi.fn(),
+  mockContextFindById: vi.fn(),
 }));
 
 vi.mock('../../api/db/db-connect.js', () => ({
@@ -46,7 +52,16 @@ vi.mock('../../models/embedding.js', () => ({
     updateMany: mockUpdateMany,
     aggregate: mockEmbeddingAggregate,
     find: mockEmbeddingFind,
+    deleteMany: mockEmbeddingDeleteMany,
   },
+}));
+
+vi.mock('../../models/sentenceEmbedding.js', () => ({
+  SentenceEmbedding: { deleteMany: mockSentenceEmbeddingDeleteMany },
+}));
+
+vi.mock('../../models/context.js', () => ({
+  Context: { findById: mockContextFindById },
 }));
 
 vi.mock('../../models/expertFeedback.js', () => ({
@@ -91,6 +106,8 @@ describe('EmbeddingMetadataService', () => {
     mockUpdateMany.mockReset();
     mockEmbeddingAggregate.mockReset();
     mockEmbeddingFind.mockReset();
+    mockEmbeddingDeleteMany.mockReset();
+    mockSentenceEmbeddingDeleteMany.mockReset();
     mockChatFind.mockReset();
     mockChatFindOne.mockReset();
     mockInteractionFind.mockReset();
@@ -98,6 +115,7 @@ describe('EmbeddingMetadataService', () => {
     mockInteractionCountDocuments.mockReset();
     mockExpertFeedbackFind.mockReset();
     mockExpertFeedbackFindById.mockReset();
+    mockContextFindById.mockReset();
     mockExpertFeedbackFindResult([]);
     mockEmbeddingFind.mockReturnValue({
       select: () => ({
@@ -168,9 +186,72 @@ describe('EmbeddingMetadataService', () => {
           expertFeedbackNeverStale: '',
           pageLanguage: '',
           interactionLanguage: '',
+          department: '',
         },
       }
     );
+  });
+
+  it('stores the normalized context department so examples can be kept within one department', async () => {
+    mockChatFindOne.mockReturnValue({ select: () => ({ lean: async () => ({ pageLanguage: 'en' }) }) });
+    mockContextFindById.mockReturnValue({
+      select: () => ({ lean: async () => ({ department: ' FedDev-Ontario ' }) }),
+    });
+    mockUpdateMany.mockResolvedValue({ matchedCount: 1, modifiedCount: 1 });
+
+    const result = await EmbeddingMetadataService.syncForInteraction({
+      _id: '507f1f77bcf86cd799439011',
+      context: '507f1f77bcf86cd799439041',
+      question: { language: 'en' },
+      expertFeedback: { _id: '507f1f77bcf86cd799439012', totalScore: 100, createdAt: new Date('2024-01-01T00:00:00Z') },
+    });
+
+    expect(mockContextFindById).toHaveBeenCalledWith('507f1f77bcf86cd799439041');
+    expect(mockUpdateMany.mock.calls[0][1].$set.department).toBe('FEDDEV-ONTARIO');
+    expect(result.metadataSnapshot.department).toBe('FEDDEV-ONTARIO');
+  });
+
+  it('uses an already-populated context department without another lookup', async () => {
+    mockChatFindOne.mockReturnValue({ select: () => ({ lean: async () => ({ pageLanguage: 'en' }) }) });
+    mockUpdateMany.mockResolvedValue({ matchedCount: 1, modifiedCount: 1 });
+
+    await EmbeddingMetadataService.syncForInteraction({
+      _id: '507f1f77bcf86cd799439011',
+      context: { _id: '507f1f77bcf86cd799439041', department: 'TBS-SCT' },
+      question: { language: 'en' },
+      expertFeedback: { _id: '507f1f77bcf86cd799439012', totalScore: 100, createdAt: new Date('2024-01-01T00:00:00Z') },
+    });
+
+    expect(mockContextFindById).not.toHaveBeenCalled();
+    expect(mockUpdateMany.mock.calls[0][1].$set.department).toBe('TBS-SCT');
+  });
+
+  it('treats a populated context with no department field as no department, without re-querying', async () => {
+    mockChatFindOne.mockReturnValue({ select: () => ({ lean: async () => ({ pageLanguage: 'en' }) }) });
+    mockUpdateMany.mockResolvedValue({ matchedCount: 1, modifiedCount: 1 });
+
+    await EmbeddingMetadataService.syncForInteraction({
+      _id: '507f1f77bcf86cd799439011',
+      context: { _id: '507f1f77bcf86cd799439041' },
+      question: { language: 'en' },
+      expertFeedback: { _id: '507f1f77bcf86cd799439012', totalScore: 100, createdAt: new Date('2024-01-01T00:00:00Z') },
+    });
+
+    expect(mockContextFindById).not.toHaveBeenCalled();
+    expect(mockUpdateMany.mock.calls[0][1].$set.department).toBe('');
+  });
+
+  it('stores an empty department (not absent) when context matched no department, so backfill treats it as done', async () => {
+    mockChatFindOne.mockReturnValue({ select: () => ({ lean: async () => ({ pageLanguage: 'en' }) }) });
+    mockUpdateMany.mockResolvedValue({ matchedCount: 1, modifiedCount: 1 });
+
+    await EmbeddingMetadataService.syncForInteraction({
+      _id: '507f1f77bcf86cd799439011',
+      question: { language: 'en' },
+      expertFeedback: { _id: '507f1f77bcf86cd799439012', totalScore: 100, createdAt: new Date('2024-01-01T00:00:00Z') },
+    });
+
+    expect(mockUpdateMany.mock.calls[0][1].$set.department).toBe('');
   });
 
   it('starts backfill by clearing all existing embedding metadata once', async () => {
@@ -273,6 +354,87 @@ describe('EmbeddingMetadataService', () => {
     expect(mockEmbeddingFind).toHaveBeenCalledWith({ interactionId: { $in: [interactionId] } });
     expect(mockChatFind).not.toHaveBeenCalled();
     expect(mockChatFindOne).not.toHaveBeenCalled();
+  });
+
+  it('reports duplicate embedding counts from the aggregation', async () => {
+    mockEmbeddingAggregate.mockResolvedValue([{
+      _id: null,
+      duplicateInteractions: 4,
+      duplicatesWithExpertFeedback: 1,
+      extraEmbeddings: 6,
+      maxCopies: 3,
+    }]);
+
+    await expect(EmbeddingMetadataService.getDuplicateEmbeddingStatus()).resolves.toEqual({
+      duplicateInteractions: 4,
+      duplicatesWithExpertFeedback: 1,
+      extraEmbeddings: 6,
+      maxCopies: 3,
+    });
+    // Must not load vector fields: the first stage projects to interactionId only.
+    expect(mockEmbeddingAggregate.mock.calls[0][0][0]).toEqual({ $project: { interactionId: 1 } });
+  });
+
+  it('reports zero duplicates when the aggregation finds none', async () => {
+    mockEmbeddingAggregate.mockResolvedValue([]);
+
+    await expect(EmbeddingMetadataService.getDuplicateEmbeddingStatus()).resolves.toEqual({
+      duplicateInteractions: 0,
+      duplicatesWithExpertFeedback: 0,
+      extraEmbeddings: 0,
+      maxCopies: 0,
+    });
+  });
+
+  it('removes extra embeddings, keeping the copy with expert feedback metadata', async () => {
+    mockEmbeddingAggregate.mockResolvedValue([
+      // Oldest first: no metadata on the oldest, so the second copy is kept.
+      { _id: 'i1', copies: [{ id: 'e1' }, { id: 'e2', expertFeedbackId: 'f1' }, { id: 'e3' }] },
+      // No copy has metadata: the oldest is kept, even when the pipeline
+      // returns the copies out of order.
+      { _id: 'i2', copies: [{ id: 'e5' }, { id: 'e4' }] },
+    ]);
+    mockSentenceEmbeddingDeleteMany.mockResolvedValue({ deletedCount: 9 });
+    mockEmbeddingDeleteMany.mockResolvedValue({ deletedCount: 3 });
+
+    await expect(EmbeddingMetadataService.removeDuplicateEmbeddings()).resolves.toEqual({
+      duplicateInteractions: 2,
+      deletedEmbeddings: 3,
+      deletedSentenceEmbeddings: 9,
+    });
+    expect(mockSentenceEmbeddingDeleteMany).toHaveBeenCalledWith({ parentEmbeddingId: { $in: ['e1', 'e3', 'e5'] } });
+    expect(mockEmbeddingDeleteMany).toHaveBeenCalledWith({ _id: { $in: ['e1', 'e3', 'e5'] } });
+    // Sentences are deleted before their parents so a re-run never leaves orphans.
+    expect(mockSentenceEmbeddingDeleteMany.mock.invocationCallOrder[0])
+      .toBeLessThan(mockEmbeddingDeleteMany.mock.invocationCallOrder[0]);
+    // Must not load vector fields.
+    expect(mockEmbeddingAggregate.mock.calls[0][0][0]).toEqual({ $project: { interactionId: 1, expertFeedbackId: 1 } });
+  });
+
+  it('deletes in batches', async () => {
+    mockEmbeddingAggregate.mockResolvedValue([
+      { _id: 'i1', copies: [{ id: 'e1' }, { id: 'e2' }, { id: 'e3' }, { id: 'e4' }] },
+    ]);
+    mockSentenceEmbeddingDeleteMany.mockResolvedValue({ deletedCount: 0 });
+    mockEmbeddingDeleteMany.mockResolvedValue({ deletedCount: 2 });
+
+    const result = await EmbeddingMetadataService.removeDuplicateEmbeddings({ batchSize: 2 });
+
+    expect(mockEmbeddingDeleteMany).toHaveBeenNthCalledWith(1, { _id: { $in: ['e2', 'e3'] } });
+    expect(mockEmbeddingDeleteMany).toHaveBeenNthCalledWith(2, { _id: { $in: ['e4'] } });
+    expect(result.deletedEmbeddings).toBe(4);
+  });
+
+  it('deletes nothing when there are no duplicates', async () => {
+    mockEmbeddingAggregate.mockResolvedValue([]);
+
+    await expect(EmbeddingMetadataService.removeDuplicateEmbeddings()).resolves.toEqual({
+      duplicateInteractions: 0,
+      deletedEmbeddings: 0,
+      deletedSentenceEmbeddings: 0,
+    });
+    expect(mockEmbeddingDeleteMany).not.toHaveBeenCalled();
+    expect(mockSentenceEmbeddingDeleteMany).not.toHaveBeenCalled();
   });
 
   it('reports whether embedding metadata matches linked feedback', async () => {
@@ -482,13 +644,13 @@ describe('EmbeddingMetadataService', () => {
     });
     expect(mockEmbeddingFind).toHaveBeenCalledWith({
       interactionId: { $in: [firstInteractionId, missingInteractionId] },
-      expertFeedbackId: null,
+      $or: [{ expertFeedbackId: null }, { department: null }],
     });
     expect(mockUpdateMany).toHaveBeenCalledWith(
       {
         $and: [
           { interactionId: missingInteractionId },
-          { expertFeedbackId: null },
+          { $or: [{ expertFeedbackId: null }, { department: null }] },
         ],
       },
       {
@@ -613,6 +775,69 @@ describe('EmbeddingMetadataService', () => {
       interactionLanguage: 'fr',
       metadataPageLanguage: 'fr',
       metadataInteractionLanguage: 'en',
+    }));
+  });
+
+  it('reports the context and metadata departments, and flags a synced row with no department as missing metadata', async () => {
+    mockChatFindOne.mockReturnValue({
+      select: () => ({
+        populate: () => ({
+          lean: async () => ({
+            _id: '507f1f77bcf86cd799439031',
+            chatId: 'chat-123',
+            pageLanguage: 'en',
+            interactions: [
+              {
+                _id: '507f1f77bcf86cd799439011',
+                interactionId: '1',
+                question: { language: 'en' },
+                context: { _id: '507f1f77bcf86cd799439041', department: 'FedDev-Ontario' },
+                expertFeedback: { _id: '507f1f77bcf86cd799439012', totalScore: 100 },
+              },
+              {
+                _id: '507f1f77bcf86cd799439013',
+                interactionId: '2',
+                question: { language: 'en' },
+                context: { _id: '507f1f77bcf86cd799439042', department: 'TBS-SCT' },
+                expertFeedback: { _id: '507f1f77bcf86cd799439014', totalScore: 100 },
+              },
+            ],
+          }),
+        }),
+      }),
+    });
+    mockEmbeddingFind.mockReturnValue({
+      select: () => ({
+        sort: () => ({
+          lean: async () => ([
+            {
+              _id: '507f1f77bcf86cd799439021',
+              interactionId: '507f1f77bcf86cd799439011',
+              expertFeedbackId: '507f1f77bcf86cd799439012',
+              department: 'FEDDEV-ONTARIO',
+            },
+            {
+              _id: '507f1f77bcf86cd799439022',
+              interactionId: '507f1f77bcf86cd799439013',
+              expertFeedbackId: '507f1f77bcf86cd799439014',
+              // synced before `department` existed
+            },
+          ]),
+        }),
+      }),
+    });
+
+    const { rows } = await EmbeddingMetadataService.lookupForChat('chat-123');
+
+    expect(rows[0]).toEqual(expect.objectContaining({
+      contextDepartment: 'FEDDEV-ONTARIO',
+      metadataDepartment: 'FEDDEV-ONTARIO',
+      metadataStatus: 'metadataMatches',
+    }));
+    expect(rows[1]).toEqual(expect.objectContaining({
+      contextDepartment: 'TBS-SCT',
+      metadataDepartment: null,
+      metadataStatus: 'missingMetadata',
     }));
   });
 

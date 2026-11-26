@@ -20,8 +20,9 @@ A change to `FilterPanel.js` or `getChatFilterConditions` must be verified on **
 - **EvalDashboardPage / AutoEvalDashboardPage** (`api/eval/eval-dashboard.js`) — aggregates from `Chat`, unwinds `interactions`; uses `basePath: 'interactions'`, `userField: 'user'`; `referringUrl` may lack a protocol prefix
 - **MetricsDashboard** (`api/metrics/metrics-common.js` + metric endpoints)
 - **PartnerDashboard** (`api/metrics/*` via `parseRequestFilters`)
-- **ChatViewer / Chat logs list** (`api/db/db-chat-logs.js`)
 - **Export/Download** (`api/chat/chat-export-logs.js`) — a `$lookup` overwrites `user`; apply the user-type filter early in `dateFilter`
+
+`api/db/db-chat-logs.js` is not a consumer: it only serves the Batches page export (`BatchService.retrieveBatchChats`), requires a `batchId`, answers any other parameter with a 400, and only serves partners/admins exporting a batch they may access (creator or admin, via `findAccessibleBatch`; 404 otherwise).
 
 **Reviewer filters (`institution`, `group`, `reviewerEmail` query params).** Every consumer above resolves them up front with `resolveReviewerMatch()` (`api/util/reviewer-filter.js`) and passes the result as `filters.reviewerMatch` into `getChatFilterConditions`, which matches chats *created by* any resolved user **or** carrying an expert evaluation *written by* one. They exist because reviewer identity is stored two ways — `chat.user` is a `User` ref, but `expertFeedback.expertEmail` is a string copy of the reviewer's email — so the resolver turns both into id sets once, and the shared condition matches each as a raw ref *and* as a looked-up doc's `_id`, which is what lets one condition work across pipelines that `$lookup` `user`/`expertFeedback` at different points. `User.institution` (partner abbrKey, `src/constants/partnerDepartments.js`) and `User.group` (curated list with EN/FR labels, `src/constants/partnerGroups.js` — render the stored value through `getPartnerGroupLabel(value, lang)`) are set by an admin on the Manage user accounts page, or once by the user on the Manage your account page (`UserService.updateOwnProfile` in `services/UserService.js`, behind `api/user/user-me.js`, locks them for partners after the first save); deliberately not collected at signup — the public form would otherwise list every partner institution. There is deliberately no `FilterPanel` control for these: `group` reaches the backend only via the account preference, shown as a closable pill in the applied-filters row and as a read-only label inside the panel above the date range, shown whenever the group is in effect (the pill's × clears it, Clear restores it) (same classes as HomePage.js's admin-view pill); `institution`/`reviewerEmail` currently have no UI caller — they exist for future features that let a group see work done by specific team members (e.g. a "Reviewed by" dropdown fed by the assign picker's list, `api/user/user-assignable.js`). The same institution preference also pre-selects the department on `ScenarioOverridesPage.js` (`?department=` still wins). `parseRequestFilters` in `metrics-common.js` is `async` because of this resolve step.
 
@@ -29,13 +30,13 @@ A change to `FilterPanel.js` or `getChatFilterConditions` must be verified on **
 
 **A new/changed `FilterPanel` field must also be forwarded by `ChatLogsDashboard.js`, or the download silently ignores it.** `ChatDashboardPage` forwards every filter key generically (`DashboardService.getChatDashboard` appends every key in the filters object as a query param), but `ChatLogsDashboard.js`'s `handleApplyFilters` (the "Download chat logs" page) hand-picks specific fields into `URLSearchParams` (`startDate`, `endDate`, `department`, `urlEn`, `urlFr`, `userType`, `answerType`, `partnerEval`, `aiEval`, `evalLogic`) before calling `chat-export-logs.js`. When adding or renaming a field in `FilterPanel.js`, check `ChatLogsDashboard.js`'s param-building list explicitly — it won't fail loudly, it just drops the field.
 
-**`partnerEval`/`aiEval`/`answerType` allow-lists are hand-duplicated.** `api/db/db-chat-logs.js` and `api/chat/chat-export-logs.js` each keep `validCategories`/`validPartnerEvalCategories`/`validAnswerTypes` arrays that 400 a request before the pipeline runs. A new pseudo-category (like `noEval`, `hasContentIssue`) must be added to `chat-filters.js`, `FilterPanel.js`, **and both** arrays.
+**`partnerEval`/`aiEval`/`answerType` allow-lists are hand-duplicated.** `api/chat/chat-export-logs.js` keeps `validCategories`/`validPartnerEvalCategories`/`validAnswerTypes` arrays that 400 a request before the pipeline runs. A new pseudo-category (like `noEval`, `hasContentIssue`) must be added to `chat-filters.js`, `FilterPanel.js`, **and** those arrays.
 
 ## Cross-dashboard gotchas
 
 - **DataTables `stateSave`**: when changing column `searchable`/`orderable`, bump the page's `TABLE_STORAGE_KEY` version — stale localStorage silently applies old column filters.
 - **Eval dashboard aggregates from `Chat`, then unwinds interactions**: one row per interaction, but `user`, `chatId`, `pageLanguage` stay on the chat document.
-- **Eval dashboard "Eval-informed" column** is derived in the endpoint from the context lookup: `context.qaMatches` non-empty means expert-rated examples were injected into the answer prompt (see [using-evals-for-answers.md](../architecture/using-evals-for-answers.md#graph-node)). No separate flag is stored.
+- **Eval-informed** is derived from the context lookup: `context.qaMatches` non-empty means expert-rated examples were injected into the answer prompt (see [using-evals-for-answers.md](../architecture/using-evals-for-answers.md#graph-node)). No separate flag is stored. Build it with `getEvalInformedAggregationExpression` (`api/util/chat-filters.js`) — the Eval dashboard column and the partner dashboard card/list all use it.
 - **Cleanup `$project` stages**: a field added via `$lookup` + `$addFields` must survive any later `$project` that needs it.
 - **Only AutoEval has per-column filters** (built in `initComplete`, sent as `columnSearch`; no global search). Chat and Eval use one global search. Adding column filters to Chat needs frontend (`initComplete` + `columnSearch`) and backend (`chat-dashboard.js`) work; the eval endpoint already handles `columnSearch`.
 - **Chat grouping is shared**: striping and keep-chat-together cells for Chat, Eval and AutoEval come from `src/utils/admin/chatGroupedTable.js` — see [tables.md](tables.md#grouped-chat-tables).
@@ -61,7 +62,7 @@ FilterPanel / DashboardFilterBar  ──onApply(filters)──►  useDashboardM
                               setMetrics({ ...usage, ...session, ...expert, ...ai, ...publicFb, ...dept, ...technical, ...tail })
 ```
 
-- **`src/hooks/admin/useDashboardMetrics.js`** — 7 parallel fetches (usage, sessions, expert, ai, public feedback, departments, technical), then a best-effort tail round: blocked queries always; referrals, citations, programs, content-issue chats and harmful chats only when opted in (`useDashboardMetrics({ includeReferrals, includeCitations, includePrograms, includeContentIssueChats, includeHarmfulChats })` — partner opts into all five, public into none). Each tail fetch falls back to its empty shape on failure. `fetchMetrics(filters)` passes the filters object through unchanged.
+- **`src/hooks/admin/useDashboardMetrics.js`** — 7 parallel fetches (usage, sessions, expert, ai, public feedback, departments, technical), then a best-effort tail round: blocked queries always; referrals, citations, programs, content-issue chats, harmful chats and eval-informed chats only when opted in (`useDashboardMetrics({ includeReferrals, includeCitations, includePrograms, includeContentIssueChats, includeHarmfulChats, includeEvalInformedChats })` — partner opts into all six, public into none). Each tail fetch falls back to its empty shape on failure. `fetchMetrics(filters)` passes the filters object through unchanged.
 - **`src/services/MetricsService.js`** — `_fetchMetric` serializes the filters object to query params.
 - **`api/metrics/*.js`** — each endpoint calls `parseRequestFilters(req)` (`metrics-common.js`), reading `startDate/endDate/timezoneOffsetMinutes/department/userType/answerType/partnerEval/aiEval/urlEn/urlFr`. `userType` `'all'`/undefined = no filter.
 
@@ -94,13 +95,14 @@ End dates run through today (23:59:59); the picker allows today. There is **no**
 
 **Public section order**: KPI row (accuracy donut + questions asked, then expert-evaluated → content issues) → top institutions → conversation length + median response time → blocked queries. Expert-evaluated precedes content issues because the issues are identified by those evaluators.
 
-**Partner-only sections**: operations metrics (with tokens), top referral pages, top citation pages + answer types, question volume by program, satisfaction, content-issue and harmful chat lists (`ContentIssueChatsCard`, linked from the Content issues/Harmful `StatCard`s), and "Run eval analysis" (`EvalAnalysisSection`, enabled only with an institution filter).
+**Partner-only sections**: operations metrics (with tokens), top referral pages, top citation pages + answer types, question volume by program, satisfaction, content-issue, harmful and eval-informed chat lists (`ContentIssueChatsCard`; content-issue and harmful are linked from their `StatCard`s, eval-informed sits beside its card). "Run eval analysis" is no longer here: it's on the AI-assisted analysis page (`src/pages/AiAnalysisPage.js`), see below.
 
 ## Metric bundle shape
 
 ```
 metrics.firstDataDate                                    // earliest createdAt in range; null if no data
 metrics.totalQuestions / totalQuestionsEn / totalQuestionsFr / totalConversations
+metrics.evalInformed.{ eligible, informed }.{ total, en, fr } + .firstDate   // usage; eligible = questions answered by EVAL_INFORMED_WORKFLOW (src/config/workflows.js)
 metrics.totalInputTokens / totalOutputTokens (+En/Fr)    // usage
 metrics.responseTime.{ count, median, p90, p95, max, maxChatId }   // ms, technical
 metrics.sessionsByQuestionCount.{singleQuestion,twoQuestions,threeQuestions}.total
@@ -115,9 +117,14 @@ metrics.blockedQueries.<type>.{ total, en, fr } // tooShort, piStage1, piStage2,
                                                 //   manipulation, azureGuardrail, unsupportedLanguage, total
 metrics.topReferrals[]      // partner: [{ url, count }] top 20; count = CONVERSATIONS
 metrics.topPrograms[]       // partner: [{ program, count, en, fr, programFr }]; 'unknown' = unclassified
+metrics.evalCoverage        // partner: { programs: [{ program, programFr, questions,
+                            //   usableEvals, expiringEvals, informedAnswers, actions: [{ action, actionFr, count }] }],  // usable/expiring: all dates, dept only; null for 'unknown'
+                            //   recencyDays, expiringWindowDays }; top 10 by questions
 metrics.topCitations[]      // partner: [{ url, count }] top 20; count = QUESTIONS citing the page
 metrics.answerTypeBreakdown.{ normal, 'clarifying-question', 'pt-muni', 'not-gc' }
-metrics.contentIssueChats[] / harmfulChats[]   // partner: [{ chatId, interactionId, pageLanguage, createdAt, status? }]
+metrics.contentIssueChats[] / harmfulChats[]   // partner: [{ chatId, interactionId, pageLanguage, createdAt, questionNumber, status? }]
+metrics.mostUsedEvals[]                         // partner: [{ chatId, interactionId, pageLanguage, questionNumber, program, programFr, totalScore, evaluatedAt, uses }]; top 20 (MOST_USED_EVALS_LIMIT) by uses in range
+metrics.evalInformedChats[]                     // partner: same shape, no status; one row per question, so a chat can repeat; 20 most recent (a sample, not all)
 ```
 
 ### What each metric counts
@@ -161,7 +168,9 @@ const chartA11y = {
 | `CitationPagesCard.js` | `CollapsibleCard` + `CountTable` of top citation pages. Partner only. |
 | `AnswerTypesCard.js` | `CollapsibleCard` + answer-type breakdown table (split out of `CitationPagesCard`). Partner only. |
 | `ContentIssueChatsCard.js` | Collapsible list of chats matching an expert-feedback flag, each linking to review mode in a new tab; optional per-row `status` pill. Partner only. |
-| `EvalAnalysisSection.js` / `EvalAnalysisReport.js` | "Run eval analysis" at the bottom of partner (see `useEvalAnalysis`). |
+| `EvalCoverageCard.js` | Evaluation coverage by service table (classes `.dashboard-data-table`, `.dashboard-table-scroll` in admin.css — no inline styles). Partner only. |
+| `MostUsedEvalsCard.js` | Collapsible table of the evaluations injected into the most answers, each linking to review mode. Same table classes as `EvalCoverageCard`. Partner only. |
+| `src/components/aiAnalysis/EvalAnalysisSection.js` / `EvalAnalysisReport.js` | "Run eval analysis" on the AI-assisted analysis page (`AiAnalysisPage.js`, own `FilterPanel`, enabled only with an institution filter; see `useEvalAnalysis`). One request (`eval-analysis-run`): stats over every human eval in scope, no volume limit, then one insights call sent at most `MAX_INSIGHT_ROWS` (150) non-perfect rows and as many content-issue rows, errors (harmful, answer and citation errors) first then most recent (`selectInsightRows` in `services/evalAnalysisStats.js`); the report header says when either list was cut. Evaluations count by interaction date; chats are pre-filtered from one day before the start. Past runs still `running` show "In progress" for 10 minutes, then "Did not finish". The report still renders a v1 doc's scores-by-service table; new runs have none. |
 
 ## Pure data helpers (`src/utils/dashboard/feedbackBreakdown.js`)
 
@@ -218,6 +227,27 @@ Ranked bar of `context.program`, directly under the accuracy row.
 - **Endpoint:** `api/metrics/metrics-programs.js` → `metrics.topPrograms`, grouped by `$program` with an `en`/`fr` split by `pageLanguage`; `programFr` is the curated French name (empty → English). `'unknown'` is pulled out of the bars into the subtitle.
 - Subtitle is terse at partner request. Tests: `__tests__/api.metrics-programs.test.js`.
 
+## Evaluation coverage by service (partner only)
+
+Table in the eval-informed section, collapsed by default: per program, questions, the expert evaluations eval-informed answering can use, answers that used past evaluations, and evaluations expiring soon.
+
+- **One evaluation count, and it ignores the date range.** The "Expert evaluations" column is `usableEvals`. A date-range count of evaluations (dropped 2026-11-18) was near zero under the 7-day default and told partners nothing about what answering can draw on.
+
+- **Same scope as the volume chart.** `metrics-eval-coverage.js` reuses `buildProgramScopeStages` from `metrics-programs.js` (normal answers, all filters), so the two can't count different questions.
+- **"Expert evaluations" / "Expiring soon" ignore the date range and every filter except department** — a second query (`buildUsableEvalsPipeline`) over all human evaluations, because retrieval uses any of them whenever the question was asked. It mirrors retrieval's conditions: not `type: 'ai'`, has a `totalScore` (the "Never stale" toggle creates blank, unscored docs on unevaluated questions — not evaluations), evaluated within `EVAL_INFORMED_RECENCY_DAYS` (`src/config/workflows.js`, also passed by `GenericWithQAGraph`) or `neverStale` (`true` or `'true'`). "Expiring soon" = will cross that line within `EXPIRING_WINDOW_DAYS` (60). Not mirrored: whether the embedding has synced. The unclassified row gets `null` for both.
+- **"Answers using evaluations"** = same definition as the eval-informed rate (`EVAL_INFORMED_WORKFLOW` + non-empty `qaMatches`), so it only counts from late August 2026.
+- **Actions** exclude `''`, `'unknown'` and `'Other'`; most frequent first. The card shows at most 3, skipping actions asked only once unless that's all there is, then "and N more" (`pickActions` in `EvalCoverageCard.js`).
+- Presence-gated: hidden when no row. Tests: `__tests__/integration.metrics-eval-coverage.test.js` (in-memory Mongo), `src/components/admin/__tests__/EvalCoverageCard.test.js` (a11y contract).
+
+## Most-used evaluations (partner only)
+
+Below the coverage table: the human evaluations eval-informed answering injected into the most answers in the period.
+
+- **Same answers and filters as the eval-informed chats list** — both build on `evalInformedAnswerStages` (`metrics-eval-informed-chats.js`): `EVAL_INFORMED_WORKFLOW` + `qaMatches`, filtered by date range, user/URL filters and department. Don't `$project` the chat down before those stages: userType and reviewer filters read the chat-level `user` field.
+- **Two steps** (`metrics-eval-reuse.js`): the aggregation ranks `qaMatches.interactionId` and keeps twice `MOST_USED_EVALS_LIMIT` (20, `src/config/workflows.js`) as candidates; details (score, evaluation date, service, chat, question number) come from indexed finds in JS. Evaluations deleted since use are dropped, then the list is cut to 20.
+- Links go to the **evaluated** question in review mode, in that chat's language. A chat can hold two evaluated questions, so each link has a sr-only question number.
+- Tests: `__tests__/integration.metrics-eval-reuse.test.js`, `src/components/admin/__tests__/MostUsedEvalsCard.test.js`.
+
 ## Satisfaction section (partner only)
 
 A collapsible `<details>` (default closed) whose `<summary>` carries the headline (`{pct} helpful of {total} responses`).
@@ -243,7 +273,7 @@ Append `?mock=1` to `/en/public-dashboard` or `/en/partner-dashboard` — no bac
   - Filter-driven fetch → `<LoadingOverlay message={...} />` (`src/components/admin/LoadingOverlay.js`; blocks the whole page): Chat, Eval, AutoEval, ChatLogs, Public, Partner. Don't hand-roll `.loading-overlay` markup.
   - One bounded region instead of the whole page (a table sharing a page with other live content) → `<LoadingOverlay scoped message={...} />` — same component, `position: absolute` instead of `fixed`; the caller's wrapper needs its own `position: relative` **and** `isolation: isolate` (or another new-stacking-context trigger) — position alone anchors the overlay but doesn't contain its `z-index: 9999`, so without isolation it can still paint over unrelated page chrome. `ServerDataTable.js`'s `.server-data-table-loading-wrapper` (admin.css) is the reference pairing.
   - Multi-fetch progressive reveal (`MetricsDashboard`, `TechnicalMetricsDashboard`) → `LoadingOverlay` until the first section settles, then `SectionLoadingIndicator` per still-loading section (visual only, not a live region — one consolidated announcement instead of up to 7 simultaneous ones).
-- **Don't set DataTables' own `processing: true` on a table already covered by `LoadingOverlay`.** DataTables only ever toggles that node's `display`, never re-inserts it or changes its text, so most screen readers never announce it regardless of its `role="status"` — and visually it renders underneath `LoadingOverlay`'s full-page backdrop anyway. `ServerDataTable.js` tracks its own `loading` state, renders a scoped `LoadingOverlay` instead, and announces its own completion (`admin.common.resultsLoaded` / `admin.common.noData`) so the overlay's skippable "Loading…" is dropped rather than read after the rows appear. `ExperimentalServerDataTable.js` still sets `processing: true` — it's a near-identical fork of `ServerDataTable.js` from before this fix existed, not a case that needs the flag; it just hasn't adopted the scoped-`LoadingOverlay` pattern yet. See the TODO in `ServerDataTable.js`'s top comment about eventually replacing it outright.
+- **Don't set DataTables' own `processing: true` on a table already covered by `LoadingOverlay`.** DataTables only ever toggles that node's `display`, never re-inserts it or changes its text, so most screen readers never announce it regardless of its `role="status"` — and visually it renders underneath `LoadingOverlay`'s full-page backdrop anyway. `ServerDataTable.js` tracks its own `loading` state, renders a scoped `LoadingOverlay` instead, and announces its own completion (`admin.common.resultsLoaded` / `admin.common.noData`) so the overlay's skippable "Loading…" is dropped rather than read after the rows appear. `ExperimentalServerDataTable.js`, a near-identical fork of `ServerDataTable.js`, does the same. See the TODO in `ServerDataTable.js`'s top comment about eventually replacing it outright.
 - **Locales**: `partnerDashboard.*` / `publicDashboard.*` namespaces; duplicated keys across the two are normal. Add EN + FR together; run `node scripts/find-dead-locale-keys.cjs`.
 - **Numbers**: `formatNumber`/`formatPercent`/`formatDecimal` from `src/utils/numberFormat.js`.
 - **En-dash ` – `** is fine in headings, date ranges, and `CRA-ARC`-style abbreviations; avoid it in chart labels/tooltips (recharts renders its own).

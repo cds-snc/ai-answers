@@ -27,3 +27,15 @@ export function formatDecimal(n, lang, fractionDigits = 3) {
   }
   return formatters[key].format(num);
 }
+
+// Picks the singular locale key: French treats 0 and 1 as singular, English only 1.
+// Usage: t(isSingular(n, lang) ? 'x.one' : 'x.other')
+// TODO: replace the "(s)" plural strings in en.json/fr.json with one/other keys using this.
+const pluralRules = {};
+export function isSingular(n, lang) {
+  const locale = lang === 'fr' ? 'fr-CA' : 'en-CA';
+  if (!pluralRules[locale]) {
+    pluralRules[locale] = new Intl.PluralRules(locale);
+  }
+  return pluralRules[locale].select(n ?? 0) === 'one';
+}

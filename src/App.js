@@ -3,6 +3,7 @@ import { createBrowserRouter, RouterProvider, Outlet, useLocation, useMatches } 
 import HomePage from './pages/HomePage.js';
 import AboutPage from './pages/AboutPage.js';
 import HowToPage from './pages/HowToPage.js';
+import SystemCardPage from './pages/SystemCardPage.js';
 import ChatDashboardPage from './pages/ChatDashboardPage.js';
 import AdminPage from './pages/AdminPage.js';
 import ScenarioOverridesPage from './pages/ScenarioOverridesPage.js';
@@ -18,6 +19,7 @@ import { GcdsHeader, GcdsBreadcrumbs, GcdsBreadcrumbsItem, GcdsFooter } from '@g
 import StatusMessage from './components/admin/StatusMessage.js';
 import { useRouteChangeFocus } from './hooks/useRouteChangeFocus.js';
 import { usePageMetadata } from './hooks/usePageMetadata.js';
+import { useLangToggleLang } from './hooks/useLangToggleLang.js';
 import { installPagingFocusGuard } from './utils/admin/dataTableAccessibility.js';
 import './styles/global.css';
 import './styles/admin.css';
@@ -36,9 +38,11 @@ import VectorPage from './pages/VectorPage.js';
 import { AuthProvider } from './contexts/AuthContext.js';
 import { useAuth } from './contexts/AuthContext.js';
 import { RoleProtectedRoute } from './components/RoleProtectedRoute.js';
+import { useHasAnyRole } from './components/RoleBasedUI.js';
 import MetricsPage from './pages/MetricsPage.js';
 import PublicDashboardPage from './pages/PublicDashboardPage.js';
 import PartnerDashboardPage from './pages/PartnerDashboardPage.js';
+import AiAnalysisPage from './pages/AiAnalysisPage.js';
 import TechnicalMetricsPage from './pages/TechnicalMetricsPage.js';
 import SessionPage from './pages/SessionPage.js';
 import ConnectivityPage from './pages/ConnectivityPage.js';
@@ -52,6 +56,8 @@ import { useTranslations } from './hooks/useTranslations.js';
 import { translatePathSegments, getPath } from './utils/routes.js';
 import { HOW_TOS } from './config/howTos.js';
 import { PUBLIC_HOME_ROUTE_PATHS, isPublicAuthExemptPath } from './config/appRoutePaths.js';
+import { getAdminFooterProps } from './utils/admin/adminFooterLinks.js';
+import { normalizePathname } from './utils/normalizePathname.js';
 
 
 const getAlternatePath = (currentPath, currentLang) => {
@@ -224,10 +230,25 @@ const AppLayout = () => {
 
   const { alternateLangHref, currentLang } = computeAlternateLangHref(location);
   const { t } = useTranslations(currentLang);
-  const { currentUser, sessionWarningVisible } = useAuth();
+  const { currentUser, sessionWarningVisible, loading: authLoading } = useAuth();
   const requireAuthForChat = typeof window !== 'undefined' && window.RUNTIME_CONFIG && window.RUNTIME_CONFIG.REQUIRE_AUTH_FOR_CHAT;
   const matches = useMatches();
   const is404 = matches.some(m => m.handle?.is404);
+  const isAdminOrPartner = useHasAnyRole(['admin', 'partner']);
+  // Chat review is the chat page plus ?review=1, so it has no admin route to
+  // flag. Role is checked for both: anyone can open a review URL, and
+  // signed-out visitors briefly sit on a protected route before the redirect.
+  const isChatReview = PUBLIC_HOME_ROUTE_PATHS.includes(normalizePathname(location.pathname))
+    && new URLSearchParams(location.search).get('review') === '1';
+  const onAdminFooterPage = matches.some(m => m.handle?.adminFooter) || isChatReview;
+  const adminFooter = isAdminOrPartner && onAdminFooterPage;
+  // No footer until the sign-in check is done, so it never shows the public
+  // links and then swaps (the page body waits for the same check).
+  const hideFooter = onAdminFooterPage && authLoading;
+  const adminFooterProps = useMemo(
+    () => (adminFooter ? getAdminFooterProps(currentLang, t) : {}),
+    [adminFooter, currentLang, t]
+  );
   // isChatReviewMode/skipRouteFocus derivation and the <title>/meta-tag
   // effect used to live inline here - extracted to usePageMetadata.js (see
   // its own header for why no existing library replaces it).
@@ -248,6 +269,9 @@ const AppLayout = () => {
   useLayoutEffect(() => {
     document.documentElement.lang = currentLang;
   }, [currentLang]);
+
+  // Puts lang on the header's language link, which GC DS leaves off.
+  useLangToggleLang(currentLang);
 
   useEffect(() => {
     // Removed the auth expiration checker setup
@@ -280,10 +304,18 @@ const AppLayout = () => {
           skipToHref="#main-content"
         >
           <GcdsBreadcrumbs slot="breadcrumb">
-            {/* Show AI Answers breadcrumb on About and 404 pages */}
-            {(location.pathname.includes('/en/about') || location.pathname.includes('/fr/a-propos') || is404) && (
+            {/* Show AI Answers breadcrumb on About, system card and 404 pages */}
+            {(location.pathname.includes('/en/about') || location.pathname.includes('/fr/a-propos') ||
+              location.pathname.includes(getPath('system-card', 'en')) || location.pathname.includes(getPath('system-card', 'fr')) || is404) && (
               <GcdsBreadcrumbsItem href={currentLang === 'fr' ? '/fr' : '/en'}>
                 {t('notFound.breadcrumb')}
+              </GcdsBreadcrumbsItem>
+            )}
+            {/* The card is reached from the About page, so About is its
+                parent crumb. */}
+            {(location.pathname.includes(getPath('system-card', 'en')) || location.pathname.includes(getPath('system-card', 'fr'))) && (
+              <GcdsBreadcrumbsItem href={getPath('about', currentLang)}>
+                {t('aboutPage.title')}
               </GcdsBreadcrumbsItem>
             )}
           </GcdsBreadcrumbs>
@@ -322,7 +354,16 @@ const AppLayout = () => {
         {/* Outlet will be replaced by the matching route's element */}
         <Outlet />
       </main>
-      <GcdsFooter display={is404 ? 'full' : 'compact'} lang={currentLang} />
+      {/* Remount when switching between admin and public footer, as a safeguard
+          against admin links lingering in GcdsFooter's stored link objects. */}
+      {!hideFooter && (
+        <GcdsFooter
+          key={adminFooter ? 'admin' : 'default'}
+          display={is404 ? 'full' : 'compact'}
+          lang={currentLang}
+          {...adminFooterProps}
+        />
+      )}
     </>
   );
 };
@@ -347,10 +388,16 @@ export default function App() {
     }));
     homeRouteEntries[0] = { path: '/', element: homeDefault, handle: { skipRouteFocus: true } };
 
+    // TODO: most route paths here (and in config/appRoutePaths.js) are
+    // hardcoded strings that duplicate ROUTE_SLUGS. Switch them all to
+    // getPath(name, lang) in their own PR, with a test that every route
+    // matches its getPath() value, so a slug rename can't silently 404.
     const publicRoutes = [
       ...(requireAuthForChat ? [] : homeRouteEntries),
       { path: '/en/about', element: <AboutPage lang="en" /> },
       { path: '/fr/a-propos', element: <AboutPage lang="fr" /> },
+      { path: getPath('system-card', 'en'), element: <SystemCardPage lang="en" /> },
+      { path: getPath('system-card', 'fr'), element: <SystemCardPage lang="fr" /> },
       { path: '/en/signin', element: <LoginPage lang="en" />, handle: { titleKey: 'login.title' } },
       { path: '/fr/se-connecter', element: <LoginPage lang="fr" />, handle: { titleKey: 'login.title' } },
       { path: '/en/reset-request', element: <ResetRequestPage lang="en" />, handle: { titleKey: 'reset.request.title' } },
@@ -397,6 +444,8 @@ export default function App() {
       { path: '/fr/tableau-de-bord-public', element: <PublicDashboardPage lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'publicDashboard.title' } },
       { path: '/en/partner-dashboard', element: <PartnerDashboardPage lang="en" />, roles: ['admin', 'partner'], handle: { titleKey: 'partnerDashboard.title' } },
       { path: '/fr/tableau-de-bord-partenaire', element: <PartnerDashboardPage lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'partnerDashboard.title' } },
+      { path: getPath('ai-analysis', 'en'), element: <AiAnalysisPage lang="en" />, roles: ['admin', 'partner'], handle: { titleKey: 'admin.aiAnalysis.title' } },
+      { path: getPath('ai-analysis', 'fr'), element: <AiAnalysisPage lang="fr" />, roles: ['admin', 'partner'], handle: { titleKey: 'admin.aiAnalysis.title' } },
       { path: '/en/technical-metrics', element: <TechnicalMetricsPage lang="en" />, roles: ['admin'], handle: { titleKey: 'technicalMetrics.title' } },
       { path: '/fr/metriques-techniques', element: <TechnicalMetricsPage lang="fr" />, roles: ['admin'], handle: { titleKey: 'technicalMetrics.title' } },
       { path: '/en/sessions', element: <SessionPage lang="en" />, roles: ['admin'], handle: { titleKey: 'admin.session.title' } },
@@ -452,7 +501,11 @@ export default function App() {
           ...publicRoutes,
           ...protectedRoutes.map(route => ({
             path: route.path,
-            handle: route.handle,
+            // Chat home is only here when REQUIRE_AUTH_FOR_CHAT is on (staging);
+            // it keeps the public footer anyway.
+            handle: PUBLIC_HOME_ROUTE_PATHS.includes(route.path)
+              ? route.handle
+              : { ...route.handle, adminFooter: true },
             element: (
               <RoleProtectedRoute roles={route.roles} lang={route.path === '/fr' || route.path.startsWith('/fr/') ? 'fr' : 'en'}>
                 {route.element}

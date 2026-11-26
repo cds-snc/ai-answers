@@ -27,6 +27,25 @@ describe('chat-session-availability', () => {
     mockSessionsAvailable.mockReset().mockResolvedValue(true);
   });
 
+  it('answers HEAD with the same payload as GET', async () => {
+    const res = makeResponse();
+
+    await handler({ method: 'HEAD', sessionID: 'anonymous-session', session: {} }, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ siteStatus: true, sessionAvailable: true });
+  });
+
+  it('rejects methods other than GET and HEAD', async () => {
+    const res = makeResponse();
+
+    await handler({ method: 'POST', sessionID: 'anonymous-session', session: {} }, res);
+
+    expect(mockSessionsAvailable).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(405);
+    expect(res.json).toHaveBeenCalledWith({ error: 'method_not_allowed' });
+  });
+
   it('returns unavailable when the anonymous session pool is full', async () => {
     mockSessionsAvailable.mockResolvedValue(false);
     const res = makeResponse();

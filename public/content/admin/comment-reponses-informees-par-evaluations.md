@@ -21,14 +21,14 @@ Une erreur corrigée une fois par un expert devrait cesser de se reproduire dans
 
 ## Voir quelles évaluations ont été utilisées
 
-1. Ouvrez le chat en mode révision. Sélectionnez un ID de chat dans un tableau de bord, ou collez-en un dans **Voir le chat par ID** sur la page d'administration.
+1. Ouvrez le chat en mode révision. Sélectionnez un ID de clavardage dans un tableau de bord, ou collez-en un dans **Voir le chat par ID** sur la page d'administration.
 2. Déployez **Évaluations antérieures utilisées** sous la réponse. Ce panneau n'apparaît que si le système a trouvé des évaluations admissibles pour cette question. La plupart des questions n'en ont aucune : pour bien des réponses, il n'y a donc rien à déployer.
 
-![Panneau « Évaluations antérieures utilisées » déployé sous une réponse, listant chaque ID de chat et son score total](/content/admin/images/eval-informed-past-evals-used-fr.jpg)
+![Panneau « Évaluations antérieures utilisées » déployé sous une réponse, listant chaque ID de clavardage et son score total](/content/admin/images/eval-informed-past-evals-used-fr.jpg)
 
 - Chaque ligne est un chat antérieur ayant informé la réponse, avec le score de l'expert sur 100.
 - Un mélange de scores élevés et faibles est normal. Il n'y a aucun score minimal.
-- Les ID de chat sont des liens. Ouvrez-en un pour lire les notes de l'expert phrase par phrase et l'évaluation de la citation.
+- Les ID de clavardage sont des liens. Ouvrez-en un pour lire les notes de l'expert phrase par phrase et l'évaluation de la citation.
 
 ### Retirer une évaluation
 
@@ -42,6 +42,29 @@ Retirez-en une lorsque le contenu sur lequel elle reposait a changé, que le jug
 
 - Prend effet dès la question suivante. Il n'y a rien à relancer ni à réindexer.
 - À revoir chaque fois que le contenu web d'un programme change de façon importante.
+
+## Voir à quelle fréquence la fonction est utilisée
+
+Le **Tableau de bord partenaire** affiche une carte **Réponses informées par les évaluations** dans sa propre section, à côté d'une liste des exemples les plus récents.
+
+- Le pourcentage indique la part des questions pour lesquelles des évaluations antérieures ont été utilisées.
+- Seules les questions traitées depuis la mise en service des réponses informées par les évaluations sont comptées. Les questions plus anciennes sont exclues.
+- La carte suit les filtres du tableau de bord.
+
+Ouvrez un ID de clavardage dans la liste pour voir les évaluations antérieures qu'il a utilisées.
+
+## Voir où il manque des évaluations
+
+Sous cette carte, **Couverture des évaluations par service** présente les 10 services ayant reçu le plus de questions. Utilisez-la pour choisir quoi évaluer ensuite.
+
+- Ouvrez-la avec **Principaux services par couverture des évaluations**.
+- **Évaluations d'experts** compte les évaluations que l'IA peut utiliser comme exemples : celles de la dernière année, ainsi que celles marquées **Toujours valide**. Cette colonne ne tient pas compte de la période choisie. Le tableau présente d'abord les services les plus sollicités. Ceux en haut du tableau qui ont peu d'évaluations sont donc ceux à évaluer en priorité.
+- **Réponses utilisant des évaluations** indique si les évaluations faites correspondent à ce que les gens demandent.
+- **Expirent bientôt** compte les évaluations qui cesseront d'être utilisées d'ici 60 jours. Évaluez de nouvelles questions pour ce service afin de les remplacer. Cette colonne ne tient pas compte non plus de la période choisie.
+- **Actions demandées** énumère jusqu'à trois choses que les gens ont demandé de faire, de la plus fréquente à la moins fréquente. Les actions demandées une seule fois sont omises.
+- Les autres colonnes suivent les filtres du tableau de bord.
+
+**Évaluations les plus utilisées** présente les évaluations fournies le plus souvent à l'IA pendant la période. Ouvrez un ID de clavardage pour vérifier qu'une évaluation est toujours juste. Une évaluation erronée souvent utilisée touche de nombreuses réponses.
 
 ## Règles appliquées par le système
 
@@ -64,6 +87,6 @@ Retirez-en une lorsque le contenu sur lequel elle reposait a changé, que le jug
 
 ## Liens connexes
 
-- [Utiliser les évaluations pour améliorer les réponses](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md#utiliser-les-évaluations-pour-améliorer-les-réponses) : le résumé public dans la fiche de système
+- [Utiliser les évaluations pour améliorer les réponses](/fr/fiche-systeme#utiliser-les-évaluations-pour-améliorer-les-réponses) : le résumé public dans la fiche de système
 - [Mécanique de récupération, seuils, modes de défaillance](https://github.com/cds-snc/ai-answers/blob/main/docs/architecture/using-evals-for-answers.md) (en anglais)
 - [Processus d'évaluation par les experts, avec captures d'écran](https://github.com/cds-snc/ai-answers/blob/main/docs/pdf/fr-reponses-ai-integration-evaluations.pdf)

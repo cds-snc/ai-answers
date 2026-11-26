@@ -21,25 +21,27 @@ export class GraphClient {
     translationF,
     onStatusUpdate,
     searchProvider,
-    overrideUserId = null
+    overrideUserId = null,
+    batchId = null
   ) {
     const controller = new AbortController();
     let reader = null;
 
     try {
-      // Extract historySignature from the last AI message in history
+      // Extract historySignature from the last answered turn in history. Error
+      // bubbles are not turns and never carry a signature.
       const lastAiMessage = Array.isArray(conversationHistory)
-        ? [...conversationHistory].reverse().find(m => m.sender === 'ai' || (m.interaction && m.interaction.answer))
+        ? [...conversationHistory].reverse().find(m => !m.error && (m.sender === 'ai' || (m.interaction && m.interaction.answer)))
         : null;
-      const historySignature = lastAiMessage?.historySignature ||
-        lastAiMessage?.interaction?.historySignature ||
-        lastAiMessage?.interaction?.answer?.historySignature ||
-        null;
+      // The server puts it on the result, which is stored as `interaction`.
+      const historySignature = lastAiMessage?.interaction?.historySignature || null;
 
       const visitorId = await SessionService.getVisitorId();
 
       const payload = {
         graph: this.graphName,
+        // Batch questions: the server runs the settings saved on this batch
+        batchId,
         input: {
           chatId,
           userMessage,
@@ -180,7 +182,6 @@ export class GraphClient {
                 data.userMessage || userMessage,
                 fallbackUrl
               );
-              if (data.historySignature) sq.historySignature = data.historySignature;
               throw sq;
             }
             if (errorName === 'RedactionError') {
@@ -189,7 +190,6 @@ export class GraphClient {
                 data.redactedText || '',
                 data.redactedItems || null
               );
-              if (data.historySignature) re.historySignature = data.historySignature;
               throw re;
             }
             // Unknown named error: construct and throw Error with provided name

@@ -1,9 +1,13 @@
 # -------------------------------------------------
 # Build Stage (Debian-based, safe for building)
 # -------------------------------------------------
-FROM node:24.18.0 AS build
+FROM node:24.22.1 AS build
 
 WORKDIR /app
+
+# onnxruntime-node (via @huggingface/transformers) downloads optional CUDA binaries
+# on Linux x64 during install. We run on CPU only, and the download 404s.
+ENV ONNXRUNTIME_NODE_INSTALL_CUDA=skip
 
 # Install deps for build
 COPY package.json package-lock.json ./
@@ -32,6 +36,10 @@ RUN dnf install -y ca-certificates \
 
 # Copy RDS global bundle (matches original path)
 COPY global-bundle.pem /app/global-bundle.pem
+
+# onnxruntime-node (via @huggingface/transformers) downloads optional CUDA binaries
+# on Linux x64 during install. We run on CPU only, and the download 404s.
+ENV ONNXRUNTIME_NODE_INSTALL_CUDA=skip
 
 # Install runtime dependencies
 COPY package.json package-lock.json ./

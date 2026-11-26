@@ -9,9 +9,14 @@ const userSchema = new mongoose.Schema({
     trim: true,
     lowercase: true
   },
+  // The secret fields (password, twoFACode, resetPasswordTokenHash) are
+  // select: false, so no query or export returns them unless it asks with
+  // '+field'. Only sign-in (config/passport.js), 2FA (services/TwoFAService.js)
+  // and password reset (api/auth/auth-reset-password.js) ask.
   password: {
     type: String,
-    required: true
+    required: true,
+    select: false
   },
   role: {
     type: String,
@@ -21,6 +26,15 @@ const userSchema = new mongoose.Schema({
   active: {
     type: Boolean,
     default: true
+  },
+  // Set only on the first user ever (api/auth/auth-signup.js). The unique
+  // sparse index lets one document hold it, so two simultaneous sign-ups on an
+  // empty database can't both become admin. No default: a stored `false`
+  // would be indexed, and every later user would collide on it.
+  isFirstAdmin: {
+    type: Boolean,
+    unique: true,
+    sparse: true
   },
   // Institution the user belongs to, as a partner department abbrKey from
   // src/constants/partnerDepartments.js ('' = unassigned). Set by an admin
@@ -55,34 +69,54 @@ const userSchema = new mongoose.Schema({
     // (chats created or evaluated by group members). Needs `group` set.
     prefilterGroup: { type: Boolean, default: false }
   },
-  // Two factor authentication fields
+  // Two factor authentication challenge (services/TwoFAService.js).
+  // twoFACode is an HMAC of the emailed one-time code, never the code itself.
   twoFACode: {
     type: String,
     default: null,
+    select: false,
   },
   twoFAExpires: {
     type: Date,
     default: null,
-  }
-  ,
-  // If using otplib TOTP flow, store a per-user secret
-  twoFASecret: {
-    type: String,
-    default: null,
   },
-  // Password reset fields
-  // Permanent secret for TOTP password reset codes
-  resetPasswordSecret: {
-    type: String,
-    default: null,
-  },
-  // Track failed reset code attempts for account-level lockout
-  resetPasswordAttempts: {
+  // Wrong-code count. NOT reset when a new code is sent, only on success or
+  // after the lockout ends, so asking for fresh codes can't buy more guesses.
+  twoFAAttempts: {
     type: Number,
     default: 0,
   },
-  // Lockout timestamp after too many failed reset attempts
-  resetPasswordLockedUntil: {
+  twoFALockedUntil: {
+    type: Date,
+    default: null,
+  },
+  twoFALastSentAt: {
+    type: Date,
+    default: null,
+  },
+  // Password sign-in lockout (config/passport.js)
+  loginAttempts: {
+    type: Number,
+    default: 0,
+  },
+  loginLockedUntil: {
+    type: Date,
+    default: null,
+  },
+  // When loginAttempts last went up; older than LOGIN_ATTEMPT_WINDOW_MS means start the count again.
+  loginLastFailedAt: {
+    type: Date,
+    default: null,
+  },
+  // Password reset fields
+  // SHA-256 of the token in the latest reset link, and when it stops working
+  // (api/auth/reset-token.js). Cleared when the reset succeeds.
+  resetPasswordTokenHash: {
+    type: String,
+    default: null,
+    select: false,
+  },
+  resetPasswordExpiresAt: {
     type: Date,
     default: null,
   },
@@ -104,5 +138,15 @@ userSchema.pre('save', async function (next) {
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
+
+// Aggregation $lookup ignores select: false, so a pipeline that joins users
+// gets the secret fields too. Add this stage right after the join (path is
+// where the joined user sits, e.g. 'user'). The list comes from the schema, so
+// a field marked select: false later is stripped here as well.
+const SECRET_FIELDS = Object.keys(userSchema.paths)
+  .filter((field) => userSchema.paths[field].options.select === false);
+export const omitUserSecrets = (path) => ({
+  $project: Object.fromEntries(SECRET_FIELDS.map((field) => [`${path}.${field}`, 0]))
+});
 
 export const User = mongoose.models.User || mongoose.model('User', userSchema);

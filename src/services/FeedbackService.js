@@ -1,6 +1,5 @@
 import { getApiUrl } from '../utils/apiToUrl.js';
 import AuthService from './AuthService.js';
-import ClientLoggingService from './ClientLoggingService.js';
 
 class FeedbackService {
   static async persistExpertFeedback({ chatId, interactionId, expertFeedback }) {
@@ -20,8 +19,6 @@ class FeedbackService {
       expertCitationUrl: expertFeedback.expertCitationUrl || '',
       feedback: expertFeedback.feedback
     };
-    // Log expert feedback using ClientLoggingService
-    await ClientLoggingService.info(chatId, 'Expert feedback submitted', formattedExpertFeedback);
     const response = await AuthService.fetch(getApiUrl('feedback-persist-expert'), {
       method: 'POST',
       headers: {
@@ -48,8 +45,6 @@ class FeedbackService {
       publicFeedbackReason: publicFeedback.publicFeedbackReason || '',
       publicFeedbackScore: publicFeedback.publicFeedbackScore ?? null
     };
-    // Log public feedback using ClientLoggingService
-    await ClientLoggingService.info(chatId, 'Public feedback submitted', formattedPublicFeedback);
     const response = await AuthService.fetch(getApiUrl('feedback-persist-public'), {
       method: 'POST',
       headers: {

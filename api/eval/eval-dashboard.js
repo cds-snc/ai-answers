@@ -2,7 +2,7 @@ import { resolveReviewerMatch } from '../util/reviewer-filter.js';
 import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
-import { getChatFilterConditions, getPartnerEvalAggregationExpressionWithoutCitation, getAiEvalAggregationExpressionWithoutCitation, getPartnerContentIssueAggregationExpression, getHasCitationErrorAggregationExpression, getFeedbackDataProjection } from '../util/chat-filters.js';
+import { getChatFilterConditions, getPartnerEvalAggregationExpressionWithoutCitation, getAiEvalAggregationExpressionWithoutCitation, getPartnerContentIssueAggregationExpression, getHasCitationErrorAggregationExpression, getFeedbackDataProjection, getEvalInformedAggregationExpression } from '../util/chat-filters.js';
 import { frForProgram, frForAction } from '../util/programActionFr.js';
 import { escapeRegex } from '../util/db-query.js';
 
@@ -257,21 +257,13 @@ async function evalDashboardHandler(req, res) {
     });
     // Extract only department + program/action classification immediately,
     // plus whether eval-informed answering injected any expert-rated
-    // examples: the graph persists the matched examples on the context
-    // (context.qaMatches), so a non-empty array is the flag.
+    // examples (see getEvalInformedAggregationExpression).
     pipeline.push({
       $addFields: {
         'interactions.department': { $ifNull: [{ $arrayElemAt: ['$contextDoc.department', 0] }, ''] },
         'interactions.program': { $ifNull: [{ $arrayElemAt: ['$contextDoc.program', 0] }, ''] },
         'interactions.action': { $ifNull: [{ $arrayElemAt: ['$contextDoc.action', 0] }, ''] },
-        'interactions.evalInformed': {
-          $let: {
-            vars: { qa: { $arrayElemAt: ['$contextDoc.qaMatches', 0] } },
-            // $isArray guard: $size throws on a non-array and would fail the
-            // whole aggregation for one malformed document.
-            in: { $gt: [{ $size: { $cond: [{ $isArray: '$$qa' }, '$$qa', []] } }, 0] }
-          }
-        }
+        'interactions.evalInformed': getEvalInformedAggregationExpression({ $arrayElemAt: ['$contextDoc.qaMatches', 0] })
       }
     });
 

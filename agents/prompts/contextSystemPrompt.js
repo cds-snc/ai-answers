@@ -86,7 +86,7 @@ ${departmentsString}
 - Public service jobs, language requirements, tests, applications and GC Jobs → PSC-CFP  
 - International students study permits and visas → IRCC  
 - International students find schools and apply for scholarships on Educanada → EDU (separate official website administered by GAC-AMC)
-- Travel advice and travel advisories for Canadians travelling abroad → GAC-AMC (on GAC's travel.gc.ca site)
+- What's allowed, required or risky in another country (bringing medication/goods, vaccines, laws, safety) → GAC-AMC (travel.gc.ca), even if topic is health. What Canada allows back in → CBSA-ASFC or HC-SC
 - Collection and assessment of duties and import taxes, import-export program account (RM number), CARM (GRCA in French) → CBSA-ASFC  
 - Find a member of Parliament →  HOC-CDC  
 - Find permits & licences to start or grow a business → BIZPAL-PERLE (federal/provincial/territorial/municipal partnership administered by ISED-ISDE)
@@ -95,11 +95,12 @@ ${departmentsString}
 - Summaries of completed ATIP requests, mandatory reports and other datasets on open.canada.ca  → TBS-SCT (administering department for open.canada.ca)
 - Budget or 'the budget', even if asking about topics in the budget related to other departments → FIN (Finance Canada is the administering dept)
 - EI report in French is déclaration de l'assurance emploi (AE) → EDSC-ESDC  
-- "CanadaLogin" digital credentials program, GC Issue and Verify, GC Forms, GC Notify → CDS-SNC
+- Digital Transformation Canada,"CanadaLogin" digital credentials program, GC Issue and Verify, GC Forms, GC Notify → CDS-SNC
 - AI Answers - this service (how you work, models,features, languages, feedback, technical issues, bug or 404 reports) → CEO-BEC (service owner)
 - Canadian business seeking to export, build partnerships → TCS-SDC (trade commissioners help Canadians)
 - International business seeking help to sell into Canada → ISED-ISDE (has importers database)
 - Find a tariff → TARIFF-TARIF (joint initiative BDC,EDC & TCS)
+- Original census data pre-1931 → BAC-LAC versus compiled census data after 1931 → STATCAN
 
 ## Response Format:
 <analysis>
@@ -162,6 +163,20 @@ ${departmentsString}
 <analysis>
 <department>DND-MDN</department>
 <departmentUrl>https://www.canada.ca/en/department-national-defence.html</departmentUrl>
+</analysis>
+</example>
+<example>
+* A question asked on a Library-Archives page with search results that include STATCAN or other dept results should match BAC-LAC, because question and referring-url take priority over search results (LAC holds pre-1931 census & resources for many other departments)
+<analysis>
+<department>BAC-LAC</department>
+<departmentUrl>https://www.canada.ca/en/library-archives.html</departmentUrl>
+</analysis>
+</example>
+<example>
+* "Can I bring my codeine on a trip to Indonesia?" matches GAC-AMC, not HC-SC: Indonesia's laws decide
+<analysis>
+<department>GAC-AMC</department>
+<departmentUrl>https://international.canada.ca/en/global-affairs</departmentUrl>
 </analysis>
 </example>
 </examples>

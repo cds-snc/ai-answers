@@ -1,265 +1,112 @@
 import crypto from 'crypto';
+import { extractCompletedTurns, buildVerifiedHistory } from '../api/util/conversation-turns.js';
 
-const SECRET = process.env.CONVERSATION_INTEGRITY_SECRET || 'dev-secret-key';
+// The client holds the conversation history and sends it back with every
+// follow-up question. This service lets the server check that what comes back
+// is what the server itself produced.
+//
+// Rules this design depends on - keep them when changing anything here:
+//   1. Sign only what the server wrote. Signing happens in one place, where a
+//      completed turn leaves the server (api/chat/chat-graph-run.js). Nothing
+//      a client sent is ever signed on its own.
+//   2. Sign exactly what is read back. The signature covers the raw question
+//      and answer text of every completed turn - no normalization, no
+//      "close enough".
+//   3. Consume only what was verified. verifyHistory returns a history rebuilt
+//      from the signed text alone; the pipeline never sees the client's array.
+//   4. Fail closed. No secret, no signature, or a mismatch means no history.
+
+// Bump when the signed payload changes shape, so old signatures stop verifying.
+const SIGNATURE_VERSION = 'v2';
+
+// AIA-019: there is no hardcoded fallback secret. A known secret lets anyone
+// sign a history they wrote, so a missing one must fail closed.
+//
+// Read lazily, not at import: server.js loads .env after its imports run.
+// "Not development and not test" is how this codebase spots a deployed
+// environment (see middleware/express-session.js) - NODE_ENV is not reliably
+// 'production' there, so an unset NODE_ENV has to count as deployed.
+let cachedSecret = null;
+function getSecret() {
+    if (cachedSecret) return cachedSecret;
+    const configured = process.env.CONVERSATION_INTEGRITY_SECRET;
+    if (configured) {
+        cachedSecret = configured;
+    } else if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+        // Local only: a throwaway secret that lasts until the process exits.
+        cachedSecret = crypto.randomBytes(32).toString('hex');
+        if (process.env.NODE_ENV === 'development') {
+            console.warn('[ConversationIntegrityService] CONVERSATION_INTEGRITY_SECRET is not set: using a temporary secret. Chats open in a browser will fail their next turn after a server restart.');
+        }
+    } else {
+        throw new Error('CONVERSATION_INTEGRITY_SECRET is not set. Refusing to sign or verify conversation history without it.');
+    }
+    return cachedSecret;
+}
 
 class ConversationIntegrityService {
     /**
-     * Normalizes text by stripping internal XML tags and metadata
-     * to ensure signatures match between raw LLM output and cleaned UI state.
+     * Throws when no signing secret is available. server.js calls this at
+     * startup so a misconfigured deployment fails to boot instead of failing
+     * on the first follow-up question.
      */
-    normalizeText(text) {
-        if (!text || typeof text !== 'string') return '';
-        let content = text;
-        if (process.env.DEBUG_CONV_INTEGRITY) {
-            // eslint-disable-next-line no-console
-            console.log('[ConversationIntegrityService] normalizeText input:', text);
-        }
-
-        // 1. "Take what you need" for AI responses
-        // Check <answer> first: parseResponse.js uses <answer> as source of truth when both tags exist.
-        const answerMatch = text.match(/<answer>([\s\S]*?)<\/answer>/) ||
-            text.match(/<english-answer>([\s\S]*?)<\/english-answer>/);
-
-        if (answerMatch) {
-            content = answerMatch[1];
-        } else {
-            // 2. Try to extract clarifying question content
-            // Clarifying questions use <clarifying-question> tags
-            const clarifyingMatch = text.match(/<clarifying-question>([\s\S]*?)<\/clarifying-question>/);
-            if (clarifyingMatch) {
-                content = clarifyingMatch[1];
-            } else {
-                // 3. Fallback: Try to extract sentence-tagged content (<s-1>, <s-2>, etc.)
-                // This handles cases where the answer is wrapped in sentence tags
-                const sentenceMatches = text.match(/<s-\d+>([\s\S]*?)<\/s-\d+>/g);
-                if (sentenceMatches && sentenceMatches.length > 0) {
-                    // Extract content from all sentence tags and join them
-                    content = sentenceMatches
-                        .map(match => match.replace(/<\/?s-\d+>/g, ''))
-                        .join(' ');
-                } else {
-                    // 4. "Remove known noise" for User messages (or AI messages without standard tags)
-                    // e.g. <output-lang>eng</output-lang> sometimes appended to history
-                    content = content
-                        .replace(/<output-lang>[\s\S]*?<\/output-lang>/g, '')
-                        .replace(/<referring-url>[\s\S]*?<\/referring-url>/g, '')
-                        .replace(/<preliminary-checks>[\s\S]*?<\/preliminary-checks>/g, '');
-                }
-            }
-        }
-
-        // 5. Final Polish: strip remaining tags (formatting, s-tags) and normalize whitespace
-        const result = content
-            .replace(/<[^>]+>/g, '')
-            .replace(/\s+/g, ' ')
-            .trim();
-        if (process.env.DEBUG_CONV_INTEGRITY) {
-            // eslint-disable-next-line no-console
-            console.log('[ConversationIntegrityService] normalizeText output:', result);
-        }
-        return result;
-    }
-
-
-    /**
-     * Deterministically serializes conversation history for signing/verification.
-     */
-    serializeHistory(history) {
-        if (!Array.isArray(history)) return '';
-
-        // Filter out error messages - they don't affect conversation integrity
-        // and their presence/absence shouldn't change the signature
-        const filteredHistory = history.filter(m => !m.error);
- 
-        const lines = [];
-        for (let i = 0; i < filteredHistory.length; i++) {
-            const m = filteredHistory[i];
-            const isUser = (m.sender === 'user' || m.role === 'user');
-
-            // TODO(ai-turn-check-sync): this "is this an AI turn" guard is
-            // hand-duplicated in 2 other files - AnswerGenerationService.js
-            // and ContextAgentService.js (search for "ai-turn-check-sync" there). All
-            // three independently implement the same invariant (originally
-            // by the same author, Ryan Hyma, in commits a2c70182 and
-            // b585a348 - a2c70182 wrote AnswerGenerationService.js's own
-            // copy; b585a348, five weeks later, wrote this one and
-            // ContextAgentService.js's together, as a real bug fix after a
-            // conversation-integrity hash mismatch from them being out of
-            // sync). Keep this in sync with the other two if you touch it -
-            // consider a shared helper only if that becomes a recurring cost.
-            //
-            // Only an AI-sender message carrying `interaction` represents a full
-            // Q+A turn on its own. Client state also retroactively attaches the
-            // same `interaction` object onto the *user* bubble (ChatAppContainer.js,
-            // so the question bubble can read its own detected language) - without
-            // this sender check, that user message would hit this branch too and
-            // double up the user:/ai: lines below, changing the signature from
-            // what AnswerGenerationService originally computed over the plain
-            // [user, ai] pair.
-            if (m.interaction && !isUser) {
-                const qRaw = m.interaction.question?.redactedQuestion || m.interaction.question?.text || m.interaction.question;
-                const aRaw = m.interaction.answer?.content || m.interaction.answer?.text || m.interaction.answer;
-                const q = this.normalizeText(qRaw);
-                const a = this.normalizeText(aRaw);
-                lines.push(`user:${q}`);
-                lines.push(`ai:${a}`);
-            } else {
-                // Check redundancy: If this is a user message and the NEXT message has an interaction,
-                // assume the interaction covers this turn (User Q + AI A) and skip this standalone user message.
-                // This handles the [User, AI(with interaction)] pattern common in client state - including a
-                // user message that now carries its own `interaction` (see comment above), since the check
-                // above only looks at the *next* message here, not this one's own `interaction`.
-                if (isUser && i + 1 < filteredHistory.length) {
-                    const next = filteredHistory[i + 1];
-                    if (next.interaction) {
-                        continue;
-                    }
-                }
-
-                const role = m.sender || m.role || '';
-                const text = this.normalizeText(m.text || m.content || '');
-                lines.push(`${role}:${text}`);
-            }
-        }
-        const result = lines.join('|');
-        if (process.env.DEBUG_CONV_INTEGRITY) {
-            // eslint-disable-next-line no-console
-            console.log('[ConversationIntegrityService] serializeHistory:', result);
-        }
-        return result;
+    assertConfigured() {
+        getSecret();
     }
 
     /**
-     * Calculates a HMAC-SHA256 signature for the given history.
-     * 
-     * @param {Array} history - The conversation history.
-     * @returns {string} - Hex digest of the signature.
-     */
-    calculateSignature(history) {
-        const data = this.serializeHistory(history);
-        const signature = crypto.createHmac('sha256', SECRET).update(data).digest('hex');
-        if (process.env.DEBUG_CONV_INTEGRITY) {
-            // eslint-disable-next-line no-console
-            console.log('[ConversationIntegrityService] calculateSignature:', { data, signature });
-        }
-        return signature;
-    }
-
-    /**
-     * Verifies if the provided signature matches the history.
-     * 
-     * @param {Array} history - The conversation history.
-     * @param {string} signature - The signature to verify.
-     * @returns {boolean} - True if valid, false otherwise.
-     */
-    verifyHistory(history, signature) {
-        if (!signature) return false;
-        const expected = this.calculateSignature(history);
-        if (process.env.DEBUG_CONV_INTEGRITY) {
-            // eslint-disable-next-line no-console
-            console.log('[ConversationIntegrityService] verifyHistory:', { signature, expected, match: signature === expected });
-        }
-        return signature === expected;
-    }
-
-    /**
-     * Verify only the signed prefix of a history when a signature may refer
-     * to an earlier AI turn. Returns an object describing the result so
-     * callers can decide how to proceed.
+     * Signs a chat's completed turns.
      *
-     * @param {Array} historyArray - Full conversation history (may include error turns)
-     * @param {string|null} inputSignature - Optional signature provided by client
-     * @returns {Object} - { valid: boolean, reason?: string, signature?: string, signatureSourceIndex?: number }
+     * The payload is JSON, so text can never read as a boundary between turns,
+     * and it includes the chatId, so a signature from one chat does not verify
+     * in another.
+     *
+     * @param {string} chatId - The server-validated chat ID.
+     * @param {Array<{question: string, answer: string}>} turns - From extractCompletedTurns.
+     * @returns {string} - Hex HMAC-SHA256.
      */
-    verifySignedPrefix(historyArray, inputSignature) {
-        const history = Array.isArray(historyArray) ? historyArray : [];
-
-        // Filter out error messages - they don't participate in integrity checking
-        const filteredHistory = history.filter(m => !m.error);
-
-        if (process.env.DEBUG_CONV_INTEGRITY) {
-            // eslint-disable-next-line no-console
-            console.log('[ConversationIntegrityService] verifySignedPrefix input:', { historyArray, inputSignature, filteredHistory });
+    signTurns(chatId, turns) {
+        if (typeof chatId !== 'string' || !chatId) {
+            throw new Error('ConversationIntegrityService: chatId is required to sign or verify a history');
         }
+        const payload = JSON.stringify([
+            SIGNATURE_VERSION,
+            chatId,
+            turns.map(({ question, answer }) => [question, answer]),
+        ]);
+        return crypto.createHmac('sha256', getSecret()).update(payload).digest('hex');
+    }
 
-        if (filteredHistory.length === 0) return { valid: true };
+    /**
+     * Checks a client-held history against its signature and returns the
+     * history the pipeline may consume.
+     *
+     * @param {string} chatId - The server-validated chat ID.
+     * @param {*} history - conversationHistory exactly as the client sent it.
+     * @param {*} signature - historySignature as the client sent it.
+     * @returns {{valid: true, history: Array} | {valid: false, reason: 'missing_signature' | 'invalid_signature'}}
+     *   `history` is rebuilt from the signed text only. Callers must consume
+     *   it, never the array they passed in.
+     */
+    verifyHistory(chatId, history, signature) {
+        const turns = extractCompletedTurns(history);
 
-        // Extract signature from possible locations
-        const lastAi = [...filteredHistory].reverse().find(m => m.sender === 'ai' || m.interaction?.answer);
-        let signature = inputSignature || null;
-        let signatureSource = null;
+        // No completed turn means no history: error messages and questions
+        // that never got an answer are not signed and are not consumed.
+        if (turns.length === 0) return { valid: true, history: [] };
 
-        if (!signature && lastAi?.historySignature) {
-            signature = lastAi.historySignature;
-            signatureSource = lastAi;
-        }
-        if (!signature && lastAi?.interaction?.historySignature) {
-            signature = lastAi.interaction.historySignature;
-            signatureSource = lastAi;
-        }
-        if (!signature && lastAi?.interaction?.answer?.historySignature) {
-            signature = lastAi.interaction.answer.historySignature;
-            signatureSource = lastAi;
-        }
-        if (!signature && filteredHistory[0]?.interaction?.answer?.historySignature) {
-            signature = filteredHistory[0].interaction.answer.historySignature;
-            signatureSource = filteredHistory[0];
-        }
-
-        // If signature provided explicitly, try to locate message that carried it
-        if (!signatureSource && signature) {
-            signatureSource = [...filteredHistory].reverse().find(m =>
-                m?.historySignature === signature ||
-                m?.interaction?.historySignature === signature ||
-                m?.interaction?.answer?.historySignature === signature
-            ) || null;
-        }
-
-        // If we still don't have a signature, check the full history (including error/system messages)
-        // because some system/error turns may carry the historySignature even though they are filtered out.
-        if (!signature) {
-            const lastWithSig = [...history].reverse().find(m =>
-                m?.historySignature || m?.interaction?.historySignature || m?.interaction?.answer?.historySignature
-            );
-            if (lastWithSig) {
-                signature = lastWithSig.historySignature || lastWithSig.interaction?.historySignature || lastWithSig.interaction?.answer?.historySignature || null;
-                signatureSource = lastWithSig;
-            }
-        }
-
-        if (!signature) {
-            if (process.env.DEBUG_CONV_INTEGRITY) {
-                // eslint-disable-next-line no-console
-                console.log('[ConversationIntegrityService] verifySignedPrefix: missing signature');
-            }
+        if (typeof signature !== 'string' || !signature) {
             return { valid: false, reason: 'missing_signature' };
         }
 
-        // Default to verifying full historyArray; if we located the signature source
-        // verify only the prefix up to and including that message to allow client-only
-        // trailing error/system turns.
-        let historyToVerify = history;
-        if (signatureSource) {
-            const sourceIndex = history.findIndex((m) => m === signatureSource);
-            if (sourceIndex >= 0) {
-                historyToVerify = history.slice(0, sourceIndex + 1);
-            }
+        // Constant-time compare, so response timing can't reveal the signature.
+        const received = Buffer.from(signature);
+        const expected = Buffer.from(this.signTurns(chatId, turns));
+        if (received.length !== expected.length || !crypto.timingSafeEqual(received, expected)) {
+            return { valid: false, reason: 'invalid_signature' };
         }
 
-        if (process.env.DEBUG_CONV_INTEGRITY) {
-            // eslint-disable-next-line no-console
-            console.log('[ConversationIntegrityService] verifySignedPrefix verifying:', { signature, signatureSource, historyToVerify });
-        }
-
-        const valid = this.verifyHistory(historyToVerify, signature);
-        if (!valid) {
-            if (process.env.DEBUG_CONV_INTEGRITY) {
-                // eslint-disable-next-line no-console
-                console.log('[ConversationIntegrityService] verifySignedPrefix: invalid signature', { signature, historyToVerify });
-            }
-            return { valid: false, reason: 'invalid_signature', signature };
-        }
-        return { valid: true, signature, signatureSourceIndex: signatureSource ? history.findIndex(m => m === signatureSource) : null };
+        return { valid: true, history: buildVerifiedHistory(turns) };
     }
 }
 

@@ -1,109 +1,11 @@
 import { ScenarioOverrideService } from '../../services/ScenarioOverrideService.js';
 import { requireLiteralString } from '../util/db-query.js';
+import { SCENARIO_LOADERS, getScenarioLoader } from '../../agents/prompts/scenarios/scenario-loaders.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
-
-const SUPPORTED_DEPARTMENTS = {
-  'AAFC-AAC': async () => {
-    const mod = await import('../../agents/prompts/scenarios/context-aafc-aac/aafc-aac-scenarios.js');
-    return mod.AAFC_AAC_SCENARIOS || '';
-  },
-  'BAC-LAC': async () => {
-    const mod = await import('../../agents/prompts/scenarios/context-bac-lac/bac-lac-scenarios.js');
-    return mod.BAC_LAC_SCENARIOS || '';
-  },
-  'CBSA-ASFC': async () => {
-    const mod = await import('../../agents/prompts/scenarios/context-cbsa-asfc/cbsa-asfc-scenarios.js');
-    return mod.CBSA_ASFC_SCENARIOS || '';
-  },
-  'CEO-BEC': async () => {
-    const mod = await import('../../agents/prompts/scenarios/context-ceo-bec/ceo-bec-scenarios.js');
-    return mod.CEO_BEC_SCENARIOS || '';
-  },
-  'CDS-SNC': async () => {
-    const mod = await import('../../agents/prompts/scenarios/context-cds-snc/cds-snc-scenarios.js');
-    return mod.CDS_SNC_SCENARIOS || '';
-  },
-  'CRA-ARC': async () => {
-    const mod = await import('../../agents/prompts/scenarios/context-cra-arc/cra-arc-scenarios.js');
-    return mod.CRA_ARC_SCENARIOS || '';
-  },
-  'DND-MDN': async () => {
-    const mod = await import('../../agents/prompts/scenarios/context-dnd-mdn/dnd-mdn-scenarios.js');
-    return mod.DND_MDN_SCENARIOS || '';
-  },
-  'ECCC': async () => {
-    const mod = await import('../../agents/prompts/scenarios/context-eccc/eccc-scenarios.js');
-    return mod.ECCC_SCENARIOS || '';
-  },
-  'EDSC-ESDC': async () => {
-    const mod = await import('../../agents/prompts/scenarios/context-edsc-esdc/edsc-esdc-scenarios.js');
-    return mod.EDSC_ESDC_SCENARIOS || '';
-  },
-  'FedDev-Ontario': async () => {
-    const mod = await import('../../agents/prompts/scenarios/context-feddev-ontario/feddev-ontario-scenarios.js');
-    return mod.FEDDEV_ONTARIO_SCENARIOS || '';
-  },
-  'FedNor': async () => {
-    const mod = await import('../../agents/prompts/scenarios/context-fednor/fednor-scenarios.js');
-    return mod.FEDNOR_SCENARIOS || '';
-  },
-  'FIN': async () => {
-    const mod = await import('../../agents/prompts/scenarios/context-fin/fin-scenarios.js');
-    return mod.FIN_SCENARIOS || '';
-  },
-  'HC-SC': async () => {
-    const mod = await import('../../agents/prompts/scenarios/context-hc-sc/hc-sc-scenarios.js');
-    return mod.HC_SC_SCENARIOS || '';
-  },
-  'IRCC': async () => {
-    const mod = await import('../../agents/prompts/scenarios/context-ircc/ircc-scenarios.js');
-    return mod.IRCC_SCENARIOS || '';
-  },
-  'ISED-ISDE': async () => {
-    const mod = await import('../../agents/prompts/scenarios/context-ised-isde/ised-isde-scenarios.js');
-    return mod.ISED_ISDE_SCENARIOS || '';
-  },
-  'JUS': async () => {
-    const mod = await import('../../agents/prompts/scenarios/context-jus/jus-scenarios.js');
-    return mod.JUS_SCENARIOS || '';
-  },
-  'NRCan-RNCan': async () => {
-    const mod = await import('../../agents/prompts/scenarios/context-nrcan-rncan/nrcan-rncan-scenarios.js');
-    return mod.NRCAN_RNCAN_SCENARIOS || '';
-  },
-  'PacifiCan': async () => {
-    const mod = await import('../../agents/prompts/scenarios/context-pacifican/pacifican-scenarios.js');
-    return mod.PACIFICAN_SCENARIOS || '';
-  },
-  'PrairiesCan': async () => {
-    const mod = await import('../../agents/prompts/scenarios/context-prairiescan/prairiescan-scenarios.js');
-    return mod.PRAIRIESCAN_SCENARIOS || '';
-  },
-  'SAC-ISC': async () => {
-    const mod = await import('../../agents/prompts/scenarios/context-sac-isc/sac-isc-scenarios.js');
-    return mod.SAC_ISC_SCENARIOS || '';
-  },
-  'StatCan': async () => {
-    const mod = await import('../../agents/prompts/scenarios/context-statcan/statcan-scenarios.js');
-    return mod.STATCAN_SCENARIOS || '';
-  },
-  'TC': async () => {
-    const mod = await import('../../agents/prompts/scenarios/context-tc/tc-scenarios.js');
-    return mod.TC_SCENARIOS || '';
-  },
-  'TBS-SCT': async () => {
-    const mod = await import('../../agents/prompts/scenarios/context-tbs-sct/tbs-sct-scenarios.js');
-    return mod.TBS_SCT_SCENARIOS || '';
-  },
-  'VAC-ACC': async () => {
-    const mod = await import('../../agents/prompts/scenarios/context-vac-acc/vac-acc-scenarios.js');
-    return mod.VAC_ACC_SCENARIOS || '';
-  },
-};
 
 async function loadDefaultScenarios(departmentKey) {
   if (departmentKey) {
-    const loader = SUPPORTED_DEPARTMENTS[departmentKey];
+    const loader = getScenarioLoader(departmentKey);
     if (!loader) {
       return null;
     }
@@ -111,7 +13,7 @@ async function loadDefaultScenarios(departmentKey) {
   }
 
   const entries = await Promise.all(
-    Object.entries(SUPPORTED_DEPARTMENTS).map(async ([key, loader]) => {
+    Object.entries(SCENARIO_LOADERS).map(async ([key, loader]) => {
       const text = await loader();
       return [key, text];
     })
@@ -153,7 +55,7 @@ async function handler(req, res) {
         } catch (error) {
           return res.status(400).json({ message: 'Invalid department key' });
         }
-        if (!SUPPORTED_DEPARTMENTS[departmentKey]) {
+        if (!getScenarioLoader(departmentKey)) {
           return res.status(400).json({ message: 'Invalid department key' });
         }
       }
@@ -208,7 +110,7 @@ async function handler(req, res) {
       } catch (error) {
         return res.status(400).json({ message: 'Invalid department key' });
       }
-      if (!SUPPORTED_DEPARTMENTS[departmentKey]) {
+      if (!getScenarioLoader(departmentKey)) {
         return res.status(400).json({ message: 'Invalid department key' });
       }
       if (typeof overrideText !== 'string' || !overrideText.trim()) {
@@ -288,7 +190,7 @@ async function handler(req, res) {
       } catch (error) {
         return res.status(400).json({ message: 'Invalid department key' });
       }
-      if (!SUPPORTED_DEPARTMENTS[departmentKey]) {
+      if (!getScenarioLoader(departmentKey)) {
         return res.status(400).json({ message: 'Invalid department key' });
       }
       await ScenarioOverrideService.deleteOverride(userId, departmentKey);

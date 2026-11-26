@@ -1,0 +1,272 @@
+import React from 'react';
+import { GcdsLink } from '@gcds-core/components-react';
+import { useTranslations } from '../../hooks/useTranslations.js';
+import { formatNumber, formatPercent, formatDecimal } from '../../utils/numberFormat.js';
+import { buildChatReviewHref } from '../../utils/reviewLink.js';
+import StatusMessage from '../admin/StatusMessage.js';
+
+const cell = { borderBottom: '1px solid #e0e0e0', padding: '8px 8px' };
+const head = { borderBottom: '2px solid #e0e0e0', padding: '8px 8px', textAlign: 'left' };
+const numHead = { ...head, textAlign: 'right' };
+const numCell = { ...cell, textAlign: 'right', whiteSpace: 'nowrap' };
+
+// Renders a stored eval-analysis report: computed tables (EN/FR, evaluators)
+// interleaved with the LLM narrative sections. Everything is read from the
+// stored analysis doc — no fetching here. v1 reports also stored a scores by
+// service and action table (crossTab); it still renders for them, and new
+// runs don't have one.
+const EvalAnalysisReport = ({ analysis, lang = 'en' }) => {
+  const { t } = useTranslations(lang);
+  const fmtN = (n) => formatNumber(n, lang);
+  const fmtPct = (n) => formatPercent(n, lang);
+  const fmtScore = (n) => (typeof n === 'number' ? formatDecimal(n, lang, 1) : '—');
+  const pctOrDash = (n) => (n !== null && n !== undefined ? fmtPct(n) : '—');
+
+  if (!analysis) return null;
+  const stats = analysis.stats || null;
+  const crossTab = analysis.crossTab || null;
+  const insights = analysis.insights || null;
+  const input = analysis.insightInput || null;
+  const basedOnNotes = input
+    ? [
+        { key: 'basedOn', sent: input.nonPerfectSent, total: input.nonPerfectTotal },
+        { key: 'basedOnContentIssues', sent: input.contentIssueSent, total: input.contentIssueTotal }
+      ].filter((n) => n.sent < n.total)
+    : [];
+
+  const locale = lang === 'fr' ? 'fr-CA' : 'en-CA';
+  const fmtDate = (d) => (d ? new Date(d).toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' }) : '—');
+
+  const narrative = (text) => (text ? <p style={{ whiteSpace: 'pre-wrap' }}>{text}</p> : null);
+
+  // Older stored reports have no example.
+  const exampleLink = (example) => {
+    if (!example?.chatId) return '—';
+    // Route to the example's own (EN/FR breakdown row) language, not the
+    // admin's current UI language - see the note in ChatDashboardPage.js.
+    // The admin's own language rides along separately as the `adminLang`
+    // query param (4th arg) for the review page's own chrome to use. The
+    // visible text is just the opaque chatId though, not real content -
+    // its `lang` attribute (driving GcdsLink's own "opens in a new tab"
+    // hint) is admin-facing chrome, so it follows the admin's own `lang`
+    // instead of `chatLang`, same reasoning as ContentIssueChatsCard.js.
+    const chatLang = example.lang === 'fr' ? 'fr' : 'en';
+    return (
+      <GcdsLink href={buildChatReviewHref(example.chatId, chatLang, example.interactionId, lang)} target="_blank" lang={lang}>
+        {example.chatId}
+      </GcdsLink>
+    );
+  };
+
+  // This table has headers on both axes (col headers here + a row header for
+  // each label below) — scope is what disambiguates which axis each <th>
+  // labels in that mixed case (WCAG 1.3.1, technique H63). The other tables
+  // in this file only have column headers, where <th> alone is normally
+  // enough, but scope="col" is kept on those too since it's harmless and
+  // keeps the pattern consistent across the file.
+  const crossTabTable = (rows, labelColLabel, headingId) => (
+    <div style={{ overflowX: 'auto' }}>
+      <table className="display" aria-labelledby={headingId} style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead>
+          <tr>
+            <th scope="col" style={head}>{labelColLabel}</th>
+            <th scope="col" style={numHead}>{t('admin.aiAnalysis.evalAnalysis.report.colCount')}</th>
+            <th scope="col" style={numHead}>{t('admin.aiAnalysis.evalAnalysis.report.colNonPerfect')}</th>
+            <th scope="col" style={numHead}>{t('admin.aiAnalysis.evalAnalysis.report.colPctNonPerfect')}</th>
+            <th scope="col" style={head}>{t('admin.aiAnalysis.evalAnalysis.report.colExample')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.label}>
+              <th scope="row" style={{ ...cell, textAlign: 'left', fontWeight: 'normal' }}>
+                {(lang === 'fr' && row.labelFr) ? row.labelFr : row.label}
+                {row.alwaysPerfect && (
+                  <span className="font-size-text-xsm-nr text-status--positive" style={{ marginLeft: 8 }}>
+                    {t('admin.aiAnalysis.evalAnalysis.report.allPerfect')}
+                  </span>
+                )}
+              </th>
+              <td style={numCell}>{fmtN(row.count)}</td>
+              <td style={numCell}>{fmtN(row.nonPerfectCount)}</td>
+              <td style={numCell}>{pctOrDash(row.pctNonPerfect)}</td>
+              <td style={{ ...cell, wordBreak: 'break-all' }} className="font-size-text-xsm-nr">
+                {exampleLink(row.example)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  return (
+    <div>
+      {/* Header: what was analyzed. Plain sections with dashboard-style
+          headings — the card border/box chrome is reserved for the stat and
+          chart cards elsewhere on the dashboard. */}
+      <div className="dashboard-section">
+        <h3>{t('admin.aiAnalysis.evalAnalysis.report.title')}</h3>
+        <p className="font-size-text-xsm-nr">
+          {t('admin.aiAnalysis.evalAnalysis.report.header')
+            .replace('{count}', fmtN(analysis.evalCount))
+            .replace('{department}', analysis.department || '')
+            .replace('{start}', fmtDate(analysis.startDate))
+            .replace('{end}', fmtDate(analysis.endDate))}
+          {' · '}
+          {t('admin.aiAnalysis.evalAnalysis.report.runOn').replace('{date}', fmtDate(analysis.createdAt))}
+          {analysis.requestedBy ? ` · ${t('admin.aiAnalysis.evalAnalysis.report.runBy').replace('{email}', analysis.requestedBy)}` : ''}
+        </p>
+        {(analysis.excludedCount > 0 || (crossTab && crossTab.unclassifiedCount > 0)) && (
+          <p className="font-size-text-xsm-nr">
+            {analysis.excludedCount > 0 &&
+              t('admin.aiAnalysis.evalAnalysis.report.excluded').replace('{count}', fmtN(analysis.excludedCount))}
+            {analysis.excludedCount > 0 && crossTab && crossTab.unclassifiedCount > 0 && ' · '}
+            {crossTab && crossTab.unclassifiedCount > 0 &&
+              t('admin.aiAnalysis.evalAnalysis.report.unclassified').replace('{count}', fmtN(crossTab.unclassifiedCount))}
+          </p>
+        )}
+        {/* When there are many, only part of each list is sent to the model
+            (errors first, then most recent). Said here, not under a section,
+            so it shows even when the model reports no themes. */}
+        {basedOnNotes.map(({ key, sent, total }) => (
+          <p key={key} className="font-size-text-xsm-nr">
+            {t(`admin.aiAnalysis.evalAnalysis.report.${key}`)
+              .replace('{sent}', fmtN(sent))
+              .replace('{total}', fmtN(total))}
+          </p>
+        ))}
+        {analysis.status === 'error' && (
+          <StatusMessage variant="error" message={t('admin.aiAnalysis.evalAnalysis.report.partial')} />
+        )}
+      </div>
+
+      {/* Scores by combined program — action group: v1 reports only */}
+      {crossTab && Array.isArray(crossTab.groups) && (
+        <div className="dashboard-section">
+          <h4 id="eval-analysis-program-actions-title">{t('admin.aiAnalysis.evalAnalysis.report.programActionsTitle')}</h4>
+          {crossTabTable(crossTab.groups, t('admin.aiAnalysis.evalAnalysis.report.colProgramAction'), 'eval-analysis-program-actions-title')}
+          {crossTab.skippedSingles?.groupCount > 0 && (
+            <p className="font-size-text-xsm-nr" style={{ marginTop: 8 }}>
+              {t('admin.aiAnalysis.evalAnalysis.report.singlesSkipped')
+                .replace('{groups}', fmtN(crossTab.skippedSingles.groupCount))
+                .replace('{count}', fmtN(crossTab.skippedSingles.rowCount))}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Explanation themes */}
+      {insights && Array.isArray(insights.explanationThemes) && insights.explanationThemes.length > 0 && (
+        <div className="dashboard-section">
+          <h4>{t('admin.aiAnalysis.evalAnalysis.report.themesTitle')}</h4>
+          {insights.explanationThemes.map((theme, i) => (
+            <div key={i} style={{ marginBottom: 16 }}>
+              <p style={{ marginBottom: 4 }}>
+                <strong>{theme.theme}</strong>
+                {typeof theme.count === 'number' && (
+                  <span className="font-size-text-xsm-nr" style={{ marginLeft: 8 }}>
+                    {t('admin.aiAnalysis.evalAnalysis.report.themeCount').replace('{count}', fmtN(theme.count))}
+                  </span>
+                )}
+              </p>
+              {theme.note && <p className="font-size-text-xsm-nr" style={{ marginBottom: 4 }}>{theme.note}</p>}
+              {Array.isArray(theme.examples) && theme.examples.length > 0 && (
+                <ul className="font-size-text-xsm-nr" style={{ marginTop: 0 }}>
+                  {theme.examples.map((ex, j) => (
+                    <li key={j}><strong>{ex}</strong></li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Content issues — only when some were flagged; no card for a zero count */}
+      {stats && stats.contentIssueCount > 0 && (
+        <div className="dashboard-section">
+          <h4>{t('admin.aiAnalysis.evalAnalysis.report.contentIssuesTitle')}</h4>
+          <p className="font-size-text-xsm-nr">
+            {t('admin.aiAnalysis.evalAnalysis.report.contentIssuesCount').replace('{count}', fmtN(stats.contentIssueCount))}
+          </p>
+          {insights && narrative(insights.contentIssues)}
+        </div>
+      )}
+
+      {/* EN vs FR */}
+      {stats && (
+        <div className="dashboard-section">
+          <h4 id="eval-analysis-language-title">{t('admin.aiAnalysis.evalAnalysis.report.languageTitle')}</h4>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="display" aria-labelledby="eval-analysis-language-title" style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th scope="col" style={head}>{t('admin.aiAnalysis.evalAnalysis.report.colLanguage')}</th>
+                  <th scope="col" style={numHead}>{t('admin.aiAnalysis.evalAnalysis.report.colCount')}</th>
+                  <th scope="col" style={numHead}>{t('admin.aiAnalysis.evalAnalysis.report.colMeanScore')}</th>
+                  <th scope="col" style={numHead}>{t('admin.aiAnalysis.evalAnalysis.report.colPctPerfect')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {['en', 'fr'].map((key) => {
+                  const row = stats.byLanguage?.[key];
+                  if (!row) return null;
+                  return (
+                    <tr key={key}>
+                      <td style={cell}>{t(`admin.aiAnalysis.evalAnalysis.report.lang.${key}`)}</td>
+                      <td style={numCell}>{fmtN(row.count)}</td>
+                      <td style={numCell}>{fmtScore(row.meanScore)}</td>
+                      <td style={numCell}>{pctOrDash(row.pctPerfect)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Evaluators — no "vs others" column: the delta reads as a ranking of
+          people, which is more sensitive than it is useful. A manager can
+          derive divergence from the counts and rates shown. The Review flag
+          (which uses the same delta internally) stays. */}
+      {stats && Array.isArray(stats.evaluators) && stats.evaluators.length > 0 && (
+        <div className="dashboard-section">
+          <h4 id="eval-analysis-evaluators-title">{t('admin.aiAnalysis.evalAnalysis.report.evaluatorsTitle')}</h4>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="display" aria-labelledby="eval-analysis-evaluators-title" style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th scope="col" style={head}>{t('admin.aiAnalysis.evalAnalysis.report.colEvaluator')}</th>
+                  <th scope="col" style={numHead}>{t('admin.aiAnalysis.evalAnalysis.report.colCount')}</th>
+                  <th scope="col" style={numHead}>{t('admin.aiAnalysis.evalAnalysis.report.colMeanScore')}</th>
+                  <th scope="col" style={numHead}>{t('admin.aiAnalysis.evalAnalysis.report.colPctPerfect')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stats.evaluators.map((ev) => (
+                  <tr key={ev.email}>
+                    <td style={{ ...cell, wordBreak: 'break-all' }}>
+                      {ev.email}
+                      {ev.flagged && (
+                        <span className="font-size-text-xsm-nr" style={{ marginLeft: 8, color: '#b10e1e' }}>
+                          {t('admin.aiAnalysis.evalAnalysis.report.flagged')}
+                        </span>
+                      )}
+                    </td>
+                    <td style={numCell}>{fmtN(ev.count)}</td>
+                    <td style={numCell}>{fmtScore(ev.meanScore)}</td>
+                    <td style={numCell}>{pctOrDash(ev.pctPerfect)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default EvalAnalysisReport;

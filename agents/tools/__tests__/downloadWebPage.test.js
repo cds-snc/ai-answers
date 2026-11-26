@@ -117,6 +117,25 @@ describe('downloadWebPage tool', () => {
     expect(output.trim().length).toBeGreaterThan(50);
   });
 
+  // AIA-010: a non-GC URL is refused before the cache or the network.
+  it('refuses a non-Government of Canada URL without fetching it', async () => {
+    await expect(invokeTool({ url: 'https://attacker.example/phish' }))
+      .rejects.toThrow(/only Government of Canada sites/);
+    expect(axios.get).not.toHaveBeenCalled();
+    expect(storageGetWithMetadataMock).not.toHaveBeenCalled();
+  });
+
+  it('fetches with the resolved-IP and redirect guards attached', async () => {
+    axios.get.mockResolvedValueOnce({ status: 200, data: realContent });
+
+    await invokeTool({ url: 'https://www.canada.ca/en/real-page.html' });
+
+    const config = axios.get.mock.calls[0][1];
+    expect(config.httpsAgent.options.lookup).toBeTypeOf('function');
+    expect(config.httpAgent.options.lookup).toBeTypeOf('function');
+    expect(config.beforeRedirect).toBeTypeOf('function');
+  });
+
   it('returns a fresh S3 cache entry without downloading the source page', async () => {
     vi.stubEnv('S3_BUCKET_NAME', 'test-cache-bucket');
     cacheEnabledMock.mockResolvedValue(true);
@@ -591,6 +610,24 @@ describe('downloadWebPage tool', () => {
       expect(axios.get).toHaveBeenCalledTimes(1);
     });
 
+    it('logs a certificate failure as a TLS verification failure, without retrying', async () => {
+      const badChain = Object.assign(new Error('unable to verify the first certificate'), {
+        code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+        config: {},
+      });
+      axios.get.mockRejectedValue(badChain);
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.spyOn(console, 'log').mockImplementation(() => {});
+
+      await expect(invokeTool({ url: 'https://www.clo-ocol.gc.ca/en/page' }))
+        .rejects.toThrow(/Failed to download webpage/);
+      expect(axios.get).toHaveBeenCalledTimes(1);
+      expect(warn).toHaveBeenCalledWith(
+        'TLS verification failed: www.clo-ocol.gc.ca UNABLE_TO_VERIFY_LEAF_SIGNATURE downloadWebPage https://www.clo-ocol.gc.ca/en/page'
+      );
+    });
+
     it('does not retry a refused connection', async () => {
       const refused = Object.assign(new Error('connect ECONNREFUSED'), {
         code: 'ECONNREFUSED',
@@ -600,7 +637,7 @@ describe('downloadWebPage tool', () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
       vi.spyOn(console, 'log').mockImplementation(() => {});
 
-      await expect(invokeTool({ url: 'https://www.canada.ca:9999/en/page' }))
+      await expect(invokeTool({ url: 'https://www.canada.ca/en/page' }))
         .rejects.toThrow(/Connection refused/);
       expect(axios.get).toHaveBeenCalledTimes(1);
     });

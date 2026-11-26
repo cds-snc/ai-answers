@@ -1,6 +1,9 @@
 export const EXPERT_EVAL_CHATS_EXPORT = 'ExpertEvalChats';
 export const ALL_BUT_LOGS_AND_EMBEDDINGS_EXPORT = 'AllButLogsAndEmbeddings';
 
+// Must match the server's scope (buildExpertEvalChatsExportScope in
+// api/db/db-database-management.js), which refuses any other collection.
+// No sessionstate: evaluators don't need it, and it holds session IDs.
 const EXPERT_EVAL_CHATS_COLLECTIONS = [
   'chat',
   'interaction',
@@ -15,7 +18,6 @@ const EXPERT_EVAL_CHATS_COLLECTIONS = [
   'embedding',
   'sentenceembedding',
   'logs',
-  'sessionstate',
   'user'
 ];
 

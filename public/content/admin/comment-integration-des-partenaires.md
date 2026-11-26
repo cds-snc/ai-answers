@@ -76,4 +76,4 @@ Les résultats sont comparés entre institutions, tâches et langues pour repér
 
 - [Évaluer les réponses](/fr/comment-faire/evaluer-les-reponses) : comment noter une réponse une fois que vous en avez une
 - [Réponses informées par les évaluations](/fr/comment-faire/reponses-informees-par-evaluations) : comment vos évaluations façonnent les réponses futures
-- [Utiliser les évaluations pour améliorer les réponses](https://github.com/cds-snc/ai-answers/blob/main/SYSTEM_CARD_FR.md#utiliser-les-évaluations-pour-améliorer-les-réponses) : le résumé public dans la fiche de système
+- [Utiliser les évaluations pour améliorer les réponses](/fr/fiche-systeme#utiliser-les-évaluations-pour-améliorer-les-réponses) : le résumé public dans la fiche de système

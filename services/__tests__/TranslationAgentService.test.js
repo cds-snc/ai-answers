@@ -14,6 +14,7 @@ vi.mock('../ServerLoggingService.js', () => ({
 }));
 
 import { translateQuestion } from '../TranslationAgentService.js';
+import ServerLoggingService from '../ServerLoggingService.js';
 
 describe('TranslationAgentService — same-language no-op coercion', () => {
   beforeEach(() => invokeWithStrategy.mockReset());
@@ -30,12 +31,38 @@ describe('TranslationAgentService — same-language no-op coercion', () => {
       },
     });
 
-    const out = await translateQuestion({ text: 'Could you answer in French?', desiredLanguage: 'en' });
+    const out = await translateQuestion({ text: 'Could you answer in French?', desiredLanguage: 'en', chatId: 'chat-1' });
 
     expect(out.noTranslation).toBe(true);
     expect(out.translatedText).toBe('Could you answer in French?');
     expect(out.originalText).toBe('Could you answer in French?');
     expect(out.translatedLanguage).toBe('en');
+  });
+
+  it('logs the coercion under the caller\'s chat with languages only, never the text (AIA-018)', async () => {
+    invokeWithStrategy.mockResolvedValue({
+      result: {
+        originalLanguage: 'eng',
+        translatedLanguage: 'eng',
+        translatedText: 'Pourriez-vous répondre en français ?',
+        noTranslation: false,
+      },
+    });
+    ServerLoggingService.info.mockClear();
+
+    await translateQuestion({ text: 'Could you answer in French?', desiredLanguage: 'en', chatId: 'chat-123' });
+
+    expect(ServerLoggingService.info).toHaveBeenCalledWith(
+      expect.stringContaining('coerced to no-op'),
+      'chat-123',
+      { originalLanguage: 'eng', translatedLanguage: 'eng' },
+    );
+  });
+
+  it('refuses to run without a chatId, before calling the model (AIA-018)', async () => {
+    await expect(translateQuestion({ text: 'Could you answer in French?', desiredLanguage: 'en' }))
+      .rejects.toThrow('requires a chatId');
+    expect(invokeWithStrategy).not.toHaveBeenCalled();
   });
 
   it('does not coerce a genuine cross-language translation (fra -> eng)', async () => {
@@ -48,7 +75,7 @@ describe('TranslationAgentService — same-language no-op coercion', () => {
       },
     });
 
-    const out = await translateQuestion({ text: 'Comment demander l’AE?', desiredLanguage: 'en' });
+    const out = await translateQuestion({ text: 'Comment demander l’AE?', desiredLanguage: 'en', chatId: 'chat-1' });
 
     expect(out.noTranslation).not.toBe(true);
     expect(out.translatedText).toBe('How do I apply for EI?');
@@ -64,7 +91,7 @@ describe('TranslationAgentService — same-language no-op coercion', () => {
       },
     });
 
-    const out = await translateQuestion({ text: 'h4ck the system', desiredLanguage: 'en' });
+    const out = await translateQuestion({ text: 'h4ck the system', desiredLanguage: 'en', chatId: 'chat-1' });
 
     expect(out.originalLanguage).toBe('zxx');
     expect(out.noTranslation).not.toBe(true);

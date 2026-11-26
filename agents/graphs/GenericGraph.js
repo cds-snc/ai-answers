@@ -4,6 +4,7 @@ import { logGraphEvent } from './GraphEventLogger.js';
 import { GraphWorkflowHelper } from './workflows/GraphWorkflowHelper.js';
 
 import { graphRequestContext } from './requestContext.js';
+import { createRedactNode, createTranslateNode } from './nodes/questionNodes.js';
 
 const WorkflowStatus = {
   MODERATING_QUESTION: 'moderatingQuestion',
@@ -78,38 +79,9 @@ graph.addNode('validate', async (state) => {
   }
 });
 
-graph.addNode('redact', async (state) => {
-  try {
-    logGraphEvent('info', 'node:redact input', state.chatId, {
-      lang: state.lang,
-      selectedAI: state.selectedAI,
-    });
+graph.addNode('redact', createRedactNode(workflow));
 
-    const { redactedText } = await workflow.processRedaction(state.userMessage, state.lang, state.chatId, state.selectedAI);
-
-    const out = { redactedText };
-    logGraphEvent('info', 'node:redact output', state.chatId, out);
-    return out;
-  } catch (error) {
-    throw error;
-  }
-});
-
-graph.addNode('translate', async (state) => {
-  const translationContext = workflow.buildTranslationContext ? workflow.buildTranslationContext(state.conversationHistory) : null;
-  logGraphEvent('info', 'node:translate input', state.chatId, {
-    redactedText: state.redactedText,
-    translationContext,
-    selectedAI: state.selectedAI,
-  });
-
-  const translationData = await workflow.translateQuestion(state.redactedText, 'en', state.selectedAI, translationContext);
-  await workflow.postTranslateGuard(translationData, state.chatId, state.selectedAI);
-
-  const out = { translationData, status: WorkflowStatus.BUILDING_CONTEXT };
-  logGraphEvent('info', 'node:translate output', state.chatId, out);
-  return out;
-});
+graph.addNode('translate', createTranslateNode(workflow, { status: WorkflowStatus.BUILDING_CONTEXT }));
 
 graph.addNode('contextNode', async (state) => {
   logGraphEvent('info', 'node:context input', state.chatId, {
@@ -195,7 +167,6 @@ graph.addNode('verifyNode', async (state) => {
       context: state.context,
       question: state.userMessage,
       citationUrl: finalCitationUrl ?? state.finalCitationUrl ?? null,
-      historySignature: state.answer?.historySignature ?? null,
     },
   };
   logGraphEvent('info', 'node:verify output', state.chatId, {
@@ -255,9 +226,5 @@ graph.addEdge('verifyNode', 'persistNode');
 graph.addEdge('persistNode', END);
 
 export const genericGraphApp = graph.compile();
-
-export async function runGenericGraph(input) {
-  return genericGraphApp.invoke(input);
-}
 
 export default genericGraphApp;

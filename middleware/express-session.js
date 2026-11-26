@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
 import { RedisStore } from 'connect-redis';
@@ -14,7 +15,11 @@ const _getSetting = (keys) => {
   return undefined;
 };
 
-const _getSessionTtlMinutes = (req) => {
+// Session cookie lifetime in ms. Signed-in sessions get
+// session.authenticatedTTLMinutes, others session.defaultTTLMinutes (default 60).
+// The sign-in handlers call this after req.login, because the regenerated
+// session would otherwise keep the anonymous default.
+export const getSessionTtlMs = (req) => {
   const defaultMinutes = Number(_getSetting(['session.defaultTTLMinutes', 'SESSION_TTL_MINUTES']) || process.env.SESSION_TTL_MINUTES || '60');
   const authenticatedMinutes = Number(_getSetting(['session.authenticatedTTLMinutes', 'SESSION_AUTH_TTL_MINUTES']) || process.env.SESSION_AUTH_TTL_MINUTES || defaultMinutes);
 
@@ -23,12 +28,39 @@ const _getSessionTtlMinutes = (req) => {
   return (Number.isFinite(minutes) && minutes > 0 ? minutes : 60) * 60 * 1000;
 };
 
+// AIA-004: there is no hardcoded fallback secret. A known secret lets anyone
+// forge a session cookie, so a missing one must fail closed. Same rule as
+// ConversationIntegrityService: only development and test get a throwaway
+// secret, and an unset NODE_ENV counts as deployed.
+//
+// The env variable wins over the database setting, so someone who can edit
+// settings cannot replace the deployed secret with a weak one. server.js calls
+// this after SettingsService.loadAll(), so a server with no secret refuses to
+// start instead of failing every request.
+let devSecret = null;
+export const resolveSessionSecret = () => {
+  const configured = process.env.SESSION_SECRET || _getSetting(['session.secret', 'SESSION_SECRET']);
+  if (configured) return configured;
+
+  if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+    if (!devSecret) {
+      devSecret = crypto.randomBytes(32).toString('hex');
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[SESSION] SESSION_SECRET is not set: using a temporary secret. Sessions end when the server restarts.');
+      }
+    }
+    return devSecret;
+  }
+
+  throw new Error('SESSION_SECRET is not set. Refusing to sign session cookies without it.');
+};
+
 // Singleton session middleware instance
 let instance = null;
 
 const buildSessionMiddleware = (app) => {
   const sessionType = (String(_getSetting(['session.type', 'SESSION_TYPE']) || process.env.SESSION_TYPE || process.env.SESSION_STORE || 'mongo')).toLowerCase();
-  const sessionSecret = _getSetting(['session.secret', 'SESSION_SECRET']) || process.env.SESSION_SECRET || 'change-me-session-secret';
+  const sessionSecret = resolveSessionSecret();
 
   let sessionStore = null;
 
@@ -68,7 +100,7 @@ const buildSessionMiddleware = (app) => {
       httpOnly: true,
       secure: isSecure,
       sameSite: isSecure ? 'strict' : 'lax',
-      maxAge: _getSessionTtlMinutes(),
+      maxAge: getSessionTtlMs(),
       path: '/'
     },
     rolling: true
@@ -119,7 +151,7 @@ export default function createSessionMiddleware(app) {
 
     instance(req, res, () => {
       if (req.session && req.session.cookie) {
-        req.session.cookie.maxAge = _getSessionTtlMinutes(req);
+        req.session.cookie.maxAge = getSessionTtlMs(req);
 
         if (parentDomain) {
           req.session.cookie.domain = parentDomain;

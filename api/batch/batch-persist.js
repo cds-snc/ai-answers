@@ -2,6 +2,7 @@ import dbConnect from '../db/db-connect.js';
 import { Batch } from '../../models/batch.js';
 import { BatchItem } from '../../models/batchItem.js';
 import { requireObjectIdString, requireLiteralString } from '../util/db-query.js';
+import { batchAccessFilter } from '../util/batch-access.js';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 import { MAX_BATCH_ITEMS } from '../../src/config/batch.js';
 import { resolveSearchProvider } from '../../src/config/searchProviders.js';
@@ -25,9 +26,15 @@ async function batchPersistHandler(req, res) {
     await dbConnect();
     const configuredSearchProvider = resolveSearchProvider(SettingsService.get('search.default'));
 
-    // If a batchId is provided, update the existing batch (or upsert when not found).
+    // If a batchId is provided, update that existing batch. Never upsert: an
+    // unknown id must not create a batch with no owner.
     if (batchId) {
       console.log(`[batch-persist] updating existing batch ${batchId}`);
+
+      // Ownership goes in the update's own filter (below), so the check and
+      // the write are one query with no gap between them.
+      const access = batchAccessFilter(req.user);
+      if (!access) return res.status(404).json({ message: 'Batch not found' });
 
       // Whitelist and sanitize updatable fields to avoid operator injection
       const allowedFields = [
@@ -56,9 +63,9 @@ async function batchPersistHandler(req, res) {
 
       // Prevent updating createdBy or _id via this endpoint
       const updated = await Batch.findOneAndUpdate(
-        { _id: batchId },
+        { _id: batchId, ...access },
         { $set: safeSet },
-        { new: true, upsert: true }
+        { new: true }
       );
       console.log(`[batch-persist] updated result:`, updated ? { _id: updated._id } : null);
 

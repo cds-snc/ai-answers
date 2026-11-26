@@ -9,8 +9,9 @@ import AnnouncedError from '../components/auth/AnnouncedError.js';
 import { useAnnouncedError } from '../hooks/auth/useAnnouncedError.js';
 import { useAuthFormValidation } from '../hooks/auth/useAuthFormValidation.js';
 import { normalizeEmail } from '../utils/auth/validateEmail.js';
+import { normalizeTwoFACode } from '../utils/auth/twoFACode.js';
 import { useFocusOnChange } from '../hooks/useFocusOnChange.js';
-import StatusMessage from '../components/admin/StatusMessage.js';
+import StatusMessage, { useRepeatableStatus } from '../components/admin/StatusMessage.js';
 import { announce } from '../utils/liveAnnouncer.js';
 
 const LoginPage = ({ lang = 'en' }) => {
@@ -34,9 +35,30 @@ const LoginPage = ({ lang = 'en' }) => {
   // nearby trigger the user just interacted with to anchor their attention.
   const sessionExpiredRef = useFocusOnChange(sessionExpired);
 
+  // Sign-in outcomes no field is at fault for (server/connection failure,
+  // lockout, timed-out session, a resend's result). A status, not a form
+  // error: wrong email/password and wrong code stay on AnnouncedError.
+  // The buttons disable while working, which drops focus to <body>, so focus
+  // moves onto the message (focus reads it, so announce={false}). Repeatable,
+  // so the same message twice in a row is read again.
+  const { message: statusText, variant: statusVariant, nonce: statusNonce, announce: showStatus, clear: clearStatus } = useRepeatableStatus();
+  const statusRef = useFocusOnChange(statusNonce);
+  const statusBox = (
+    <StatusMessage
+      variant={statusVariant}
+      message={statusText}
+      className="mb-400"
+      ref={statusRef}
+      tabIndex={-1}
+      announce={false}
+      announcedVia="focus"
+    />
+  );
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     clearError();
+    clearStatus();
     // If 2FA flow already started, ignore normal submit
     if (showTwoStep) {
       return;
@@ -84,7 +106,20 @@ const LoginPage = ({ lang = 'en' }) => {
       // wherever the old page's cursor was, with nothing read.
       navigate(defaultRoute);
     } catch (err) {
-      setError(t('login.invalidCredentials'), ['email', 'password']);
+      // Only a correct password reaches the 2FA step, so these reasons say
+      // nothing about the account that the code screen wouldn't. A wrong
+      // password, an unknown email and a password lockout all stay identical.
+      const messages = {
+        locked: 'login.2fa.locked',
+        send_failed: 'login.2fa.sendError',
+        server_error: 'login.serverError',
+        network: 'login.networkError',
+      };
+      if (messages[err.reason]) {
+        showStatus(t(messages[err.reason]), { variant: 'error' });
+      } else {
+        setError(t('login.invalidCredentials'), ['email', 'password']);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -93,6 +128,8 @@ const LoginPage = ({ lang = 'en' }) => {
   // Two-step verification state
   const [showTwoStep, setShowTwoStep] = useState(false);
   const [code, setCode] = useState('');
+  // Ticked by default: government staff rarely share a computer.
+  const [rememberDevice, setRememberDevice] = useState(true);
   const {
     error: twoStepError,
     errorCount: twoStepErrorCount,
@@ -110,14 +147,33 @@ const LoginPage = ({ lang = 'en' }) => {
   // don't rely on it to announce resend-specific feedback.
   const twoStepIntroRef = useFocusOnChange(showTwoStep);
 
-  const verifyTwoStep = async () => {
-    setIsLoading(true);
+  // The sign-in session behind the code screen has lapsed (or the account
+  // changed). A new code can't help, so go back to the password form and say why.
+  const restartSignIn = () => {
+    setShowTwoStep(false);
+    setCode('');
+    setPassword('');
     clearTwoStepError();
+    showStatus(t('login.2fa.expired'), { variant: 'error' });
+  };
+
+  const verifyTwoStep = async (e) => {
+    e.preventDefault();
+    clearTwoStepError();
+    clearStatus();
+    // Checked here like the password form's empty fields, with the same rule
+    // the server uses: a typo isn't sent, so it can't count toward the lockout.
+    const normalizedCode = normalizeTwoFACode(code);
+    if (!normalizedCode) {
+      setTwoStepError(t('login.2fa.codeFormat'));
+      return;
+    }
+    setIsLoading(true);
     // Same reasoning as handleSubmit's announce().
     announce(t('login.form.submitting'), { skippable: true });
     try {
       // backend method remains verify2FA
-      const data = await AuthService.verify2FA(email, code);
+      const data = await AuthService.verify2FA(normalizedCode, rememberDevice);
       // AuthService stores token and user; refresh context
       await refreshUser();
       // Prefer explicit defaultRoute from the verify response if present
@@ -129,23 +185,42 @@ const LoginPage = ({ lang = 'en' }) => {
       if (!defaultRoute) defaultRoute = '/';
       navigate(defaultRoute);
     } catch (err) {
-      setTwoStepError(t('login.2fa.invalidCode'));
+      if (err.reason === 'expired') {
+        restartSignIn();
+        return;
+      }
+      // Only a reason-less 4xx is a wrong code. A server or connection failure
+      // says so, or the user retypes a correct code into the lockout count.
+      const messages = { locked: 'login.2fa.locked', server_error: 'login.serverError', network: 'login.networkError' };
+      if (messages[err.reason]) {
+        showStatus(t(messages[err.reason]), { variant: 'error' });
+      } else {
+        setTwoStepError(t('login.2fa.invalidCode'));
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Request a verification code to be sent to the user's email (public endpoint)
+  // Ask for the verification code to be sent again (the server uses the sign-in session)
   const requestTwoStep = async () => {
-    if (!email) return;
     setIsLoading(true);
     clearTwoStepError();
+    clearStatus();
     try {
       // backend method remains send2FA
-      await AuthService.send2FA(email);
+      await AuthService.send2FA();
       setShowTwoStep(true);
+      showStatus(t('login.2fa.resent'), { variant: 'success' });
     } catch (err) {
-      setTwoStepError(t('login.2fa.sendError'));
+      if (err.reason === 'expired') {
+        restartSignIn();
+        return;
+      }
+      // The server refuses a resend within a minute of the last code (the one
+      // sent at sign-in counts) and while 2FA is locked. Say so, not "failed".
+      const messages = { cooldown: 'login.2fa.cooldown', locked: 'login.2fa.locked', network: 'login.networkError' };
+      showStatus(t(messages[err.reason] || 'login.2fa.sendError'), { variant: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -179,6 +254,7 @@ const LoginPage = ({ lang = 'en' }) => {
           <p tabIndex={-1} ref={twoStepIntroRef}>
             {t('login.2fa.sentToEmail')}
           </p>
+          {statusBox}
           {twoStepError && (
             <AnnouncedError
               id="login-2fa-error"
@@ -187,29 +263,51 @@ const LoginPage = ({ lang = 'en' }) => {
               inputRef={twoStepErrorRef}
             />
           )}
-          <div className="auth-form-group">
-            <label htmlFor="code">{t('login.2fa.code')}</label>
-            <input
-              id="code"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              disabled={isLoading}
-              aria-describedby={twoStepError ? 'login-2fa-error' : undefined}
-              aria-invalid={!!twoStepError}
-            />
-          </div>
-          <div>
-            <button onClick={verifyTwoStep} disabled={isLoading} className="btn-primary-sm auth-submit-button">
-              {t('login.2fa.verify')}
-            </button>
-            <button onClick={requestTwoStep} disabled={isLoading || !email}>
-              {t('login.2fa.resend')}
-            </button>
-          </div>
+          {/* A form so Enter in the field verifies, as on the password step.
+              Resend is type="button" so it never submits. */}
+          <form onSubmit={verifyTwoStep} noValidate>
+            <div className="auth-form-group">
+              <label htmlFor="code">{t('login.2fa.code')}</label>
+              <p id="login-2fa-code-hint" className="field-hint">{t('login.2fa.codeHint')}</p>
+              {/* inputMode/autoComplete: number pad and emailed-code autofill on
+                  phones. No maxLength: it would silently cut a pasted code. */}
+              <input
+                id="code"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                disabled={isLoading}
+                aria-required="true"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                aria-describedby={twoStepError ? 'login-2fa-code-hint login-2fa-error' : 'login-2fa-code-hint'}
+                aria-invalid={!!twoStepError}
+              />
+            </div>
+            <div className="gc-chckbxrdio sm mb-200">
+              <div className="checkbox">
+                <input
+                  type="checkbox"
+                  id="remember-device"
+                  checked={rememberDevice}
+                  onChange={(e) => setRememberDevice(e.target.checked)}
+                />
+                <label htmlFor="remember-device">{t('login.2fa.rememberDevice')}</label>
+              </div>
+            </div>
+            <div>
+              <button type="submit" disabled={isLoading} className="btn-primary-sm auth-submit-button">
+                {t('login.2fa.verify')}
+              </button>
+              <button type="button" onClick={requestTwoStep} disabled={isLoading} className="btn-secondary-sm auth-secondary-button">
+                {t('login.2fa.resend')}
+              </button>
+            </div>
+          </form>
         </div>
       ) : (
         // Default login form with signup link when not in 2FA flow
         <>
+          {statusBox}
           {error && (
             <AnnouncedError id="login-error" message={error} errorCount={errorCount} inputRef={errorRef} />
           )}

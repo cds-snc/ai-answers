@@ -1,263 +1,288 @@
-# Partner dashboard — "Run eval analysis" feature
+# Partner dashboard — eval analysis (v2 redesign)
 
-**Status:** implemented (v1) — pending prompt-wording review and a live run to
-measure cost/duration
+**Status:** v2 redesign in progress. PR 1 (coverage table, `analysis-update`)
+and PR 2 (most-used evaluations, `eval-reuse-lists`) are merged. PR 3 (Part B
+simplification) is on `eval-analysis-v2`, which also moves Part B off the
+partner dashboard to its own page (see [Where Part B lives](#where-part-b-lives)).
+For the v1 design it replaces, see
+[What v1 did](#what-v1-did).
 **Owner:** Lisa Fast
-**Written:** 2026-07-10
+**Written:** 2026-07-10 (v1) · **Rewritten:** 2026-11-15 (v2)
 
-A "Run eval analysis" section at the bottom of the Partner dashboard that analyzes
-the **human expert evaluations** in the currently applied filter scope and surfaces
-patterns for the evaluator team: which program areas collect errors or
-needs-improvement scores, what the low-score explanations indicate, whether
-content issues share a pattern, EN vs FR differences, and whether any evaluator
-scores differently from the rest.
+## Why redesign
 
-AI auto-evaluations are **out of scope** for v1 — a separate analysis for them
-comes later.
+v1 was designed before two things shipped:
 
-## Decisions already made
+1. **Program/action classification of every question** (background step after
+   each answer, stored on `context.program` / `context.action` — see
+   [program-action-classification.md](./program-action-classification.md)).
+   v1's Tier 2 was built to classify evals itself with chunked LLM calls. That
+   cost is the only reason for the 20/200 volume gates, the client-driven
+   advance loop and the progress bar. It now only runs for rows from before the
+   classifier existed.
+2. **Eval-informed answering in production.** The production graph
+   (`GenericWithQAGraph`, named by the `workflow.default` setting) injects up to
+   three human-rated past Q&As (same department, similarity ≥ 0.75, score ≤ 100,
+   evaluated within 365 days unless `neverStale`) into each new answer.
+   Non-perfect examples carry the expert's sentence comments as mistakes to
+   avoid. Each answer records what it was given in `context.qaMatches`
+   (**in production since late August 2026**).
+
+So human evaluations are no longer only a quality measure. They are inputs to
+future answers. The evaluator team's most useful questions are now about that:
+*where are we missing evaluations, which of our evaluations get used, and are
+the ones that get used good examples?* v1 answers none of these, because it
+only looks at evaluated rows and knows nothing about reuse.
+
+## Decisions
 
 | Question | Decision |
 |---|---|
-| Program taxonomy | **Emergent program groupings derived by the LLM** from the questions/answers. The programs/actions seed CSV (`seed-programs-actions-ideas.csv`, formerly `LF services actions ideas.csv`) is *seed vocabulary/ideas*, not a fixed taxonomy. `referringUrl` and `citationUrl` are good clues for program grouping — include them in the classification input. |
-| Model | Default model via the existing agent factory (there will always be a default). No new model setting. |
-| Evaluator anomaly visibility | Show to everyone who can run the analysis (signed-in admin/partner — realistically the team lead). Evaluator emails are fine to display. |
-| Volume guardrails | Min **20** evals to run; max **200** (was 500 — reduced to watch API cost/duration; revisit later). |
-| Report language | Narrative generated **in the dashboard language only**. Switching languages requires re-running — consistent with the rest of the app. |
-| History | Keep a **visible list of past analyses** per institution. PDF export is a wanted follow-up (v1.1). |
-| Gating | Run button disabled until an **institution (department)** filter is applied. |
+| Scope | Human expert evaluations only. **AI auto-evaluations stay out of scope.** |
+| LLM classification in the analysis (v1 Tier 2) | **Remove.** Use stored `context.program`/`action` only. Rows without a program show as "Not yet classified". |
+| Historical program backfill | **Skipped** (decided 2026-11-15). Older questions stay unclassified; the coverage table mostly matters for recent ranges. (This was only ever about program classification — reuse data can't be backfilled, since `qaMatches` wasn't recorded before late August 2026.) |
+| Actions in the coverage table | **One "Actions asked about" column per service**, most frequent first — not a program × action breakdown. `''`, `unknown` and `Other` are left out. Shows at most 3, skips actions asked only once (unless that's all there is), then "and N more". |
+| Volume gates (min 20 / max 200) | **Remove both.** The statistics are database aggregation and need no cap. A small-sample note replaces the minimum. Only the LLM insights call is limited, by the number of rows it is sent. |
+| Institution gate | The deterministic section follows the dashboard filters like every other card (no gate). The insights button still requires an institution, because themes across departments aren't actionable for one team. |
+| Insights prompt (Tier 3) | Kept. **Wording was reviewed by the prompt maintainers**, and the stale "not reviewed" note was removed. PR 3 changed one sentence, approved by a maintainer (2026-11-18): the model no longer gets the per-program cross-tab, and is told it may receive a subset (errors first, then the most recent). |
+| Scores by service table in the report | **Dropped for new runs** (decided 2026-11-18). The plan had Part A replace it, but the coverage table no longer shows scores; quality is left to the themes. Old v1 reports still display their stored table. |
+| EN vs FR and evaluator tables | **Stay in the Part B report** (decided 2026-11-18), computed over every evaluation in scope. Moving them into Part A was dropped to keep PR 3 a simplification only. |
+| Reuse window | Reuse metrics only count answers from **late August 2026** onward (when `qaMatches` started being saved). The UI states that start date. Earlier ranges show "no reuse data" rather than zero. |
+| Report language | Unchanged: insights are generated in the dashboard language only. |
+| Evaluator table | Kept as is (titled "Evaluators", no "vs others" column). |
 
-## UX flow
+## What v2 looks like
 
-1. New section at the **bottom of `PartnerDashboard.js`**: heading + Run button +
-   past-analyses list.
-2. No institution applied → Run button disabled with a short explanatory note.
-3. Institution applied → a lightweight **pre-flight count** runs (human evals
-   matching current filters):
-   - `< 20` → warning: not enough evaluations to analyze.
-   - `> 200` → warning: too many for one analysis — narrow the date range.
-   - otherwise → Run enabled, label shows the count ("Analyze N evaluations").
-4. Click Run → analysis record created (`status: running`), UI polls and shows
-   progress (classification is chunked, so progress is real: `x / N classified`).
-5. On completion the report renders in place; the run is added to the
-   past-analyses list. Selecting a past run re-displays its stored report
-   (no re-run, no LLM cost).
+Part A is at the bottom of `src/components/admin/PartnerDashboard.js`, below
+the existing eval-informed card. Part B is on its own page (below).
 
-The analysis honours **whatever filters are applied** (institution + date range +
-userType etc.) — same filter contract as the metrics endpoints.
+### Part A — "Evaluation coverage and use" (live, no LLM)
 
-## Data scope
+It renders with the dashboard's applied filters, like every other card. There
+is no Run button and nothing is stored. It shows one table **by program**
+(program — action drill-in is a later option), with the columns below.
 
-Human expert evals only: aggregate from `Chat`, `$unwind` interactions, match
-`interactions.expertFeedback` exists (human feedback lives at
-`interaction.expertFeedback`; AI auto-evals live separately at
-`interaction.autoEval` — clean separation, no type filtering needed).
-Reuse `getChatFilterConditions` with `basePath: 'interactions'`, `userField:
-'user'` — same shape as `api/eval/eval-dashboard.js`.
+| Column | Source | Tells evaluators |
+|---|---|---|
+| Questions | all normal-answer interactions in scope, `context.program` | demand |
+| Usable evals (shown as "Expert evaluations") | **all** human evals for the service and department evaluated within 365 days (or `neverStale`), with a total score — **not limited by the date range or other filters**, because retrieval isn't | what retrieval can actually see today |
+| Answers that used an eval | interactions with a `qaMatches` entry | reuse volume |
+| Expiring soon | usable evals that pass 365 days within the next 60 days (same all-dates scope) | where to re-evaluate |
+| Actions asked about | `context.action` per program, most frequent first | what people want to do |
 
-Per eval row, collect: question (redacted), answer sentences, citation URL,
-`referringUrl`, page language, department, expertFeedback (all sentence scores +
-explanations + contentIssue/harmful flags, citationScore/explanation,
-answerImprovement, expertEmail, createdAt), interaction createdAt, chatId.
+Column order on the card: service, actions, questions, usable evals, answers
+that used an eval, expiring soon (last). The card is collapsed by
+default (`CollapsibleCard`) because the table is long.
 
-## Analysis design — three tiers
+**Dropped after review (2026-11-18):** "Eval coverage %" (evals ÷ questions —
+both numbers are already in the row, and it read as overlapping with "in use")
+and "% non-perfect" (quality is covered by the eval analysis below; the
+`scoredEvals`/`nonPerfectEvals` fields were removed from the endpoint too).
+"Human evals" in the date range was dropped as well: with the 7-day default it
+was near zero and said nothing about what retrieval can use, so it pointed
+partners at the wrong services. Usable evals is the only evaluation count, and
+it is labelled "Expert evaluations".
 
-### Tier 1 — deterministic stats (computed in JS, no LLM)
+Sort by questions, descending, top 10 (the volume chart shows 25; cut to 10 on 2026-11-18 because the table is wide). Busy services
+with few evaluations are where to evaluate next — the sort and the questions and
+evaluations columns show that; there is no separate highlight in PR 1 (thresholds would be
+arbitrary). The per-service example chat link was dropped from PR 1: the reuse
+lists in PR 2 link to real evaluations instead.
 
-**Don't duplicate the dashboard.** The partner dashboard already shows expert
-category counts with EN/FR splits (`metrics.expertScored.<cat>.{total,en,fr}`),
-accuracy by language, content-issue counts, and harmful counts. The analysis
-does **not** re-display those. Note: the dashboard quality bar mixes expert+AI;
-this analysis is human-only, so its internal numbers can legitimately differ —
-the report states its own N.
+**Known limit:** usable evals don't check whether the evaluation's embedding has
+synced to the vector index. An evaluation whose sync failed is counted but can't
+be retrieved. Checking would mean joining the embeddings collection; not worth
+it unless sync failures turn out to be common.
 
-New stats this feature computes (input to the report + the insight pass):
+**Accessibility (required):** a real `<table>` with caption, `scope="col"`
+headers and the service name as `scope="row"` header; a focusable scroll region
+named by the caption; em dashes are `aria-hidden` with a spoken equivalent;
+English fallback names on the French dashboard carry `lang="en"`; column
+definitions are visible text under the table, not tooltips; no inline styles.
 
-- **Per-evaluator table**: eval count, mean totalScore, % perfect (100),
-  % needs-improvement, % error, % with citation deduction — vs the group rate.
-  Anomaly flag on a simple difference-of-proportions threshold; with 20–200
-  evals, keep it plain and let the narrative caveat small per-evaluator counts.
-- **EN vs FR** (human-only): mean totalScore + category rates per language, with
-  a small-sample caveat when one language is thin (Trial 4: FR was ~12%).
-- **Content-issue rows** gathered with their explanations (feeds Tier 3).
-- **Low-score rows** (totalScore < 100) gathered with all their explanation
-  texts, citation explanations, and answerImprovement (feeds Tier 3).
+One list goes below the table (PR 2, built).
 
-### Tier 2 — LLM program classification (chunked)
+- **Most-used evaluations.** The human evals injected into the most answers in
+  the period (top 20, `MOST_USED_EVALS_LIMIT`), showing a review-mode link to
+  the evaluated question, service, expert score, times used and evaluation date.
+  This is reuse counted from the *eval's* side: unwind `context.qaMatches` and
+  group by `interactionId`. Same answers and filters as the eval-informed chats
+  list.
+- ~~Weak examples in use~~ — **dropped** (decided 2026-11-16). Explanations have
+  been required for every deduction since 2026-08-12 (`2495d615`), so missing
+  explanations are legacy-only and age out of the 365-day window by about
+  August 2027. A wrong citation with no corrected URL is still possible today
+  (`expertCitationUrl` is optional) — revisit only if that turns out to matter.
 
-> **Updated (July 2026) — now prefers stored values.** This tier was written
-> before the per-question program/action classifier existed. It now **reuses the
-> stored `context.program`/`context.action`** for every row that has them, and
-> only falls back to the LLM for rows still lacking a program **whose answer type
-> is normal** (non-normal turns — not-gc / pt-muni / clarifying-question — carry
-> no GC program and stay unclassified). The fallback classifies against the
-> department's **curated seed list** (`getSeedPrograms`) plus program names
-> already present in the run — the emergent program-proposal call was removed. No
-> write-back to `context`. See
-> [program-action-classification.md → Phase 2 §5](./program-action-classification.md#5-rationalize-with-the-eval-analysis-tier-2-decided-july-2026).
-> The description below is the original design, kept for context.
+The existing human-only stats from v1 (the EN vs FR table and the evaluators
+table) were planned to move into Part A. They stay in the Part B report
+instead (see Decisions).
 
-Tag each evaluated Q&A with an **emergent program group** and an **action**
-(Apply, Check status, Pay, Sign in, …). Inputs per row: question, answer (first
-sentence or two), **citationUrl and referringUrl** (strong program clues).
-Program groups name the **program/subject** (the thing — "Canada child
-benefit"), never the activity ("Updating address with CRA") — the action is
-the second, separate dimension, and the two are **combined for display**
-("Canada child benefit — Change my contact information").
+**Out of Part A on purpose:** before/after effect of evals on scores. Evaluated
+samples are small and the choice of which chats get evaluated skews them, so
+the result would be misleading. Revisit only if volume grows.
 
-- Two-pass approach for stable grouping: first call proposes the program-group
-  set from a sample of the questions (seeded with the programs/actions
-  vocabulary as *examples of the granularity wanted*, not as a closed list);
-  subsequent chunked calls (~20 rows each) assign every row to one of the
-  proposed groups (+ "Other") and an action (+ "Other").
-- 200 evals ≈ 10–11 calls. Store per-row tags on the analysis doc.
-- Output feeds the **combined program—action × score cross-tab**: eval count and
-  % non-perfect per combined group; call out "always perfect" groups too.
-  Groups with **fewer than 2 evaluations are dropped from the table** (one
-  evaluation is an anecdote, not a pattern) and reported in aggregate as a
-  one-line note.
+### Part B — "What the explanations say" (on demand, one LLM call)
 
-### Tier 3 — LLM insight pass (one call)
+#### Where Part B lives
 
-One synthesis call, in the **dashboard language**, given: Tier 1 stats, the
-Tier 2 cross-tab, and the raw explanation texts (low-score + content-issue
-rows). Produces only:
+Moved off the partner dashboard (decided 2026-11-22) to the **AI-assisted
+analysis** page (`src/pages/AiAnalysisPage.js`, route `ai-analysis`, admin and
+partner roles, linked from the Partner menu as "Run AI-assisted analysis").
+A planned question analysis will sit beside it, so on-demand AI runs get one
+page rather than a button at the bottom of a dashboard. The page has its own
+`FilterPanel` (same configuration as the partner dashboard) and states up
+front that an institution must be selected; each section's Run button points
+at that note with `aria-describedby` while disabled. Question analysis is a
+heading and a "coming soon" line until it's built — no disabled button.
+Components are in `src/components/aiAnalysis/`; locale keys moved from
+`partnerDashboard.evalAnalysis.*` to `admin.aiAnalysis.evalAnalysis.*`.
 
-- What the low-score explanations indicate (themes, each with a count and 1–2
-  example quotes). A theme must cover at least **max(2, 20% of the non-perfect
-  rows)** — asked of the model in the prompt AND filtered on its output; rarer
-  observations are anecdotes and are left out entirely.
-- A 1–2 sentence content-issue pattern note (empty when there are no flags).
+- An institution filter is required. The button has a plain label: the
+  planned count would have needed the precheck request, which was removed.
+  The report says how many evaluations the model saw instead.
+- **One** call to the existing `evalAnalysisInsightsStrategy`. The inputs are
+  the computed stats (score categories, EN vs FR, evaluators) and the
+  non-perfect and content-issue rows. The per-program cross-tab is no longer
+  sent.
+- **Input limit, not population limit:** send at most `MAX_INSIGHT_ROWS` (150)
+  non-perfect rows and at most 150 content-issue rows. When there are more,
+  errors (harmful, answer and citation errors) go first, then the most recent.
+  Question and citation text are fetched only for the rows sent. The report
+  header says "the findings use N of M" for each list that was cut.
+- Theme minimum is unchanged: max(2, 20% of non-perfect rows), asked in the
+  prompt and filtered on the output.
+- Results are stored as before (an `EvalAnalysis` doc with the insights and the
+  filter snapshot) so past runs can be re-displayed without cost. The
+  past-runs list stays.
+- It is a single request, with no advance loop. The UI shows a running
+  message next to the button. If one call proves too slow for the request
+  timeout, the fallback is a two-step create/advance, not chunking. **Not yet
+  checked on a large department.** The past-runs list refreshes even when the
+  request fails, so a run the server finished after a timeout can be found.
+  A stored run still `running` shows "In progress" for 10 minutes, then "Did
+  not finish".
 
-No per-table narrative paragraphs (program patterns, EN/FR commentary, evaluator
-commentary) — the tables carry that information themselves. The prompt
-instructs the model to ground every claim in the supplied numbers — no
-invented rates.
+## Backend changes
 
-## Report layout (stored, re-renderable)
+**New**
 
-1. **Header** — N evals analyzed, institution, date range, run date, run by.
-   No summary paragraph — the tables and themes carry the findings.
-2. **Scores by program and action** — one combined table (count, % non-perfect)
-   with always-perfect groups highlighted, a note for skipped
-   single-evaluation groups, and per group one **example chatId link** (a
-   non-perfect row when there is one) opening review mode in a new tab so
-   evaluators can explore a real conversation behind the numbers.
-3. **What the explanations say** — themed narrative with counts + quotes
-   (themes below the minimum count are omitted).
-4. **Content issues** — count + pattern note; the card is hidden when the
-   count is 0.
-5. **EN vs FR** — small table, no narrative.
-6. **Evaluators** — per-evaluator table + anomaly flags, no narrative.
-   Titled "Evaluators" (not "consistency") and without a "vs others" delta
-   column — the delta reads as a ranking of people, which is more sensitive
-   than useful; a manager can derive divergence from the shown counts/rates.
-   The internal delta still drives the Review flag.
+- `api/metrics/metrics-eval-coverage.js` holds the Part A by-program table
+  (**PR 1, built**). It reuses `buildProgramScopeStages`, extracted from
+  `metrics-programs.js`, so it counts exactly the volume chart's questions, and
+  adds the expert-feedback, freshness and `qaMatches` columns. The 365-day
+  limit is the shared `EVAL_INFORMED_RECENCY_DAYS` in `src/config/workflows.js`,
+  now also used by `GenericWithQAGraph`.
+- `api/metrics/metrics-eval-reuse.js` holds the most-used list (**PR 2,
+  built**). The aggregation unwinds `context.qaMatches` in scope and ranks by
+  `interactionId`, so only the top N ids leave the database; their details come
+  from two indexed finds in JS (`qaMatches` stores ids as strings — avoids
+  relying on `$toObjectId` on DocumentDB). Evaluations deleted since use are
+  dropped.
 
-## Architecture
+**Changed**
 
-### Backend
+- `services/EvalAnalysisService.js` collapses to `createAndSynthesize({
+  filters, language, requestedBy })` (**PR 3, built**). It aggregates every
+  human evaluation in scope (no volume limit) for the stats, picks the rows for
+  the model with `selectInsightRows`, then makes one insights call and stores
+  the result with an `insightInput` record of how many rows were sent.
+- `evalAnalysisInsightsStrategy.js`: the stale note is removed, the cross-tab
+  input is gone, and one prompt sentence changed with maintainer approval (see
+  Decisions). A test pins the payload fields.
+- `api/eval/eval-analysis-run.js` does the whole run in one request and
+  returns the finished doc.
 
-- **Model `models/evalAnalysis.js`** — `{ department, startDate, endDate,
-  filters (raw filter snapshot), language, status: 'running'|'classifying'|
-  'synthesizing'|'complete'|'error', progress: { classified, total },
-  evalCount, stats (Tier 1), rowTags (Tier 2 per-row program/action),
-  crossTab, insights (Tier 3 narrative sections), requestedBy, error,
-  timestamps }`.
-- **Endpoints (`api/eval/`)**, all `withProtection(handler, authMiddleware,
-  partnerOrAdminMiddleware)`:
-  - `eval-analysis-precheck.js` — GET; count human evals for filters →
-    `{ count, min, max }` (UI applies the 20/200 gates; server re-checks on
-    create).
-  - `eval-analysis-run.js` — POST; validates count and creates the doc
-    (status `running`), nothing else.
-  - `eval-analysis-advance.js` — POST; advances the run by exactly one step
-    (snapshot + Tier 1 + program proposal → one classification chunk → synthesis).
-    **Chunk-per-request** (Vercel-safe): the client drives it in a loop until
-    `complete`/`error`. (Same client-driven continuation spirit as the existing
-    chunked eval processing.)
-  - `eval-analysis-get.js` — GET by id → stored doc minus the internal rows
-    snapshot (also used to re-display past runs).
-  - `eval-analysis-list.js` — GET by department → recent runs
-    `[{ _id, dateRange, evalCount, status, createdAt, requestedBy }]`.
-- **Service `services/EvalAnalysisService.js` (server-side)** — owns the
-  pipeline: fetch rows, Tier 1 stats, chunked Tier 2, Tier 3 synthesis, doc
-  updates. LLM calls via `AgentOrchestratorService.invokeWithStrategy` with the
-  default agent from the existing factory.
-- **Strategies** — `agents/strategies/evalAnalysisClassifyStrategy.js` and
-  `agents/strategies/evalAnalysisInsightsStrategy.js` (buildMessages + parse,
-  same pattern as `rankerStrategy`). ⚠️ These contain new prompt text —
-  **flag the wording to the prompt maintainers for review** before shipping.
-  They are new files, not edits to `agents/prompts/`, but same care applies.
-- **Seed vocabulary** — convert `seed-programs-actions-ideas.csv` (formerly
-  `LF services actions ideas.csv`) to
-  `api/data/programActionSeeds.js` (programs by department + global action list
-  with synonyms; framed as **programs, not services** — programs have clear
-  accountability and the crisper concept keeps LLM groupings consistent across
-  runs). Used only as example vocabulary inside the classify strategy.
-  Not under `agents/prompts/` and not under root `config/` (React build rule
-  irrelevant here since it's server-only, but keep it out of `config/` anyway).
+**Removed** (PR 3, confirmed with the owner)
 
-### Frontend (house layering)
+- `agents/strategies/evalAnalysisClassifyStrategy.js`
+- `api/eval/eval-analysis-advance.js`, `api/eval/eval-analysis-precheck.js`
+- The `classifying`/`synthesizing` statuses, `progress`, the stored `programs`
+  vocabulary and the full `rows` snapshot on `models/evalAnalysis.js`. Old docs
+  stay readable: the report still renders a v1 doc's `crossTab`, and old
+  non-terminal statuses show as "Did not finish".
+- `rowNeedsClassification`, `buildCrossTab` and the `MIN_EVALS`/`MAX_EVALS`
+  constants. `getSeedPrograms`/`ACTION_SEEDS` have other callers and stay;
+  eval analysis no longer imports them.
 
-- **Service** `src/services/EvalAnalysisService.js` — precheck / run / drive /
-  get / list calls.
-- **Hook** `src/hooks/admin/useEvalAnalysis.js` — precheck state, run + drive
-  loop (poll/advance until complete), current report, past-runs list,
-  loading/error.
-- **Components** `src/components/admin/dashboard/`:
-  - `EvalAnalysisSection.js` — section shell: gate note, precheck warnings, Run
-    button, progress, past-runs list, report container. Rendered at the bottom
-    of `PartnerDashboard.js`, receiving `appliedDepartment` + the applied
-    filters (PartnerDashboard already tracks `appliedDepartment`; it will also
-    need to keep the last applied filters object in state to pass down).
-  - `EvalAnalysisReport.js` — renders a stored report (tables + narrative).
-    Tables follow the shared card chrome; numbers through
-    `formatNumber`/`formatPercent`/`formatDecimal`.
-- **Locales** — new `partnerDashboard.evalAnalysis.*` namespace, EN + FR
-  together; run `node scripts/find-dead-locale-keys.cjs` (0 parity gaps).
-  Narrative content is LLM-generated in the dashboard language (dynamic content
-  — exempt from locale keys).
+**Database notes (DocumentDB 8)**
 
-## Guardrails & edge cases
+- Always `$match` on `Chat.createdAt` before the interactions lookup (done in
+  PR 3). The chat match starts one day before the range so a chat that began
+  just before it still counts; the exact range applies to
+  `interactions.createdAt`. An evaluation from a chat that began more than a
+  day before the range is left out, so counts can differ slightly from the
+  eval dashboard's. This trade-off is intended (confirmed 2026-11-22).
+- Validate the new `buildPipeline` with `explain("executionStats")` on a
+  large department and range.
+- Validate the `qaMatches` unwind with `explain("executionStats")` on a
+  production-sized range.
 
-- Min 20 / max 200 enforced both in UI (precheck) and server (run endpoint).
-- If a run dies mid-way (`status: running` but stale), the list shows it as
-  incomplete; a new run can always be started. No resume logic in v1.
-- Evals with missing/blank totalScore are excluded from score stats but counted
-  and noted in the report header.
-- Department is required, but the analysis must tolerate rows whose
-  `context.department` differs from the filter (filter logic decides scope).
-- LLM chunk failure → retry once, then mark the affected rows `program: null` and
-  continue; report notes how many rows were unclassified. Synthesis failure →
-  `status: 'error'` with stored Tier 1/2 results still viewable.
+## Frontend changes
 
-## v1.1 follow-ups (not in v1)
+- Service + hook: coverage is an opt-in fetch in `useDashboardMetrics`
+  (`includeEvalCoverage`, via `MetricsService.getEvalCoverageMetrics`), like the
+  other partner-only cards — same filters, loading and abort handling, no new
+  hook. `useEvalAnalysis.js` drops the precheck and drive loop (PR 3, built).
+- Components: `EvalCoverageCard.js` in `src/components/admin/dashboard/` for
+  Part A (PR 1). `EvalAnalysisSection.js` / `EvalAnalysisReport.js` shrink to
+  Part B (PR 3, built) and move to `src/components/aiAnalysis/`. The report drops the
+  cross-tab and the row-data table for new runs.
+- Locales: new keys under `partnerDashboard.evalCoverage.*`, EN and FR
+  together. Remove the dead `tooFew`/`tooMany`/progress keys. Program and
+  action names go through the existing display-time FR maps.
+- Numbers go through `formatNumber`/`formatPercent`. The section uses the
+  shared card chrome and an accessible table.
 
-- **PDF export** of a report.
-- Analysis of **AI auto-evaluations** (separate run type).
-- Cost/duration telemetry to decide whether the 200 cap can rise.
+## TODO — split coverage EN/FR (follow-up PR)
 
-## Implementation order
+Eval-informed retrieval matches **same language only**, so a service with only
+English evaluations has nothing to draw on for French questions — today's
+single count per service hides that. Split questions, usable evaluations,
+expiring and answers-using-evaluations by `pageLanguage` (the volume chart
+already groups `en`/`fr` the same way). Kept out of PR 1 to keep it reviewable.
 
-1. `models/evalAnalysis.js` + seed data module from the CSV.
-2. `services/EvalAnalysisService.js` — row fetch + Tier 1 stats (unit-testable
-   pure helpers; vitest tests first for evaluator/EN-FR stats).
-3. Strategies (classify, insights) + orchestrator wiring. **Prompt wording
-   review by maintainers here.**
-4. Endpoints (precheck, run/drive, get, list) + `__tests__` for the API.
-5. Frontend service + hook.
-6. `EvalAnalysisSection` + `EvalAnalysisReport` + locale keys (EN+FR) +
-   PartnerDashboard wiring.
-7. End-to-end pass on staging data; watch cost/duration of a 200-eval run.
+## PR breakdown
 
-## Reference material
+1. **Part A, coverage table** (built): endpoint, card, EN/FR copy, how-to guide
+   section, dashboards doc. It stands alone and carries most of the value.
+2. **Part A, most-used evaluations** (built): endpoint, card, EN/FR copy,
+   how-to guide, dashboards doc. The weak-examples list was dropped.
+3. **Part B simplification** (built, `eval-analysis-v2`): one call, input
+   limit, removals. The EN/FR and evaluator tables stayed in the report.
 
-- Trial data sample: `.../CDS/AI/trial/Trial 4/t4-evals-only-csv.csv` (438 human
-  evals: ~85% score 100; tail of 90–96 needs-improvement where explanations
-  carry the signal; citation-only deductions; 2 of 8 evaluators did 87% of
-  evals; FR ≈ 12% of volume).
-- Seed vocabulary: `.../CDS/AI/seed-programs-actions-ideas.csv` (programs for
-  CRA/ESDC/IRCC + global action list with synonyms).
-- Dashboards guide: `docs/coding-agent-docs/dashboards.md`.
-- Eval lifecycle: `docs/architecture/evaluation-service.md`.
+Docs in the same PRs: update `docs/coding-agent-docs/dashboards.md` for the new
+cards, and the admin how-to guide in `public/content/admin/` if it covers this
+section (EN + FR).
+
+## Open questions
+
+- Is the 60-day "expiring soon" window right, or should it match an evaluation
+  cadence the team already works to?
+- **Worst-case run time (not yet measured):** a run is one request with no
+  limit on evaluations in scope, then one insights call with up to 150 + 150
+  rows. Time a run on prod for a large institution with a wide date range
+  against the 300-second request limit and the agent's `timeoutMs`. If it's
+  close, add a guard (range or row cap) rather than bring back the v1 step
+  loop. Until then, a request that times out shows "The analysis failed" even
+  if the server finishes; the run then appears in the past-runs list.
+
+## What v1 did
+
+For reference. v1 reports stored before PR 3 still display.
+
+- **Gates:** an institution filter is required. A precheck counts the human
+  evals in scope, and a run is only allowed between 20 and 200.
+- **Tier 1:** deterministic stats in `services/evalAnalysisStats.js`: an
+  evaluator table with a review flag (a perfect-rate delta of more than 20
+  points and at least 10 evals), EN vs FR, and content-issue and low-score
+  rows.
+- **Tier 2:** program — action cross-tab, with groups of fewer than 2 evals
+  dropped. It reuses the stored `context.program`/`action`. It falls back to
+  chunked LLM classification (`evalAnalysisClassifyStrategy`, 20 rows per call)
+  against the department seed list for normal-answer rows without a program.
+- **Tier 3:** one insights call (`evalAnalysisInsightsStrategy`) for
+  explanation themes and a content-issue note, in the dashboard language.
+- **Flow:** the client drives `eval-analysis-advance` step by step
+  (snapshot → classify chunks → synthesize). Runs are stored on `EvalAnalysis`
+  with a past-runs list per institution.

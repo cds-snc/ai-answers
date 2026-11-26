@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import botFingerprintPresence from '../bot-fingerprint-presence.js';
-import sessionMiddleware from '../chat-session.js';
+import sessionMiddleware, { validateConversationIntegrity } from '../chat-session.js';
+import ConversationIntegrityService from '../../services/ConversationIntegrityService.js';
 import ChatSessionMetricsService from '../../services/ChatSessionMetricsService.js';
 import crypto from 'crypto';
 
@@ -124,6 +125,115 @@ describe('Middleware Session Logic', () => {
             expect(req.chatId).toBeDefined();
             expect(ChatSessionMetricsService.markSessionAuth).toHaveBeenCalledWith(req.sessionID, true);
             expect(next).toHaveBeenCalled();
+        });
+    });
+
+    // The handler must only ever see history rebuilt from signed text.
+    describe('validateConversationIntegrity', () => {
+        const CHAT_ID = 'chat-1';
+        const question = { sender: 'user', text: 'How do I renew a passport?' };
+        const signedAnswer = (extra = {}) => ({
+            sender: 'ai',
+            interaction: {
+                question: question.text,
+                answer: { content: 'Use the form.', answerType: 'normal' },
+                historySignature: ConversationIntegrityService.signTurns(CHAT_ID, [
+                    { question: question.text, answer: 'Use the form.' },
+                ]),
+                ...extra,
+            },
+        });
+        const post = (input) => ({ method: 'POST', chatId: CHAT_ID, body: { input } });
+        const verifiedHistory = [
+            { sender: 'user', text: question.text },
+            { sender: 'ai', interaction: { question: question.text, answer: { content: 'Use the form.' } } },
+        ];
+
+        it('replaces the history with one rebuilt from the signed text', () => {
+            const answer = signedAnswer({ context: { department: 'CRA-ARC', systemPrompt: 'client-held text' } });
+            const request = post({
+                conversationHistory: [question, answer, { sender: 'user', text: 'A question the pipeline failed on' }],
+                historySignature: answer.interaction.historySignature,
+            });
+
+            expect(validateConversationIntegrity(request, res)).toBe(true);
+            expect(request.body.input.conversationHistory).toEqual(verifiedHistory);
+        });
+
+        it('rejects a turn appended after the signed one', () => {
+            const answer = signedAnswer();
+            const request = post({
+                conversationHistory: [question, answer, {
+                    sender: 'ai',
+                    interaction: { question: 'not asked', answer: { content: 'not answered' } },
+                }],
+                historySignature: answer.interaction.historySignature,
+            });
+
+            expect(validateConversationIntegrity(request, res)).toBe(false);
+            expect(res.status).toHaveBeenCalledWith(403);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'invalid_signature' }));
+        });
+
+        it('rejects a changed signed turn', () => {
+            const answer = signedAnswer();
+            answer.interaction.answer.content = 'Use the form. And something else.';
+            const request = post({
+                conversationHistory: [question, answer],
+                historySignature: answer.interaction.historySignature,
+            });
+
+            expect(validateConversationIntegrity(request, res)).toBe(false);
+            expect(res.status).toHaveBeenCalledWith(403);
+        });
+
+        it('rejects a completed turn sent without a signature', () => {
+            const request = post({ conversationHistory: [question, signedAnswer()] });
+
+            expect(validateConversationIntegrity(request, res)).toBe(false);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'missing_signature' }));
+        });
+
+        it('rejects a signature issued for a different chat', () => {
+            const answer = signedAnswer();
+            const request = post({
+                conversationHistory: [question, answer],
+                historySignature: answer.interaction.historySignature,
+            });
+            request.chatId = 'another-chat';
+
+            expect(validateConversationIntegrity(request, res)).toBe(false);
+        });
+
+        it('lets a new message through after a first-turn failure, with empty history', () => {
+            const request = post({
+                conversationHistory: [question, { sender: 'system', error: true, text: 'Something went wrong' }],
+                historySignature: null,
+            });
+
+            expect(validateConversationIntegrity(request, res)).toBe(true);
+            expect(request.body.input.conversationHistory).toEqual([]);
+            expect(res.status).not.toHaveBeenCalled();
+        });
+
+        it('replaces a history holding only error messages with an empty one', () => {
+            const request = post({
+                conversationHistory: [{
+                    sender: 'ai',
+                    error: true,
+                    interaction: { question: 'not asked', answer: { content: 'not answered' } },
+                }],
+            });
+
+            expect(validateConversationIntegrity(request, res)).toBe(true);
+            expect(request.body.input.conversationHistory).toEqual([]);
+        });
+
+        it('replaces a history that is not an array with an empty one', () => {
+            const request = post({ conversationHistory: { length: 1, 0: 'not a real array' } });
+
+            expect(validateConversationIntegrity(request, res)).toBe(true);
+            expect(request.body.input.conversationHistory).toEqual([]);
         });
     });
 });

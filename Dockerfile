@@ -1,8 +1,12 @@
-# Use Node.js 24.18.0 as the base image
-FROM node:24.18.0 AS build
+# Use Node.js 24.22.1 as the base image
+FROM node:24.22.1 AS build
 
 # Set working directory
 WORKDIR /app
+
+# onnxruntime-node (via @huggingface/transformers) downloads optional CUDA binaries
+# on Linux x64 during install. We run on CPU only, and the download 404s.
+ENV ONNXRUNTIME_NODE_INSTALL_CUDA=skip
 
 # Copy package files and install dependencies
 COPY package.json package-lock.json ./
@@ -15,7 +19,7 @@ COPY . .
 RUN GENERATE_SOURCEMAP=false npm run build
 
 # Use Node.js for the backend
-FROM node:24.18.0
+FROM node:24.22.1
 
 # Set working directory
 WORKDIR /app
@@ -29,6 +33,10 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 # Download AWS DocumentDB certificate bundle
 RUN wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+
+# onnxruntime-node (via @huggingface/transformers) downloads optional CUDA binaries
+# on Linux x64 during install. We run on CPU only, and the download 404s.
+ENV ONNXRUNTIME_NODE_INSTALL_CUDA=skip
 
 # Copy package files and install dependencies
 COPY package.json package-lock.json ./

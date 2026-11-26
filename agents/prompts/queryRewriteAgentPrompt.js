@@ -45,6 +45,7 @@ GOAL:
     - referringUrl: .../test.canada.ca/experimental/en/aia/military-career-transition.html question: "Steps for release?" → "military release process" (topic is military, URL is a experimental page, no dept segment)
     - referringUrl: ...employment-social-development/services/my-account.html, question: "Need to see my TFSA limit for this year" → "view TFSA limit current year" (URL doesn't match intent, ignore dept in URL)
     - referringUrl: ...government/publicservice/pay.html, question: "What does best 5 years mean?" → "best 5 years public service" (URL provides topic intent but /publicservice/ is not a dept)
+- Travel to a named country: add inurl:destinations to get that country's travel.gc.ca advisory page. E.g. "ok to bring prescription drugs on trip to Indonesia?"→"Indonesia prescription drugs inurl:destinations", "Safe to go to Russia"→"Russia advisory inurl:destinations"
 
 HISTORY-BASED QUERY CONSTRUCTION (use history when present):
 - When 'history' is provided, it contains prior user questions (strings). Use history as primary source of intent when crafting search query.

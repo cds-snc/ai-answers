@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { GcdsLink } from '@gcds-core/components-react';
+import { GcdsIcon, GcdsLink } from '@gcds-core/components-react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { getPath } from '../../utils/routes.js';
 import UserService from '../../services/UserService.js';
+import { formatNumber, isSingular } from '../../utils/numberFormat.js';
 
 const AdminNotifications = ({ lang = 'en' }) => {
     const { t } = useTranslations(lang);
@@ -10,6 +11,12 @@ const AdminNotifications = ({ lang = 'en' }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // TODO: make this dynamic. Counts load once on mount, so an assignment or
+    // signup from another session doesn't show until reload. Re-fetch on an
+    // interval while the tab is visible and on visibilitychange, render each
+    // box as a StatusMessage info box so changes announce through
+    // liveAnnouncer.js (only when the text changes), then drop the
+    // hand-rolled role="status" region below.
     useEffect(() => {
         let didCancel = false;
 
@@ -33,8 +40,15 @@ const AdminNotifications = ({ lang = 'en' }) => {
         return () => { didCancel = true; };
     }, []);
 
-    const hasNotifications = !loading && !error && stats &&
-        (stats.newInactiveCount > 0 || stats.totalInactiveCount > 0);
+    // Admin-only fields are absent for partners (api/user/user-stats.js)
+    const hasUserNotifications = stats && (stats.newInactiveCount > 0 || stats.totalInactiveCount > 0);
+    const hasAssignedNotifications = stats && stats.pendingAssignedCount > 0;
+    const hasNotifications = !loading && !error && (hasUserNotifications || hasAssignedNotifications);
+
+    // Takes both translated strings (literal t() calls, which
+    // scripts/find-dead-locale-keys.cjs can see) and picks one
+    const countText = (count, one, other) =>
+        (isSingular(count, lang) ? one : other).replace('{count}', () => formatNumber(count, lang));
 
     return (
         // role="status" aria-live="polite": mounted (empty) from initial
@@ -44,10 +58,10 @@ const AdminNotifications = ({ lang = 'en' }) => {
         // already in it. Returning null until the fetch resolved (the old
         // behaviour) is exactly the populated-on-insertion failure mode
         // src/utils/liveAnnouncer.js's own doc comment warns about — this
-        // is the hand-rolled-markup equivalent, since the stat list + action link
+        // is the hand-rolled-markup equivalent, since the boxes' link-list
         // layout doesn't map onto StatusMessage's single-message/children
-        // shape. polite, not assertive: these are routine pending-account
-        // counts (api/user/user-stats.js's only two fields), not an urgent
+        // shape. polite, not assertive: these are routine pending-review/
+        // pending-account counts (api/user/user-stats.js), not an urgent
         // failure. admin-notifications--empty zeroes the margin so an empty
         // region doesn't leave a visible gap — same purpose as
         // StatusMessage's status-message--empty. See
@@ -58,53 +72,48 @@ const AdminNotifications = ({ lang = 'en' }) => {
             role="status"
             aria-live="polite"
         >
-            {hasNotifications && (
+            {hasAssignedNotifications && (
                 <div className="admin-notifications-panel">
                     <div className="admin-notifications-heading">
-                        <span className="gcds-icon fa fa-solid fa-exclamation-circle admin-notifications-icon" aria-hidden="true"></span>
-                        <h2 className="admin-notifications-title">
-                            {t('admin.notifications.title')}
-                        </h2>
+                        {/* Same icon as StatusMessage's info variant */}
+                        <GcdsIcon name="info-circle" className="admin-notifications-icon" />
+                        <h2 className="admin-notifications-title">{t('admin.notifications.assignedHeading')}</h2>
                     </div>
-                    {/* role="list": Safari/VoiceOver computes the list/listitem
-                        a11y roles from list-style, and .admin-notifications-list
-                        sets list-style: none - without this override, VoiceOver
-                        users on Safari get no list semantics at all. */}
-                    <ul className="admin-notifications-list" role="list">
+                    <ul className="admin-notifications-list">
+                        <li>
+                            {/* ?show=pending is read by AccountPage.js, which filters its
+                                assigned-questions table to the rows this counts */}
+                            <GcdsLink href={`${getPath('account', lang)}?show=pending`} className="font-size-text-sm-nr">
+                                {countText(stats.pendingAssignedCount, t('admin.notifications.pendingAssignedOne'), t('admin.notifications.pendingAssignedOther'))}
+                            </GcdsLink>
+                        </li>
+                    </ul>
+                </div>
+            )}
+            {hasUserNotifications && (
+                <div className="admin-notifications-panel">
+                    <div className="admin-notifications-heading">
+                        <GcdsIcon name="info-circle" className="admin-notifications-icon" />
+                        <h2 className="admin-notifications-title">{t('admin.notifications.accountsHeading')}</h2>
+                    </div>
+                    {/* ?show= is read by UsersPage.js, which filters to the
+                        same rows these counts measure (api/user/user-stats.js) */}
+                    <ul className="admin-notifications-list">
                         {stats.newInactiveCount > 0 && (
-                            <li className="admin-notifications-item admin-notifications-item--warning">
-                                <span className="admin-notifications-count">{stats.newInactiveCount}</span>
-                                <span className="admin-notifications-label font-size-text-sm-nr">
-                                    {t('admin.notifications.newInactive')}
-                                </span>
+                            <li>
+                                <GcdsLink href={`${getPath('users', lang)}?show=new`} className="font-size-text-sm-nr">
+                                    {countText(stats.newInactiveCount, t('admin.notifications.newInactiveOne'), t('admin.notifications.newInactiveOther'))}
+                                </GcdsLink>
                             </li>
                         )}
                         {stats.totalInactiveCount > 0 && (
-                            <li className="admin-notifications-item">
-                                <span className="admin-notifications-count">{stats.totalInactiveCount}</span>
-                                <span className="admin-notifications-label font-size-text-sm-nr">
-                                    {t('admin.notifications.totalInactive')}
-                                </span>
+                            <li>
+                                <GcdsLink href={`${getPath('users', lang)}?show=inactive`} className="font-size-text-sm-nr">
+                                    {countText(stats.totalInactiveCount, t('admin.notifications.totalInactiveOne'), t('admin.notifications.totalInactiveOther'))}
+                                </GcdsLink>
                             </li>
                         )}
                     </ul>
-                    {/* TODO: each stat row above would be more useful as its own
-                        link, deep-linking into UsersPage.js pre-filtered to that
-                        stat, instead of one generic link to the unfiltered
-                        table. Not a quick change: UsersPage.js has zero
-                        useSearchParams/query-param support today, so this needs
-                        real work there first, not just an href here.
-                        - "total inactive": plausible - the Status column
-                          already has a filter dropdown (active/inactive), just
-                          not wired to a URL param yet.
-                        - "new" (last 7 days): no filter mechanism exists to
-                          link into at all - the createdAt column
-                          (~line 250 in UsersPage.js) is a plain display column,
-                          no filter type, no date-range/"last 7 days" concept.
-                          Would need a new column filter built there first. */}
-                    <GcdsLink href={getPath('users', lang)} className="admin-notifications-action font-size-text-sm-nr">
-                        {t('admin.notifications.viewUsers')}
-                    </GcdsLink>
                 </div>
             )}
         </section>
