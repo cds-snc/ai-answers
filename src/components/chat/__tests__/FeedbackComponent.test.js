@@ -309,7 +309,7 @@ describe('FeedbackComponent — public feedback', () => {
     errorSpy.mockRestore();
   });
 
-  it('does not ask for another try when the interaction is gone', async () => {
+  it('asks for another try when the chat is not stored yet', async () => {
     mockUseHasAnyRole.mockReturnValue(false);
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const missing = new Error('Interaction not found');
@@ -323,9 +323,9 @@ describe('FeedbackComponent — public feedback', () => {
       fireEvent.click(screen.getByText('homepage.publicFeedback.send'));
     });
 
-    expect(screen.getByText('homepage.publicFeedback.saveFailed')).toBeTruthy();
-    expect(screen.queryByText('homepage.publicFeedback.saveError')).toBeNull();
-    expect(screen.getByText('homepage.publicFeedback.send').closest('button').disabled).toBe(true);
+    expect(screen.getByText('homepage.publicFeedback.saveError')).toBeTruthy();
+    expect(screen.queryByText('homepage.publicFeedback.saveFailed')).toBeNull();
+    expect(screen.getByText('homepage.publicFeedback.send').closest('button').disabled).toBe(false);
     errorSpy.mockRestore();
   });
 

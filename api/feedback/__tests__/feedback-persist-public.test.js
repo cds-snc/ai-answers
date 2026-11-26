@@ -186,7 +186,7 @@ describe('feedback-persist-public', () => {
     expect(linked.publicFeedbackReason).toBe('irrelevant');
   });
 
-  it('rejects a non-string score without writing', async () => {
+  it('rejects a string score without writing', async () => {
     await seedChat();
     const res = await run(validBody({
       feedback: 'yes',
