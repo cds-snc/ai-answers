@@ -314,21 +314,36 @@ blocked questions are never stored (AIA-018). The trade-off: the logs show which
 languages are blocked, but not enough to judge whether a block was a false positive.
 
 The same rule covers every log written before `postTranslateGuard` finishes, since any
-of those questions may still be blocked. The `node:redact output` and
-`node:translate input` events carry no question text, and the translation service's
-"coerced to no-op" log records languages only. Dropping the question text costs little
-for debugging: every stage-1 redaction blocks, so any question that gets past `redact`
-is unchanged, and it is saved with the interaction if it is answered. One thing is
-lost: when the translation model rewrites a question in the same language (for
-example, it follows an instruction embedded in the question), that rewrite is
-discarded and is no longer logged, so there is no record of what the model produced.
-Translation logs
-are filed under the real `chatId`, which `TranslationAgentService.translateQuestion`
-requires (there is no shared fallback bucket).
-`blockedQuestionLogs.security.test.js` runs every graph through each block type after
-`redact`. It runs everything except the model call itself (agent orchestrator,
+of those questions may still be blocked. Every graph builds its `redact` and `translate`
+nodes from the shared factories in `agents/graphs/nodes/questionNodes.js`, so the rule
+lives in one place and a new graph gets it without code of its own. The
+`node:redact output` and `node:translate input` events carry no question text, and the
+translation service's "coerced to no-op" log records languages only. Dropping the
+question text costs little for debugging: every stage-1 redaction blocks, so any
+question that gets past `redact` is unchanged, and it is saved with the interaction if
+it is answered.
+
+When the translation model rewrites a question in the same language (for example, it
+follows an instruction embedded in the question), the service discards the rewrite and
+passes the original on. The rewrite is deliberately never logged, not even after the
+guard passes: it is model output that no guardrail has checked, and it could turn
+spelled-out or obfuscated PII into a readable form. The cost is that there is no record
+of what the model produced when it followed an embedded instruction.
+
+Translation logs are filed under the real `chatId`, which
+`TranslationAgentService.translateQuestion` requires (there is no shared fallback
+bucket).
+`blockedQuestionLogs.security.test.js` runs every registered graph (from
+`listGraphs()`, through `getGraphApp()` as production does) through each block type
+after `redact`. It runs everything except the model call itself (agent orchestrator,
 translation and PII services, strategies), and fails if any log call contains the
-question text or is filed under a different chat.
+question text or is filed under a different chat. It also runs a question that passes
+every guardrail, stopped after `translate`: no log before `node:translate output` may
+contain the question, and `node:translate output` does — the question may appear only
+after the guard. A same-language rewrite never appears in any log, whether the
+question is blocked or passes. A guard test fails if a graph module in
+`agents/graphs/` is not registered, since an unregistered graph would escape these
+runs.
 
 ---
 
