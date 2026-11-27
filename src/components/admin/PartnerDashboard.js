@@ -10,6 +10,7 @@ import HBarCard from './dashboard/HBarCard.js';
 import StackedBarCard from './dashboard/StackedBarCard.js';
 import DivergingBarCard from './dashboard/DivergingBarCard.js';
 import ReferralUrlsCard from './dashboard/ReferralUrlsCard.js';
+import RejectedReferrersCard from './dashboard/RejectedReferrersCard.js';
 import CitationPagesCard from './dashboard/CitationPagesCard.js';
 import AnswerTypesCard from './dashboard/AnswerTypesCard.js';
 import ContentIssueChatsCard from './dashboard/ContentIssueChatsCard.js';
@@ -233,6 +234,9 @@ const PartnerDashboard = ({ lang = 'en' }) => {
   // Already normalized, merged and ranked server-side; scoped to the selected
   // department when a partner is applied, otherwise the global top pages.
   const topReferrals = metrics.topReferrals || [];
+  // Hostnames of non-GC referrers dropped for signed-out visitors (AIA-006),
+  // counted by distinct conversation. Only recorded from the AIA-006 follow-up on.
+  const rejectedHosts = metrics.rejectedHosts || [];
   const contentIssueChats = metrics.contentIssueChats || [];
   // Anchors the KPI stat cards' "View" links jump to — landing inside the
   // collapsed <details> auto-opens it (see CollapsibleCard.js's anchorId).
@@ -571,6 +575,26 @@ const PartnerDashboard = ({ lang = 'en' }) => {
               />
             </div>
           )}
+        </div>
+      )}
+
+      {/* Rejected referrers — directly under top referral pages. Non-GC sites
+          that sent signed-out visitors; the server dropped those referrers and
+          kept only the hostname (AIA-006). Presence-gated like referrals. */}
+      {rejectedHosts.length > 0 && (
+        <div className="dashboard-row">
+          <div className="dashboard-col-third">
+            <RejectedReferrersCard
+              title={t('partnerDashboard.rejectedReferrers.title')}
+              subtitle={t('partnerDashboard.rejectedReferrers.subtitle')}
+              triggerLabel={t('partnerDashboard.rejectedReferrers.trigger')}
+              data={rejectedHosts}
+              hostColLabel={t('partnerDashboard.rejectedReferrers.colHost')}
+              countColLabel={t('partnerDashboard.rejectedReferrers.colCount')}
+              noDataLabel={t('partnerDashboard.rejectedReferrers.noData')}
+              lang={lang}
+            />
+          </div>
         </div>
       )}
 

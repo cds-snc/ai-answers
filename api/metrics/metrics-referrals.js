@@ -16,7 +16,12 @@ const TOP_N = 20;
 // session from one page counts once, so pages with longer conversations aren't
 // over-weighted. Honours date range, userType/url filters, and department (when
 // a partner is selected the list is scoped to that department).
-function buildReferralPipeline(dateFilter, extraFilters = [], departmentFilter = []) {
+//
+// `field` is the interaction field to count: 'referringUrl' for top referrals, or
+// 'rejectedReferrerHost' for the hostnames of non-GC referrers dropped for signed-out
+// visitors (AIA-006). `cap` bounds the rows returned.
+function buildReferralPipeline(dateFilter, extraFilters = [], departmentFilter = [], { field = 'referringUrl', cap = RAW_URL_CAP } = {}) {
+  const path = `interactions.${field}`;
   const stages = [
     { $match: dateFilter },
     {
@@ -50,14 +55,14 @@ function buildReferralPipeline(dateFilter, extraFilters = [], departmentFilter =
   }
 
   stages.push(
-    { $match: { 'interactions.referringUrl': { $exists: true, $nin: [null, ''] } } },
-    // Collapse to distinct (referringUrl, chat) pairs first so each conversation
-    // is counted once per page, then count pairs per raw URL. Two-stage grouping
+    { $match: { [path]: { $exists: true, $nin: [null, ''] } } },
+    // Collapse to distinct (value, chat) pairs first so each conversation is
+    // counted once per page, then count pairs per raw value. Two-stage grouping
     // avoids a large $addToSet of chat IDs (DocumentDB memory-friendly).
-    { $group: { _id: { url: '$interactions.referringUrl', chat: '$_id' } } },
+    { $group: { _id: { url: `$${path}`, chat: '$_id' } } },
     { $group: { _id: '$_id.url', count: { $sum: 1 } } },
     { $sort: { count: -1 } },
-    { $limit: RAW_URL_CAP },
+    { $limit: cap },
   );
 
   return stages;
@@ -70,9 +75,18 @@ async function getReferralMetrics(req, res) {
     const { dateFilter, extraFilterConditions, departmentFilter } = await parseRequestFilters(req);
     if (!dateFilter.createdAt) return res.status(400).json({ error: 'Invalid date range' });
 
-    const rows = await executeWithRetry(() =>
-      Chat.aggregate(buildReferralPipeline(dateFilter, extraFilterConditions, departmentFilter)).allowDiskUse(true)
-    );
+    const [rows, rejectedRows] = await Promise.all([
+      executeWithRetry(() =>
+        Chat.aggregate(buildReferralPipeline(dateFilter, extraFilterConditions, departmentFilter)).allowDiskUse(true)
+      ),
+      // Hosts are normalized when stored, so there is no merge step: these rows are final.
+      executeWithRetry(() =>
+        Chat.aggregate(buildReferralPipeline(dateFilter, extraFilterConditions, departmentFilter, {
+          field: 'rejectedReferrerHost',
+          cap: TOP_N,
+        })).allowDiskUse(true)
+      ),
+    ]);
 
     // Normalize raw referrers to a page key and merge their conversation counts;
     // normalizeReferralUrl drops blanks and AI Answers self-referrals.
@@ -88,7 +102,9 @@ async function getReferralMetrics(req, res) {
       .sort((a, b) => b.count - a.count)
       .slice(0, TOP_N);
 
-    return res.status(200).json({ success: true, metrics: { topReferrals } });
+    const rejectedHosts = rejectedRows.map((row) => ({ host: row._id, count: row.count }));
+
+    return res.status(200).json({ success: true, metrics: { topReferrals, rejectedHosts } });
   } catch (error) {
     console.error('Error in referral metrics:', error);
     return res.status(500).json({ error: 'Failed to fetch referral metrics' });

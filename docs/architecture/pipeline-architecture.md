@@ -170,7 +170,9 @@ The graph maintains state across all nodes with these key fields:
   referringUrl: string,          // Page URL where question was asked. Normalized at entry
                                  //   by api/util/referring-url.js (http(s) only, query
                                  //   stripped, anchor kept only if section-like,
-                                 //   ≤500 chars) or '' (AIA-006)
+                                 //   ≤500 chars) or '' (AIA-006). For signed-out
+                                 //   visitors, also '' unless it is a GC page
+                                 //   (api/util/govHost.js); admins/partners keep any host
   selectedAI: string,            // AI provider (openai, azure, anthropic)
   translationF: boolean,         // Translation function enabled
   searchProvider: string,        // Search provider (canadaCa, google)
@@ -554,6 +556,11 @@ variants this is SKIPPED on a match, because the `shortCircuit` node already per
    [After the Answer](#after-the-answer-evaluation-and-the-feedback-loop)
 
 **Metadata Tracked:**
+- Referring URL, and `rejectedReferrerHost`: the hostname only of a non-GC referrer dropped
+  for a signed-out visitor at the entry point (AIA-006). It is not graph state: it travels on
+  the `graphRequestContext` store and `GraphWorkflowHelper.persistInteraction` adds it, so every
+  graph saves it. Counted on the partner dashboard
+  ([plan](../plans/referring-url-host-allowlist.md))
 - Response time
 - Search provider used
 - AI model used

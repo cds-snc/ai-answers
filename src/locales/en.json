@@ -1858,6 +1858,14 @@
       "colUrl": "Referring page",
       "colCount": "Click-throughs"
     },
+    "rejectedReferrers": {
+      "title": "Referrers outside the Government of Canada",
+      "subtitle": "Sites outside the Government of Canada that sent signed-out visitors. The address was not used to answer.",
+      "trigger": "All referrers outside the Government of Canada",
+      "colHost": "Site",
+      "colCount": "Conversations",
+      "noData": "No referrers outside the Government of Canada in this period."
+    },
     "citations": {
       "title": "Top citation pages",
       "trigger": "All top cited pages",

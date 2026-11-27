@@ -70,6 +70,7 @@ export const InteractionPersistenceService = {
         dbInteraction.interactionId = interaction.userMessageId;
         dbInteraction.responseTime = interaction.responseTime;
         dbInteraction.referringUrl = interaction.referringUrl;
+        dbInteraction.rejectedReferrerHost = interaction.rejectedReferrerHost || '';
         // Persist optional instant-match identifiers from short-circuit flow
         dbInteraction.instantAnswerChatId = interaction.instantAnswerChatId || '';
         dbInteraction.instantAnswerInteractionId = interaction.instantAnswerInteractionId || '';

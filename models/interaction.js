@@ -9,6 +9,9 @@ const InteractionSchema = new mongoose.Schema({
     default: ''
   },
   referringUrl: { type: String, required: false, default: '' },
+  // Hostname only (never the URL) of a non-GC referrer dropped for a signed-out
+  // visitor (AIA-006, api/util/referring-url.js). Counted on the partner dashboard.
+  rejectedReferrerHost: { type: String, required: false, default: '' },
   responseTime: {
     type: String,
     required: false,

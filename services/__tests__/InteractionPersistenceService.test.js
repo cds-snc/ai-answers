@@ -188,6 +188,22 @@ describe('InteractionPersistenceService', () => {
         expect(EmbeddingService.createEmbedding).toHaveBeenCalled();
     });
 
+    it('persists the hostname of a dropped non-GC referrer next to an empty referringUrl', async () => {
+        const payload = { ...initialPayload, referringUrl: '', rejectedReferrerHost: 'evil.example' };
+        await InteractionPersistenceService.persistInteraction(payload, user);
+
+        const { interaction } = await trackCreatedDocuments(payload.chatId, payload.userMessageId);
+        expect(interaction.referringUrl).toBe('');
+        expect(interaction.rejectedReferrerHost).toBe('evil.example');
+    });
+
+    it('saves an empty rejectedReferrerHost when none was given', async () => {
+        await InteractionPersistenceService.persistInteraction(initialPayload, user);
+
+        const { interaction } = await trackCreatedDocuments(initialPayload.chatId, initialPayload.userMessageId);
+        expect(interaction.rejectedReferrerHost).toBe('');
+    });
+
     it('persists the app version on the chat and interaction', async () => {
         process.env.APP_VERSION = 'v-test-version';
 

@@ -173,6 +173,7 @@ Trois éléments de ce flux distinguent Réponses IA d'un agent conversationnel 
 - **Application de la portée** : Limitation stricte au contenu provenant du gouvernement du Canada.
 - **Longueur des conversations** : 3 questions par session pour prévenir la manipulation (les conversations plus longues présentent un risque accru d'inexactitude).
 - **Limites de caractères** : La limite de 260 caractères par question aide à prévenir l'injection d'invite et force des questions plus claires.
+- **Page de provenance** : Pour les membres du public, la page d'où ils viennent sert de contexte seulement si c'est une page du gouvernement du Canada. Toute autre adresse n'est ni transmise à l'IA ni enregistrée. Seul le nom du site est compté, à des fins de rapport.
 - **Avertissements utilisateur** : Les questions bloquées sont affichées avec les mots ou expressions fautifs remplacés par des symboles « ### ». Les tests d'utilisabilité ont confirmé que les utilisateurs comprenaient le problème et reformulaient leurs questions.
 
 ### Risques d'accessibilité

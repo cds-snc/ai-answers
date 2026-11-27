@@ -18,6 +18,7 @@ import { AnswerGenerationService } from '../../../services/AnswerGenerationServi
 import { SimilarAnswerService } from '../../../services/SimilarAnswerService.js';
 import { UrlValidationService } from '../../../services/UrlValidationService.js';
 import { InteractionPersistenceService } from '../../../services/InteractionPersistenceService.js';
+import { graphRequestContext } from '../requestContext.js';
 import { invokeContextAgent } from '../../../services/ContextAgentService.js';
 import ServiceCallMetricsService from '../../../services/ServiceCallMetricsService.js';
 import { exponentialBackoff } from '../../../api/util/backoff.js';
@@ -390,10 +391,14 @@ export class GraphWorkflowHelper {
   }
 
   async persistInteraction(interactionData, user) {
+    // The hostname of a non-GC referrer dropped for a signed-out visitor is set on the
+    // request context by api/chat/chat-graph-run.js, not on graph state, so every graph
+    // and both of its persist paths (full and short-circuit) save it from here.
+    const rejectedReferrerHost = graphRequestContext.getStore()?.rejectedReferrerHost || '';
     // Note: Graph must pass user object now
     await InteractionPersistenceService.persistInteraction(
       interactionData.chatId, // Assuming chatId is in interactionData or I need to pass it?
-      interactionData,
+      { ...interactionData, rejectedReferrerHost },
       user
     );
   }
