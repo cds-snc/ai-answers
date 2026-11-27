@@ -25,34 +25,60 @@ const ExpertFeedbackComponent = ({
   citationUrl,
   department,
   titleRef,
+  // Edit mode (ExpertFeedbackPanel.js): the saved evaluation to start from,
+  // and the submit button's text in place of "Submit evaluation".
+  initialFeedback,
+  submitLabel,
+  // Edit mode: shows a secondary Cancel button before submit that calls onClose.
+  cancelLabel,
+  // Edit mode: a save is in flight. aria-disabled rather than disabled, so the
+  // button keeps focus; the caller ignores repeat presses.
+  submitBusy = false,
+  // Rendered right under the submit button - e.g. the panel's save error.
+  submitStatus,
 }) => {
   const { t } = useTranslations(lang);
   // Namespaces every id in this component so multiple instances can render on
   // one page (e.g. review mode, one per un-rated answer) without colliding.
   const uid = useId();
   const { answerText, withAnswerNumber } = useAnswerNumberLabel(t, answerNumber);
-  const [expertFeedback, setExpertFeedback] = useState({
-    sentence1Score: null,
-    sentence1Explanation: '',
-    sentence1Harmful: false,
-    sentence1ContentIssue: false,
-    sentence2Score: null,
-    sentence2Explanation: '',
-    sentence2Harmful: false,
-    sentence2ContentIssue: false,
-    sentence3Score: null,
-    sentence3Explanation: '',
-    sentence3Harmful: false,
-    sentence3ContentIssue: false,
-    sentence4Score: null,
-    sentence4Explanation: '',
-    sentence4Harmful: false,
-    sentence4ContentIssue: false,
-    citationScore: null,
-    citationExplanation: '',
-    expertCitationUrl: '',
+  // Edit mode keeps the starting values, to block saving an unchanged form.
+  const [startingFeedback] = useState(() => {
+    const blank = {
+      sentence1Score: null,
+      sentence1Explanation: '',
+      sentence1Harmful: false,
+      sentence1ContentIssue: false,
+      sentence2Score: null,
+      sentence2Explanation: '',
+      sentence2Harmful: false,
+      sentence2ContentIssue: false,
+      sentence3Score: null,
+      sentence3Explanation: '',
+      sentence3Harmful: false,
+      sentence3ContentIssue: false,
+      sentence4Score: null,
+      sentence4Explanation: '',
+      sentence4Harmful: false,
+      sentence4ContentIssue: false,
+      citationScore: null,
+      citationExplanation: '',
+      expertCitationUrl: '',
+    };
+    if (!initialFeedback) return blank;
+    const merged = { ...blank };
+    Object.keys(blank).forEach((key) => {
+      const value = initialFeedback[key];
+      if (value !== undefined && value !== null) merged[key] = value;
+    });
+    return merged;
   });
+  const [expertFeedback, setExpertFeedback] = useState(startingFeedback);
   const { hasError, errorCount, errorRef, triggerError, clearError } = useInlineFormError();
+  const noChanges = useInlineFormError();
+  const isUnchanged = !!initialFeedback && Object.keys(startingFeedback).every(
+    (key) => expertFeedback[key] === startingFeedback[key]
+  );
 
   // Explanation is required whenever a sentence/citation is scored anything
   // other than "good" (the textarea only ever renders in that case).
@@ -184,16 +210,19 @@ const ExpertFeedbackComponent = ({
 
     setExpertFeedback((prev) => ({ ...prev, ...updates }));
     clearError();
+    noChanges.clearError();
   };
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
     setExpertFeedback((prev) => ({ ...prev, [name]: value }));
+    noChanges.clearError();
   };
 
   const handleCheckboxChange = (event) => {
     const { name, checked } = event.target;
     setExpertFeedback((prev) => ({ ...prev, [name]: checked }));
+    noChanges.clearError();
   };
 
   // Prevent form submission on enter key press inside text areas
@@ -214,6 +243,12 @@ const ExpertFeedbackComponent = ({
 
   const handleSubmit = (event) => {
     event.preventDefault();
+
+    if (isUnchanged) {
+      noChanges.triggerError();
+      return;
+    }
+    noChanges.clearError();
 
     if (!hasAnyRating(expertFeedback)) {
       triggerError();
@@ -276,7 +311,12 @@ const ExpertFeedbackComponent = ({
     // (type="url") input, with no replacement check in its place. Confirm
     // whether that's an acceptable gap (optional field, trusted admin
     // input) before adding a replacement check — not adding one blind.
-    <form onSubmit={handleSubmit} className="expert-rating-container" noValidate lang={lang}>
+    <form
+      onSubmit={handleSubmit}
+      className={`expert-rating-container${initialFeedback ? ' expert-rating-container--editing' : ''}`}
+      noValidate
+      lang={lang}
+    >
       <FontAwesomeIcon
         icon="fa-solid fa-close"
         className="close-icon"
@@ -293,6 +333,10 @@ const ExpertFeedbackComponent = ({
       />
       <fieldset className={`gc-chckbxrdio md expert-rating-fieldset${hasError ? ' has-error' : ''}`}>
         <h4 className="feedback-followup-title" ref={titleRef} tabIndex={-1}>
+          {/* Inside the heading so it's read when focus lands here on Edit. */}
+          {initialFeedback && (
+            <span className="referring-url-label admin-view-label feedback-editing-label">{t('homepage.expertRating.editingLabel')}</span>
+          )}
           {t('homepage.expertRating.intro')}
           {answerNumber && (
             <span className="feedback-answer-number">{answerText}</span>
@@ -449,7 +493,9 @@ const ExpertFeedbackComponent = ({
           ))}
         </details>
 
-        <details className="citation-details">
+        {/* Editing a rated citation opens it, so the saved rating is visible.
+            A fixed value, so React never re-sets it after the user collapses it. */}
+        <details className="citation-details" open={initialFeedback?.citationScore != null}>
           <summary>{withAnswerNumber(t('homepage.expertRating.citation'))}</summary>
           <fieldset className="citation-rating-group" aria-describedby={`${uid}-citation-text`}>
             <legend>{t('homepage.expertRating.citation')}</legend>
@@ -553,10 +599,25 @@ const ExpertFeedbackComponent = ({
           )}
         </details>
       </fieldset>
-      <button type="submit" className="btn-primary mrgn-lft-sm">
-        {withAnswerNumber(t('homepage.expertRating.submit'))}
+      {/* Cleared by any change, so it only shows after a Save press. */}
+      {noChanges.hasError && (
+        <FeedbackInlineError
+          id={`${uid}-no-changes-error`}
+          message={t('homepage.expertRating.noChangesToSave')}
+          errorCount={noChanges.errorCount}
+          inputRef={noChanges.errorRef}
+        />
+      )}
+      {cancelLabel && (
+        <button type="button" className="btn-secondary mrgn-lft-sm" onClick={onClose}>
+          {withAnswerNumber(cancelLabel)}
+        </button>
+      )}
+      <button type="submit" className="btn-primary mrgn-lft-sm" aria-disabled={submitBusy || undefined}>
+        {withAnswerNumber(submitLabel || t('homepage.expertRating.submit'))}
         {department ? ` - ${department}` : ''}
       </button>
+      {submitStatus}
     </form>
   );
 };
