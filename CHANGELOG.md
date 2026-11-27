@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.215.0](https://github.com/cds-snc/ai-answers/compare/v1.214.4...v1.215.0) (2026-11-27)
+
+
+### Features
+
+* API for editing expert evaluations ([29c6a59](https://github.com/cds-snc/ai-answers/commit/29c6a59e1ee022751eed1471c000e01a8869dcb9))
+* edit expert evaluations from the review panel ([9b74633](https://github.com/cds-snc/ai-answers/commit/9b74633e19258db069780d9c19a12cf078419ff4))
+
+
+### Bug Fixes
+
+* count only filled sentence slots when scoring; note delete recovery relies on backups ([647d548](https://github.com/cds-snc/ai-answers/commit/647d548da52da19d5eeddeb077b5a515007f6fb3))
+* skip blank sentence slots in the expert evaluation edit form ([291395b](https://github.com/cds-snc/ai-answers/commit/291395be07970e928fd431c1813e3b3ad0a3663c))
+
 ## [1.214.4](https://github.com/cds-snc/ai-answers/compare/v1.214.3...v1.214.4) (2026-11-26)
 
 
