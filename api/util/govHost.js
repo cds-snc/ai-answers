@@ -14,9 +14,15 @@
 //
 // Before changing what's allowed, run scripts/check-allowlist-urls.js on recent
 // batch/chat-log exports to see which real citations and fetches would change.
+//
+// This file defines the lists. The matching itself lives in
+// src/utils/gcHostMatch.js so the chat page applies the same rule (AIA-006
+// follow-up). After changing a list here or a department URL, run
+// `node scripts/generate-gc-hosts.js` to refresh src/config/gcHosts.json;
+// gcHostParity.test.js fails until you do.
 import { departments_EN } from '../../agents/prompts/scenarios/departments_EN.js';
 import { departments_FR } from '../../agents/prompts/scenarios/departments_FR.js';
-import { parseHttpUrl } from './parseHttpUrl.js';
+import { createGovernmentMatcher, hasEncodedPathSeparator } from '../../src/utils/gcHostMatch.js';
 
 const GC_ROOT_DOMAINS = ['canada.ca', 'gc.ca'];
 
@@ -45,20 +51,11 @@ export const NON_GC_DEPARTMENT_HOSTS = new Map([
   ['noradsanta.org', { match: 'host' }],
 ]);
 
-function stripWww(host) {
-  return host.startsWith('www.') ? host.slice(4) : host;
-}
-
-// Lowercase and drop a trailing root dot ("www.canada.ca.").
-function normalizeHost(hostname) {
-  return hostname.toLowerCase().replace(/\.$/, '');
-}
-
 function buildDepartmentHosts() {
   const hosts = new Set();
   for (const dept of [...departments_EN, ...departments_FR]) {
     try {
-      const host = stripWww(new URL(dept.url).hostname.toLowerCase());
+      const host = new URL(dept.url).hostname.toLowerCase().replace(/^www\./, '');
       if (!NON_GC_DEPARTMENT_HOSTS.has(host)) hosts.add(host);
     } catch {
       // A malformed entry in the list just contributes nothing.
@@ -67,49 +64,31 @@ function buildDepartmentHosts() {
   return hosts;
 }
 
-const DEPARTMENT_HOSTS = buildDepartmentHosts();
-
-function matchesDomain(host, domain) {
-  return host === domain || host.endsWith(`.${domain}`);
+// The host lists as plain data, for src/utils/gcHostMatch.js. Sorted so the
+// generated src/config/gcHosts.json is stable.
+export function buildGcHostConfig() {
+  return {
+    rootDomains: [...GC_ROOT_DOMAINS],
+    extraHosts: [...EXTRA_GC_HOSTS].sort(),
+    departmentHosts: [...buildDepartmentHosts()].sort(),
+    nonGcDepartmentHosts: Object.fromEntries(
+      [...NON_GC_DEPARTMENT_HOSTS].sort(([a], [b]) => a.localeCompare(b)),
+    ),
+  };
 }
+
+const matcher = createGovernmentMatcher(buildGcHostConfig());
 
 // Host-only check. A path-pinned host fails here: its host alone doesn't make
 // a URL GC content. Use isGovernmentUrl or isGovernmentLocation for those.
-export function isGovernmentHost(hostname) {
-  if (typeof hostname !== 'string' || hostname === '') return false;
-  const host = normalizeHost(hostname);
-  if (GC_ROOT_DOMAINS.some((d) => matchesDomain(host, d))) return true;
-  if (EXTRA_GC_HOSTS.has(host)) return true;
-  const bare = stripWww(host);
-  if (NON_GC_DEPARTMENT_HOSTS.get(bare)?.match === 'host') return true;
-  for (const d of DEPARTMENT_HOSTS) {
-    if (matchesDomain(bare, d)) return true;
-  }
-  return false;
-}
-
-// Encoded '/', '\' or '.' could let a server that decodes them climb out of
-// a pinned path after the prefix check has passed. Use on every path-pinned
-// check (also the raw GitHub pin in normalizeFetchUrl.js).
-const ENCODED_PATH_SEPARATOR = /%2f|%5c|%2e/i;
-
-export function hasEncodedPathSeparator(pathname) {
-  return ENCODED_PATH_SEPARATOR.test(pathname);
-}
+export const { isGovernmentHost } = matcher;
 
 // Host and path check, for a parsed URL (WHATWG URL). Allows everything
 // isGovernmentHost does, plus a path-pinned host under one of its paths.
-export function isGovernmentLocation(parsed) {
-  if (isGovernmentHost(parsed.hostname)) return true;
-  const entry = NON_GC_DEPARTMENT_HOSTS.get(normalizeHost(parsed.hostname));
-  if (entry?.match !== 'pinned') return false;
-  if (hasEncodedPathSeparator(parsed.pathname)) return false;
-  return entry.paths.some((p) => parsed.pathname.startsWith(p));
-}
+export const { isGovernmentLocation } = matcher;
 
 // True only for an absolute http(s) URL with no credentials (see
 // parseHttpUrl) that passes isGovernmentLocation.
-export function isGovernmentUrl(url) {
-  const parsed = parseHttpUrl(url);
-  return parsed !== null && isGovernmentLocation(parsed);
-}
+export const { isGovernmentUrl } = matcher;
+
+export { hasEncodedPathSeparator };

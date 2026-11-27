@@ -14,6 +14,8 @@ import { safeHttpHref } from '../../utils/safeUrl.js';
 import { buildAriaLabel } from '../../utils/citationAriaLabel.js';
 import { getCitationUrl } from '../../utils/getCitationUrl.js';
 import { getAnswerLanguage, toLangAttr } from '../../utils/answerLanguage.js';
+import { useHasAnyRole } from '../RoleBasedUI.js';
+import { isGovernmentReferringUrl } from '../../utils/chat/referringUrl.js';
 
 // Minimum gap between real-backend-status live-region announcements, so a
 // fast-moving backend can't fire several in rapid succession — see the
@@ -142,8 +144,12 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   );
   // Precedence for initial referring URL:
   // 1) saved review value (initialReferringUrl)
-  // 2) pageUrl (from usePageContext)
-  // 3) clientReferrer (document.referrer passed from HomePage)
+  // 2) pageUrl: the ?ref= query parameter (usePageContext). Legacy: GC pages
+  //    no longer link with ?ref=, so in real traffic it is empty and only a
+  //    crafted link sets it. Removal is deferred work in
+  //    docs/plans/referring-url-host-allowlist.md.
+  // 3) clientReferrer (document.referrer passed from HomePage): the normal
+  //    source of the referring URL.
   const [referringUrl, setReferringUrl] = useState(() => {
     return initialReferringUrl || pageUrl || clientReferrer || '';
   });
@@ -157,6 +163,20 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   // it afterward and have that stick.
   const userSetReferringUrlRef = useRef(false);
   const [selectedDepartment, setSelectedDepartment] = useState(urlDepartment || '');
+  // AIA-006: what we SHOW is separate from what we SEND. A signed-out visitor
+  // whose referrer is not a Government of Canada page sees the chat as if they
+  // came directly: no referring-URL banner, echo or aria text, and no
+  // department guessed from the ?ref= path. `referringUrl` itself is never
+  // cleared, so it is still sent (see handleSendMessage). Worked out on every
+  // render, not in the useState initializers above: auth loads after first
+  // render, and a partner whose role arrives late must then see the banner.
+  const isAdminOrPartner = useHasAnyRole(['admin', 'partner']);
+  const displayedReferringUrl = isAdminOrPartner || isGovernmentReferringUrl(referringUrl) ? referringUrl : '';
+  // Gated on pageUrl, not referringUrl, because for a signed-out visitor
+  // selectedDepartment only ever comes from urlDepartment, which is derived
+  // from pageUrl (?ref=, so only a crafted link sets it today). If you add
+  // another department source, gate on its URL too.
+  const departmentToSend = isAdminOrPartner || isGovernmentReferringUrl(pageUrl) ? selectedDepartment : '';
   const [turnCount, setTurnCount] = useState(0);
   const messageIdCounter = useRef(0);
   const [displayStatus, setDisplayStatus] = useState('moderatingQuestion');
@@ -605,7 +625,10 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           aiMessageId,
           messages,
           lang,
-          selectedDepartment,
+          departmentToSend,
+          // Sent on purpose even when it is hidden from a signed-out visitor:
+          // the server drops a non-GC referrer for them (AIA-006) and counts its
+          // hostname for the partner dashboard's rejected-referrers card.
           referringUrl,
           selectedAI,
           t,
@@ -815,7 +838,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     lang,
     t,
     clearInput,
-    selectedDepartment,
+    departmentToSend,
     isLoading,
     messages,
     updateStatusWithTimer,
@@ -1134,7 +1157,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         modelSelection={modelIsOverride ? selectedAI : ''}
         selectedSearch={selectedSearch}
         handleSearchToggle={handleSearchToggle}
-        referringUrl={referringUrl}
+        referringUrl={displayedReferringUrl}
         chatCreatedAt={chatCreatedAt}
         turnCount={turnCount}
         showFeedback={showFeedback}

@@ -12,6 +12,9 @@ vi.mock('../../../hooks/usePageParam', () => ({
     DEPARTMENT_MAPPINGS: {}
 }));
 
+// ChatAppContainer reads the role (AIA-006 referrer display); no AuthProvider here.
+vi.mock('../../RoleBasedUI.js', () => ({ useHasAnyRole: vi.fn(() => false) }));
+
 vi.mock('../../../hooks/useTranslations', () => ({
     useTranslations: vi.fn(() => ({
         t: (k) => {
