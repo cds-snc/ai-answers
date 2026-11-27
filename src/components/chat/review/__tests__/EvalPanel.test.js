@@ -34,6 +34,10 @@ const mockT = (key) => TRANSLATIONS[key] || key;
 vi.mock('../../../../services/EvaluationService.js', () => ({
   default: { getEvaluation: vi.fn(), deleteEvaluation: vi.fn(), reEvaluate: vi.fn() },
 }));
+const mockUseHasAnyRole = vi.fn(() => true);
+vi.mock('../../../RoleBasedUI.js', () => ({
+  useHasAnyRole: (...args) => mockUseHasAnyRole(...args),
+}));
 vi.mock('@gcds-core/components-react', () => ({
   GcdsButton: ({ children, onClick, disabled, ...rest }) => (
     <button onClick={onClick} disabled={disabled} {...rest}>{children}</button>
@@ -58,6 +62,7 @@ const buildMessage = (autoEval) => ({
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  mockUseHasAnyRole.mockReturnValue(true);
 });
 
 describe('EvalPanel', () => {
@@ -133,5 +138,14 @@ describe('EvalPanel', () => {
     });
     expect(document.activeElement.textContent).toBe('Automated evaluation deleted.');
     expect(document.activeElement).not.toBe(document.body);
+  });
+
+  // Deleting an automated evaluation is admin-only (api/eval/eval-delete.js).
+  it('hides Delete evaluation from partners, but keeps Re-run', () => {
+    mockUseHasAnyRole.mockReturnValue(false);
+    render(<EvalPanel message={buildMessage(baseAutoEval)} t={mockT} lang="en" />);
+
+    expect(screen.queryByRole('button', { name: /Delete evaluation/i })).toBeNull();
+    expect(screen.getByRole('button', { name: /Re-run/i })).toBeTruthy();
   });
 });

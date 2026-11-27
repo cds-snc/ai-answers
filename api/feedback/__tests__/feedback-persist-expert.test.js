@@ -83,12 +83,23 @@ describe('feedback-persist-expert', () => {
     ['sentence1Score', -5],
     ['sentence2Score', 50],
     ['citationScore', 100],
+    ['sentence1Explanation', 42],
+    ['sentence1Harmful', 'yes'],
+    ['expertCitationUrl', 'javascript:alert(1)'],
+    ['expertCitationUrl', 'canada.ca/page'],
   ])('rejects %s of %s and saves nothing', async (field, value) => {
     const res = await post({ [field]: value });
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ message: `Invalid field: ${field}` });
     expect(await ExpertFeedback.countDocuments({})).toBe(0);
+  });
+
+  it('saves an http(s) suggested citation', async () => {
+    const res = await post({ citationScore: 0, citationExplanation: 'Wrong page', expertCitationUrl: 'https://www.canada.ca/en.html' });
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect((await ExpertFeedback.findOne({}).lean()).expertCitationUrl).toBe('https://www.canada.ca/en.html');
   });
 
   it('never saves fields a form does not send', async () => {

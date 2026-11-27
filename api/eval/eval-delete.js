@@ -3,7 +3,7 @@ import { Interaction } from '../../models/interaction.js';
 import { Eval } from '../../models/eval.js';
 import { ExpertFeedback } from '../../models/expertFeedback.js';
 import { requireObjectIdString } from '../util/db-query.js';
-import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
+import { withProtection, authMiddleware, adminMiddleware } from '../../middleware/auth.js';
 
 async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -51,4 +51,5 @@ async function handler(req, res) {
   }
 }
 
-export default withProtection(handler, authMiddleware, partnerOrAdminMiddleware);
+// Admin-only: deleting an automated (AI) evaluation. Partners can still re-run one.
+export default withProtection(handler, authMiddleware, adminMiddleware);

@@ -260,6 +260,8 @@ describe('feedback-update-expert API', () => {
     ['sentence1Score', 50],
     ['sentence4Score', 25],
     ['citationScore', 100],
+    ['expertCitationUrl', 'javascript:alert(1)'],
+    ['expertCitationUrl', 'canada.ca/page'],
   ])('rejects %s of %s, which the form can never send', async (field, value) => {
     const doc = buildFeedbackDoc({ _id: interaction.expertFeedback, type: '', expertEmail: 'author@canada.ca' });
     mockFeedbackFindById.mockResolvedValue(doc);

@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  */
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import DeleteExpertEval from '../DeleteExpertEval.js';
@@ -20,6 +20,10 @@ const TRANSLATIONS = {
   'admin.deleteExpertEval.success': 'Deleted {count} expert evaluation(s) for {chatId}.',
   'admin.deleteExpertEval.failed': 'Could not delete the expert evaluation(s). Try again.',
   'admin.deleteExpertEval.partial': 'Deleted {count} of {total} expert evaluations. The rest could not be deleted and are still listed.',
+  'admin.deleteExpertEval.notOwn': 'You can only delete evaluations you wrote.',
+  'admin.deleteExpertEval.partialNotOwn': 'Deleted {count} of {total} expert evaluations. You can only delete evaluations you wrote. The others are still listed.',
+  'admin.deleteExpertEval.othersIntro': 'Reviewed by someone else. Contact the reviewer or admin to delete it.',
+  'admin.deleteExpertEval.onlyOthers': 'You have no evaluations to delete for this chat ID.',
   'common.deleting': 'Deleting...',
 };
 const mockT = (key) => TRANSLATIONS[key] || key;
@@ -27,13 +31,20 @@ vi.mock('../../hooks/useTranslations.js', () => ({
   useTranslations: () => ({ t: mockT }),
 }));
 
-const { mockDeleteExpertFeedback, mockGetChat } = vi.hoisted(() => ({
+const { mockDeleteExpertFeedback, mockGetExpertFeedback, mockGetChat } = vi.hoisted(() => ({
   mockDeleteExpertFeedback: vi.fn(),
+  mockGetExpertFeedback: vi.fn(),
   mockGetChat: vi.fn(),
 }));
 vi.mock('../../services/FeedbackService.js', () => ({
-  default: { deleteExpertFeedback: mockDeleteExpertFeedback },
+  default: { deleteExpertFeedback: mockDeleteExpertFeedback, getExpertFeedback: mockGetExpertFeedback },
 }));
+
+// canDelete comes from the server, per evaluation. Allowed unless a test says otherwise.
+beforeEach(() => {
+  mockGetExpertFeedback.mockReset();
+  mockGetExpertFeedback.mockResolvedValue({ canDelete: true });
+});
 vi.mock('../../services/DataStoreService.js', () => ({
   default: { getChat: mockGetChat },
 }));
@@ -236,6 +247,134 @@ describe('DeleteExpertEval picker (several evaluations)', () => {
     expect(screen.queryByText(/Failed to fetch/)).toBeNull();
     expect(screen.queryByLabelText(ROW1)).toBeNull();
     expect(screen.getByLabelText(ROW3).checked).toBe(true);
+  });
+
+  // Someone else wrote evaluation ef3 (row 3).
+  const othersOnRow3 = () => mockGetExpertFeedback.mockImplementation(({ interactionId }) => (
+    Promise.resolve({ canDelete: interactionId !== 'int3' })
+  ));
+
+  it('gives checkboxes only to evaluations this person can delete, and lists the others as plain text with the reviewer', async () => {
+    chatWithEvaluations();
+    othersOnRow3();
+    render(<DeleteExpertEval lang="en" />);
+    lookup();
+
+    expect(await screen.findByLabelText(ROW1)).toBeTruthy();
+    expect(screen.queryByLabelText(ROW3)).toBeNull();
+    expect(screen.getByText('Reviewed by someone else. Contact the reviewer or admin to delete it.')).toBeTruthy();
+    const other = screen.getByText(ROW3);
+    expect(other.closest('li')).not.toBeNull();
+    expect(other.closest('fieldset')).toBeNull();
+    expect(mockGetExpertFeedback).toHaveBeenCalledWith({ interactionId: 'int1' });
+    expect(mockGetExpertFeedback).toHaveBeenCalledWith({ interactionId: 'int3' });
+  });
+
+  it('keeps the plain-text list after deleting some of their own', async () => {
+    chatWithEvaluations();
+    mockGetChat.mockResolvedValue({
+      chat: {
+        chatId: VALID_CHAT_ID,
+        interactions: [
+          { _id: 'int1', context: { department: 'CRA-ARC' }, expertFeedback: { _id: 'ef1', expertEmail: 'a@example.ca' } },
+          { _id: 'int2', context: { department: 'ESDC-EDSC' }, expertFeedback: { _id: 'ef2', expertEmail: 'a@example.ca' } },
+          { _id: 'int3', context: { department: 'IRCC' }, expertFeedback: { _id: 'ef3', expertEmail: 'b@example.ca' } },
+        ],
+      },
+    });
+    othersOnRow3();
+    mockDeleteExpertFeedback.mockResolvedValue({ deletedCount: 1 });
+    render(<DeleteExpertEval lang="en" />);
+    lookup();
+
+    fireEvent.click(await screen.findByLabelText(ROW1));
+    fireEvent.click(screen.getByText('Delete selected evaluations (1)'));
+
+    await screen.findByText(`Deleted 1 expert evaluation(s) for ${VALID_CHAT_ID}.`);
+    expect(screen.getByText(ROW3).closest('li')).not.toBeNull();
+  });
+
+  it('shows no plain-text list when every evaluation can be deleted', async () => {
+    chatWithEvaluations();
+    render(<DeleteExpertEval lang="en" />);
+    lookup();
+
+    await screen.findByLabelText(ROW3);
+    expect(screen.queryByText(/Reviewed by someone else/)).toBeNull();
+  });
+
+  it('shows a message, no checkboxes, and the plain-text list when every evaluation was written by someone else', async () => {
+    chatWithEvaluations();
+    mockGetExpertFeedback.mockResolvedValue({ canDelete: false });
+    render(<DeleteExpertEval lang="en" />);
+    lookup();
+
+    expect(await screen.findByText('You have no evaluations to delete for this chat ID.')).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Choose evaluations to delete' })).toBeNull();
+    expect(screen.getByText(ROW1).closest('li')).not.toBeNull();
+    expect(screen.getByText(ROW3).closest('li')).not.toBeNull();
+  });
+
+  it('shows "lookup failed" when checking who can delete fails', async () => {
+    chatWithEvaluations();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    mockGetExpertFeedback.mockRejectedValue(new Error('Failed to fetch'));
+    render(<DeleteExpertEval lang="en" />);
+    lookup();
+
+    expect(await screen.findByText('admin.common.fetchFailed')).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Choose evaluations to delete' })).toBeNull();
+  });
+
+  // The server refuses (403) an evaluation someone else wrote.
+  const refused = () => Object.assign(new Error('You can only delete your own expert evaluations'), { status: 403 });
+
+  it('says why when every ticked evaluation was written by someone else', async () => {
+    chatWithEvaluations();
+    mockDeleteExpertFeedback.mockRejectedValue(refused());
+    render(<DeleteExpertEval lang="en" />);
+    lookup();
+
+    fireEvent.click(await screen.findByLabelText(ROW3));
+    fireEvent.click(screen.getByText('Delete selected evaluations (1)'));
+
+    const message = await screen.findByText('You can only delete evaluations you wrote.');
+    expect(message.closest('.status-message--error-box')).not.toBeNull();
+    expect(screen.queryByText(/Try again/)).toBeNull();
+    expect(screen.getByLabelText(ROW3)).toBeTruthy();
+  });
+
+  it('says why when some ticked evaluations were written by someone else', async () => {
+    chatWithEvaluations();
+    mockDeleteExpertFeedback.mockImplementation(({ interactionId }) => (
+      interactionId === 'int1' ? Promise.resolve({ deletedCount: 1 }) : Promise.reject(refused())
+    ));
+    render(<DeleteExpertEval lang="en" />);
+    lookup();
+
+    fireEvent.click(await screen.findByLabelText(ROW1));
+    fireEvent.click(screen.getByLabelText(ROW3));
+    fireEvent.click(screen.getByText('Delete selected evaluations (2)'));
+
+    const message = await screen.findByText('Deleted 1 of 2 expert evaluations. You can only delete evaluations you wrote. The others are still listed.');
+    expect(message.closest('.status-message--error-box')).not.toBeNull();
+    expect(screen.queryByLabelText(ROW1)).toBeNull();
+    expect(screen.getByLabelText(ROW3)).toBeTruthy();
+  });
+
+  it('keeps "Try again" when a refusal is mixed with another failure', async () => {
+    chatWithEvaluations();
+    mockDeleteExpertFeedback.mockImplementation(({ interactionId }) => (
+      interactionId === 'int1' ? Promise.reject(refused()) : Promise.reject(new Error('Failed to fetch'))
+    ));
+    render(<DeleteExpertEval lang="en" />);
+    lookup();
+
+    fireEvent.click(await screen.findByLabelText(ROW1));
+    fireEvent.click(screen.getByLabelText(ROW3));
+    fireEvent.click(screen.getByText('Delete selected evaluations (2)'));
+
+    expect(await screen.findByText('Could not delete the expert evaluation(s). Try again.')).toBeTruthy();
   });
 
   it('clears the list as soon as the admin edits the chat ID again', async () => {

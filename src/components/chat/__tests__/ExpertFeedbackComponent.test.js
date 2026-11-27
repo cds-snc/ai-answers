@@ -191,6 +191,76 @@ describe('ExpertFeedbackComponent — explanation required on non-good ratings',
   });
 });
 
+describe('ExpertFeedbackComponent — suggested citation link', () => {
+  // Citation rated "incorrect", with its required explanation filled in, so
+  // the link is the only thing left to check.
+  const rateCitationWithLink = (url) => {
+    fireEvent.click(screen.getAllByLabelText(/homepage.expertRating.options.incorrect/)[1]);
+    fireEvent.change(document.querySelector('textarea[name="citationExplanation"]'), {
+      target: { name: 'citationExplanation', value: 'Wrong page' },
+    });
+    const input = screen.getByLabelText(/homepage.expertRating.options.betterCitation/);
+    fireEvent.change(input, { target: { name: 'expertCitationUrl', value: url } });
+    return input;
+  };
+
+  it('describes the link field with its hint', () => {
+    renderComponent({ sentenceCount: 1, sentences: ['x'] });
+    const input = rateCitationWithLink('');
+
+    const hint = document.getElementById(input.getAttribute('aria-describedby'));
+    expect(hint.textContent).toBe('homepage.expertRating.citationUrlHint');
+  });
+
+  it.each(['canada.ca/page', 'javascript:alert(1)'])('blocks saving %s, shows the error above the field and focuses it', (url) => {
+    const { onSubmit } = renderComponent({ sentenceCount: 1, sentences: ['x'] });
+    const input = rateCitationWithLink(url);
+    submit();
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    const error = screen.getByText('homepage.expertRating.citationUrlInvalid');
+    expect(error.compareDocumentPosition(input) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(input.getAttribute('aria-describedby').split(' ')).toHaveLength(2);
+    expect(document.activeElement.classList.contains('form-error-message')).toBe(true);
+    expect(document.activeElement.textContent).toBe('homepage.expertRating.citationUrlInvalid');
+  });
+
+  it('clears the error once the link is fixed, and saves it trimmed', () => {
+    const { onSubmit } = renderComponent({ sentenceCount: 1, sentences: ['x'] });
+    const input = rateCitationWithLink('canada.ca/page');
+    submit();
+
+    fireEvent.change(input, { target: { name: 'expertCitationUrl', value: ' https://www.canada.ca/en.html ' } });
+    expect(screen.queryByText('homepage.expertRating.citationUrlInvalid')).toBeNull();
+    expect(input.getAttribute('aria-invalid')).toBeNull();
+    submit();
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit.mock.calls[0][0].expertCitationUrl).toBe('https://www.canada.ca/en.html');
+  });
+
+  it('saves with the link left blank', () => {
+    const { onSubmit } = renderComponent({ sentenceCount: 1, sentences: ['x'] });
+    rateCitationWithLink('');
+    submit();
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+
+  it('lists the link in the summary, and jumps to it, alongside a missing explanation', () => {
+    renderComponent({ sentenceCount: 1, sentences: ['x'] });
+    fireEvent.click(screen.getAllByLabelText(/homepage.expertRating.options.needsImprovement/)[0]); // sentence 1, no explanation
+    const input = rateCitationWithLink('canada.ca/page');
+    submit();
+
+    const links = [...document.querySelectorAll('.explanation-error-summary a')];
+    expect(links.map((l) => l.textContent)).toEqual(['homepage.expertRating.sentence1', 'homepage.expertRating.citationUrlField']);
+    fireEvent.click(links[1]);
+    expect(document.activeElement).toBe(input);
+  });
+});
+
 // EN/FR-official-languages display rule (shown as-is; non-EN/FR collapses to
 // English) (resolveDisplayContent, src/utils/answerLanguage.js) - same rule already
 // applied to ExpertFeedbackPanel.js and ChatDashboardPage.js.

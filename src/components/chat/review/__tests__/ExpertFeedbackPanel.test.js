@@ -186,6 +186,7 @@ describe('ExpertFeedbackPanel delete', () => {
   it('calls onDeleted after a successful delete, so the parent can update messages state immediately', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     vi.mocked(FeedbackService.deleteExpertFeedback).mockResolvedValue({});
+    vi.mocked(FeedbackService.getExpertFeedback).mockResolvedValue({ expertFeedback, sentences: [], canEdit: true, canDelete: true });
     const onDeleted = vi.fn();
     const message = buildMessage({
       language: 'eng',
@@ -210,6 +211,7 @@ describe('ExpertFeedbackPanel delete', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.mocked(FeedbackService.deleteExpertFeedback).mockRejectedValue(new Error('raw server detail'));
+    vi.mocked(FeedbackService.getExpertFeedback).mockResolvedValue({ expertFeedback, sentences: [], canEdit: true, canDelete: true });
     const message = buildMessage({ language: 'eng', redactedQuestion: 'Q', englishQuestion: 'Q' });
 
     const { container } = render(<ExpertFeedbackPanel message={message} extractSentences={extractSentences} t={mockT} lang="en" />);
@@ -242,11 +244,11 @@ describe('ExpertFeedbackPanel edit', () => {
   });
 
   const ownedFeedback = { ...expertFeedback, expertEmail: 'Author@canada.ca', citationScore: 25 };
-  // canEdit comes from the server (api/util/expert-feedback-access.js).
-  const renderOpen = ({ canEdit = true, ...props } = {}) => {
+  // canEdit and canDelete come from the server (api/util/expert-feedback-access.js).
+  const renderOpen = ({ canEdit = true, canDelete = canEdit, ...props } = {}) => {
     const message = buildMessage({ language: 'eng', redactedQuestion: 'Q?', englishQuestion: 'Q?' });
     message.interaction.expertFeedback = ownedFeedback;
-    vi.mocked(FeedbackService.getExpertFeedback).mockResolvedValue({ expertFeedback: ownedFeedback, sentences: [], canEdit });
+    vi.mocked(FeedbackService.getExpertFeedback).mockResolvedValue({ expertFeedback: ownedFeedback, sentences: [], canEdit, canDelete });
     const utils = render(<ExpertFeedbackPanel message={message} extractSentences={extractSentences} t={mockT} lang="en" {...props} />);
     fireEvent.click(utils.container.querySelector('summary'));
     return utils;
@@ -273,14 +275,43 @@ describe('ExpertFeedbackPanel edit', () => {
     expect(container.querySelectorAll('input[name="sentence4Score"]').length).toBe(0);
   });
 
+  it.each([
+    ['https://www.canada.ca/en.html', true],
+    ['javascript:alert(1)', false],
+    ['canada.ca/page', false],
+  ])('shows the suggested citation %s, as a link only when it is http(s)', async (url, isLink) => {
+    const withUrl = { ...ownedFeedback, citationScore: 0, expertCitationUrl: url };
+    const message = buildMessage({ language: 'eng', redactedQuestion: 'Q?', englishQuestion: 'Q?' });
+    message.interaction.expertFeedback = withUrl;
+    vi.mocked(FeedbackService.getExpertFeedback).mockResolvedValue({ expertFeedback: withUrl, sentences: [], canEdit: false });
+    const { container } = render(<ExpertFeedbackPanel message={message} extractSentences={extractSentences} t={mockT} lang="en" />);
+    fireEvent.click(container.querySelector('summary'));
+
+    expect(await screen.findByText(url)).toBeTruthy();
+    expect(container.querySelector(`a[href="${url}"]`) !== null).toBe(isLink);
+  });
+
   it('shows Edit when the server says this person can edit', async () => {
     renderOpen({ canEdit: true });
     expect(await findEditButton()).toBeTruthy();
   });
 
-  it('hides Edit when the server says this person cannot edit', async () => {
-    renderOpen({ canEdit: false });
-    await screen.findByText(/reviewPanels.deleteExpertFeedback/);
+  it('hides Edit and Delete when the server says this person cannot change it', async () => {
+    renderOpen({ canEdit: false, canDelete: false });
+    await screen.findByText('reviewPanels.neverStale');
+    expect(screen.queryByRole('button', { name: 'reviewPanels.editExpertFeedback' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'reviewPanels.deleteExpertFeedback' })).toBeNull();
+  });
+
+  it('shows Delete when the server says this person can delete it', async () => {
+    renderOpen({ canEdit: true, canDelete: true });
+    expect(await screen.findByRole('button', { name: 'reviewPanels.deleteExpertFeedback' })).toBeTruthy();
+  });
+
+  // Any admin may delete; only the author or a QA admin may edit.
+  it('shows Delete without Edit when this person can delete but not edit', async () => {
+    renderOpen({ canEdit: false, canDelete: true });
+    expect(await screen.findByRole('button', { name: 'reviewPanels.deleteExpertFeedback' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'reviewPanels.editExpertFeedback' })).toBeNull();
   });
 
@@ -292,8 +323,9 @@ describe('ExpertFeedbackPanel edit', () => {
     const { container } = render(<ExpertFeedbackPanel message={message} extractSentences={extractSentences} t={mockT} lang="en" />);
     fireEvent.click(container.querySelector('summary'));
 
-    await screen.findByText(/reviewPanels.deleteExpertFeedback/);
+    await screen.findByText('reviewPanels.neverStale');
     expect(screen.queryByRole('button', { name: 'reviewPanels.editExpertFeedback' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'reviewPanels.deleteExpertFeedback' })).toBeNull();
     resolveLoad({ expertFeedback: ownedFeedback, sentences: [], canEdit: true });
     expect(await findEditButton()).toBeTruthy();
   });

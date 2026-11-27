@@ -218,7 +218,10 @@ class DataStoreService {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to delete chat');
+        const err = new Error(error.message || 'Failed to delete chat');
+        err.status = response.status;
+        err.code = error.code;
+        throw err;
       }
       return await response.json();
     } catch (error) {

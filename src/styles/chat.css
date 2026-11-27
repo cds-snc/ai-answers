@@ -989,7 +989,8 @@ textarea:focus {
 /* aria-invalid is already set by ExpertFeedbackComponent whenever a required
    explanation is missing post-submit, so the red border stays in sync with
    the same state that drives the inline error message — no separate class. */
-.expert-rating-container .explanation-field textarea[aria-invalid="true"] {
+.expert-rating-container .explanation-field textarea[aria-invalid="true"],
+.expert-rating-container .explanation-field input[type="url"][aria-invalid="true"] {
   border-color: var(--gcds-error-message-text-color);
 }
 

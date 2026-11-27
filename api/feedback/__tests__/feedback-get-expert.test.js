@@ -89,6 +89,26 @@ describe('feedback-get-expert canEdit', () => {
     expect(res.payload.canEdit).toBe(false);
   });
 
+  // canDelete decides whether the review panel shows Delete. Any admin may.
+  it('sends canDelete true for an admin outside the QA group, who still cannot edit', async () => {
+    const interaction = await withFeedback({ expertEmail: 'author@canada.ca' });
+    const res = await getAs(await signedIn({ role: 'admin', group: '' }), interaction._id);
+    expect(res.payload.canDelete).toBe(true);
+    expect(res.payload.canEdit).toBe(false);
+  });
+
+  it('sends canDelete false for a partner on someone else\'s evaluation', async () => {
+    const interaction = await withFeedback({ expertEmail: 'author@canada.ca' });
+    const res = await getAs(await signedIn({ role: 'partner', group: QA_GROUP }), interaction._id);
+    expect(res.payload.canDelete).toBe(false);
+  });
+
+  it('sends canDelete true for a partner on their own evaluation', async () => {
+    const interaction = await withFeedback({ expertEmail: 'someone@canada.ca' });
+    const res = await getAs(await signedIn({ role: 'partner', group: '' }), interaction._id);
+    expect(res.payload.canDelete).toBe(true);
+  });
+
   it('is true for an admin outside the QA group on their own evaluation', async () => {
     const interaction = await withFeedback({ expertEmail: 'someone@canada.ca' });
     const res = await getAs(await signedIn({ role: 'admin', group: '' }), interaction._id);

@@ -7,7 +7,7 @@ import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../
 import { isAutoEvalFeedback } from '../../services/EmbeddingMetadataService.js';
 import { canEditExpertFeedback } from '../util/expert-feedback-access.js';
 import {
-  SCORE_FIELDS, TEXT_FIELDS, FLAG_FIELDS, findInvalidScore, computeTotalScore, feedbackLabel, getAnswerSentenceCount,
+  SCORE_FIELDS, TEXT_FIELDS, FLAG_FIELDS, findInvalidField, computeTotalScore, feedbackLabel, getAnswerSentenceCount,
 } from '../util/expert-feedback-scoring.js';
 import { syncCurrentExpertFeedback } from '../util/expert-feedback-sync.js';
 
@@ -15,13 +15,6 @@ import { syncCurrentExpertFeedback } from '../util/expert-feedback-sync.js';
 // not be able to turn a human evaluation into 'ai' or back), `expertEmail`
 // (the original author stays the author) or `neverStale` (own endpoint).
 // `totalScore` and `feedback` are worked out below, not taken from the form.
-
-function findInvalidField(expertFeedback) {
-  return findInvalidScore(expertFeedback)
-    || TEXT_FIELDS.find((f) => typeof expertFeedback[f] !== 'string')
-    || FLAG_FIELDS.find((f) => typeof expertFeedback[f] !== 'boolean')
-    || null;
-}
 
 // The old value of each field this edit changed. lastEditedBy/lastEditedAt are
 // left out: every history entry already says who edited and when.

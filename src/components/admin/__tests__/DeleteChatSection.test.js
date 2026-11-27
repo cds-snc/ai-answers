@@ -67,6 +67,21 @@ describe('DeleteChatSection error/success announcements', () => {
     expect(enSpan.textContent).toBe('Failed to fetch');
   });
 
+  it.each(['notOwnChat', 'othersEvaluations'])('shows the translated reason, and keeps the chat ID, when the server refuses with %s', async (code) => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    mockGetChat.mockResolvedValue({ chat: { chatId: VALID_CHAT_ID } });
+    mockDeleteChat.mockRejectedValue(Object.assign(new Error('Refused'), { status: 403, code }));
+
+    render(<DeleteChatSection lang="fr" />);
+
+    fireEvent.change(screen.getByLabelText('Chat ID'), { target: { value: VALID_CHAT_ID } });
+    fireEvent.click(screen.getByText('Delete chat'));
+
+    await waitForAnnouncement(`admin.deleteChat.${code}`, 'assertive', { exact: true });
+    expect(document.querySelector('code[lang="en"]')).toBeNull();
+    expect(screen.getByLabelText('Chat ID').value).toBe(VALID_CHAT_ID);
+  });
+
   it('announces a successful delete as role="status", not role="alert"', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     mockGetChat.mockResolvedValue({ chat: { chatId: VALID_CHAT_ID } });

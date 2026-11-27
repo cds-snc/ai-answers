@@ -6,6 +6,7 @@ import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
 import { buildChatReviewHref } from '../../../utils/reviewLink.js';
 import { useFocusOnChange } from '../../../hooks/useFocusOnChange.js';
 import StatusMessage from '../../admin/StatusMessage.js';
+import { useHasAnyRole } from '../../RoleBasedUI.js';
 
 const formatDate = (d) => {
   if (!d) return '';
@@ -53,6 +54,7 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
   const uid = useId();
 
   const { withAnswerNumber } = useAnswerNumberLabel(t, answerNumber);
+  const isAdmin = useHasAnyRole(['admin']);
 
   const getInteractionId = useCallback(() => (
     (message.interaction && (message.interaction._id || message.interaction.id)) || message.id
@@ -245,16 +247,19 @@ const EvalPanel = ({ message, t, lang = 'en', answerNumber }) => {
           >
             {reRunning ? t('eval.reRunning') : t('eval.reRun')}
           </GcdsButton>
-          <GcdsButton
-            onClick={handleDelete}
-            buttonRole="danger"
-            disabled={deleting}
-            className="hydrated"
-            style={{ marginLeft: '0.5rem' }}
-            aria-label={withAnswerNumber(deleting ? t('common.deleting') : t('reviewPanels.deleteEvaluation'))}
-          >
-            {deleting ? t('common.deleting') : t('reviewPanels.deleteEvaluation')}
-          </GcdsButton>
+          {/* Admin-only, same as api/eval/eval-delete.js. */}
+          {isAdmin && (
+            <GcdsButton
+              onClick={handleDelete}
+              buttonRole="danger"
+              disabled={deleting}
+              className="hydrated"
+              style={{ marginLeft: '0.5rem' }}
+              aria-label={withAnswerNumber(deleting ? t('common.deleting') : t('reviewPanels.deleteEvaluation'))}
+            >
+              {deleting ? t('common.deleting') : t('reviewPanels.deleteEvaluation')}
+            </GcdsButton>
+          )}
         </div>
         {/* TODO(sync-with-loader-updates): a stale table often sits below
             this line during a refetch - once feat/scoped-loading-overlay

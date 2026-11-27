@@ -204,6 +204,9 @@
       "noChangesToSave": "Aucune modification à enregistrer. Veuillez modifier l'évaluation.",
       "explanationRequired": "Une explication est requise.",
       "explanationRequiredField": "Une explication est requise : {field}",
+      "citationUrlField": "Meilleure URL de citation",
+      "citationUrlHint": "Incluez https://",
+      "citationUrlInvalid": "Entrez le lien complet, y compris https:// au début.",
       "sentence1": "Phrase 1",
       "sentence2": "Phrase 2",
       "sentence3": "Phrase 3",
@@ -1089,7 +1092,9 @@
       "loading": "Suppression en cours...",
       "notFound": "Impossible de supprimer le chat : ID introuvable.",
       "success": "{chatId} supprimé avec succès.",
-      "error": "Échec de la suppression du chat : {error}"
+      "error": "Échec de la suppression du chat : {error}",
+      "notOwnChat": "Vous ne pouvez pas supprimer ce chat, car vous ne l'avez pas créé.",
+      "othersEvaluations": "Vous ne pouvez pas supprimer ce chat, car cela supprimerait aussi l'évaluation d'une autre personne."
     },
     "deleteExpertEval": {
       "title": "Supprimer une évaluation d'expert",
@@ -1105,6 +1110,10 @@
       "success": "Supprimé {count} évaluation(s) d'expert pour {chatId}.",
       "failed": "Impossible de supprimer la ou les évaluations d'expert. Réessayez.",
       "partial": "{count} évaluation(s) d'expert supprimée(s) sur {total}. Les autres n'ont pas pu être supprimées et sont toujours dans la liste.",
+      "notOwn": "Vous pouvez seulement supprimer les évaluations que vous avez rédigées.",
+      "partialNotOwn": "{count} évaluation(s) d'expert supprimée(s) sur {total}. Vous pouvez seulement supprimer les évaluations que vous avez rédigées. Les autres sont toujours dans la liste.",
+      "othersIntro": "Évaluée par une autre personne. Communiquez avec l'évaluateur ou un administrateur pour la supprimer.",
+      "onlyOthers": "Vous n'avez aucune évaluation à supprimer pour cet ID de chat.",
       "notEvaluated": "Non évalué."
     },
     "chatLogs": {

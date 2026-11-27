@@ -113,7 +113,10 @@ class FeedbackService {
     });
     const data = await response.json();
     if (!response.ok) {
-      throw new Error(data.error || 'Failed to delete expert feedback');
+      const err = new Error(data.error || 'Failed to delete expert feedback');
+      // 403: someone else's evaluation.
+      err.status = response.status;
+      throw err;
     }
     return data;
   }

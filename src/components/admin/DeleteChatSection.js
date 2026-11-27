@@ -18,6 +18,9 @@ const DeleteChatSection = ({ lang = 'en' }) => {
       return { isError: false, text: t('admin.deleteChat.success').replace('{chatId}', chatId) };
     } catch (error) {
       console.error('Error deleting chat:', error);
+      if (error.code === 'notOwnChat' || error.code === 'othersEvaluations') {
+        return { isError: true, variant: 'error', text: t(`admin.deleteChat.${error.code}`) };
+      }
       // TODO (for Official Languages review): the wrapped detail below is
       // still only a pronunciation fix (WCAG 3.1.2), not a translation.
       // Most of what lands here really is unbounded (network drop, an

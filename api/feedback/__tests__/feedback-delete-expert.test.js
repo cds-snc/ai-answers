@@ -5,18 +5,22 @@ import dbConnect from '../../db/db-connect.js';
 import { Interaction } from '../../../models/interaction.js';
 import { ExpertFeedback } from '../../../models/expertFeedback.js';
 import { Embedding } from '../../../models/embedding.js';
+import { User } from '../../../models/user.js';
+import { QA_GROUP } from '../../../src/constants/partnerGroups.js';
 
 const { mockVectorUpdate } = vi.hoisted(() => ({ mockVectorUpdate: vi.fn() }));
 vi.mock('../../../services/VectorServiceFactory.js', () => ({
   VectorService: { updateExpertFeedbackMetadata: mockVectorUpdate },
 }));
 
-function createReq(body) {
+const AUTHOR = 'author@canada.ca';
+
+function createReq(body, user) {
   return {
     method: 'POST',
     body,
     path: '/api/feedback/feedback-delete-expert',
-    user: { role: 'admin', userId: new mongoose.Types.ObjectId().toString() },
+    user,
     isAuthenticated: () => true
   };
 }
@@ -37,9 +41,16 @@ function createRes() {
   };
 }
 
-async function runPost(body) {
+// The session copy of a stored account. The access check re-reads role and
+// group from the database (api/util/expert-feedback-access.js).
+async function signedIn(fields) {
+  const user = await User.create({ email: AUTHOR, password: 'x', role: 'partner', ...fields });
+  return { userId: user._id.toString(), role: user.role, email: user.email };
+}
+
+async function runPost(body, user) {
   const res = createRes();
-  await handler(createReq(body), res);
+  await handler(createReq(body, user ?? await signedIn({})), res);
   return res;
 }
 
@@ -53,10 +64,11 @@ describe('feedback-delete-expert', () => {
     await ExpertFeedback.deleteMany({});
     await Interaction.deleteMany({});
     await Embedding.collection.deleteMany({});
+    await User.deleteMany({});
   });
 
   it('deletes the evaluation, unlinks it from the answer and clears its embedding metadata', async () => {
-    const feedback = await ExpertFeedback.create({ totalScore: 90 });
+    const feedback = await ExpertFeedback.create({ totalScore: 90, expertEmail: AUTHOR });
     const interaction = await Interaction.create({ expertFeedback: feedback._id });
     // Raw insert: only the metadata fields matter here, not a valid vector.
     const { insertedId: embeddingId } = await Embedding.collection.insertOne({
@@ -95,5 +107,82 @@ describe('feedback-delete-expert', () => {
     const res = await runPost({ interactionId: new mongoose.Types.ObjectId().toString() });
 
     expect(res.statusCode).toBe(404);
+  });
+
+  // Same rule as editing: the author, or an admin in the AI Answers QA group.
+  describe('who can delete', () => {
+    const othersEvaluation = async () => {
+      const feedback = await ExpertFeedback.create({ totalScore: 0, expertEmail: 'someone.else@canada.ca' });
+      const interaction = await Interaction.create({ expertFeedback: feedback._id });
+      return { feedback, interaction };
+    };
+
+    it('refuses a partner deleting someone else\'s evaluation, and changes nothing', async () => {
+      const { feedback, interaction } = await othersEvaluation();
+
+      const res = await runPost({ interactionId: interaction._id.toString() }, await signedIn({ role: 'partner' }));
+
+      expect(res.statusCode).toBe(403);
+      expect(await ExpertFeedback.findById(feedback._id)).not.toBeNull();
+      expect(String((await Interaction.findById(interaction._id)).expertFeedback)).toBe(String(feedback._id));
+      expect(mockVectorUpdate).not.toHaveBeenCalled();
+    });
+
+    it('lets an admin outside the QA group delete someone else\'s evaluation', async () => {
+      const { feedback, interaction } = await othersEvaluation();
+
+      const res = await runPost({ interactionId: interaction._id.toString() }, await signedIn({ role: 'admin' }));
+
+      expect(res.statusCode).toBe(200);
+      expect(await ExpertFeedback.findById(feedback._id)).toBeNull();
+    });
+
+    it('lets a QA admin delete anyone\'s evaluation', async () => {
+      const { feedback, interaction } = await othersEvaluation();
+
+      const res = await runPost({ interactionId: interaction._id.toString() }, await signedIn({ role: 'admin', group: QA_GROUP }));
+
+      expect(res.statusCode).toBe(200);
+      expect(await ExpertFeedback.findById(feedback._id)).toBeNull();
+    });
+  });
+
+  describe('delete order', () => {
+    it('leaves the evaluation linked and its search data alone when the delete fails', async () => {
+      const feedback = await ExpertFeedback.create({ totalScore: 90, expertEmail: AUTHOR });
+      const interaction = await Interaction.create({ expertFeedback: feedback._id });
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const deleteSpy = vi.spyOn(ExpertFeedback, 'deleteOne').mockRejectedValueOnce(new Error('db down'));
+
+      const res = await runPost({ interactionId: interaction._id.toString() });
+
+      expect(res.statusCode).toBe(500);
+      expect(String((await Interaction.findById(interaction._id)).expertFeedback)).toBe(String(feedback._id));
+      expect(mockVectorUpdate).not.toHaveBeenCalled();
+      deleteSpy.mockRestore();
+    });
+
+    it('clears a link left pointing at an evaluation that no longer exists, so a retry finishes the job', async () => {
+      const interaction = await Interaction.create({ expertFeedback: new mongoose.Types.ObjectId() });
+
+      const res = await runPost({ interactionId: interaction._id.toString() });
+
+      expect(res.statusCode).toBe(200);
+      expect((await Interaction.findById(interaction._id)).expertFeedback).toBeFalsy();
+      expect(mockVectorUpdate).toHaveBeenCalledTimes(1);
+    });
+
+    it('still reports the delete when clearing search data fails afterwards', async () => {
+      const feedback = await ExpertFeedback.create({ totalScore: 90, expertEmail: AUTHOR });
+      const interaction = await Interaction.create({ expertFeedback: feedback._id });
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockVectorUpdate.mockImplementationOnce(() => { throw new Error('index down'); });
+
+      const res = await runPost({ interactionId: interaction._id.toString() });
+
+      expect(res.statusCode).toBe(200);
+      expect(await ExpertFeedback.findById(feedback._id)).toBeNull();
+      expect((await Interaction.findById(interaction._id)).expertFeedback).toBeFalsy();
+    });
   });
 });
