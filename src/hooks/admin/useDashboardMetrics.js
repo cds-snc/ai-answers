@@ -28,6 +28,7 @@ const INITIAL_METRICS = {
   byDepartment: {},
   blockedQueries: {},
   topReferrals: [],
+  rejectedHosts: [],
   topCitations: [],
   answerTypeBreakdown: {},
   topPrograms: [],
@@ -101,8 +102,8 @@ export function useDashboardMetrics(options = {}) {
           .catch(() => ({ blockedQueries: INITIAL_METRICS.blockedQueries })),
         includeReferrals
           ? MetricsService.getReferralMetrics(filters, signal)
-              .catch(() => ({ topReferrals: INITIAL_METRICS.topReferrals }))
-          : Promise.resolve({ topReferrals: INITIAL_METRICS.topReferrals }),
+              .catch(() => ({ topReferrals: INITIAL_METRICS.topReferrals, rejectedHosts: INITIAL_METRICS.rejectedHosts }))
+          : Promise.resolve({ topReferrals: INITIAL_METRICS.topReferrals, rejectedHosts: INITIAL_METRICS.rejectedHosts }),
         includeCitations
           ? MetricsService.getCitationMetrics(filters, signal)
               .catch(() => ({ topCitations: INITIAL_METRICS.topCitations, answerTypeBreakdown: INITIAL_METRICS.answerTypeBreakdown }))

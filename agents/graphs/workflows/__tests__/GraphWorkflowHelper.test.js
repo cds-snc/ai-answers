@@ -6,6 +6,7 @@ import { invokeContextAgent } from '../../../../services/ContextAgentService.js'
 import { InteractionPersistenceService } from '../../../../services/InteractionPersistenceService.js';
 import { AnswerGenerationService } from '../../../../services/AnswerGenerationService.js';
 import ServiceCallMetricsService from '../../../../services/ServiceCallMetricsService.js';
+import { graphRequestContext } from '../../requestContext.js';
 
 vi.mock('../../../../services/SearchContextService.js');
 vi.mock('../../../../services/ContextAgentService.js');
@@ -284,6 +285,27 @@ describe('GraphWorkflowHelper', () => {
         it('leaves no citation when none was stored', () => {
             const payload = build({ answer: { content: 'a' } });
             expect(payload.finalCitationUrl).toBeNull();
+        });
+    });
+
+    // AIA-006 follow-up: chat-graph-run puts the hostname of a dropped non-GC
+    // referrer on the request context; graph state never carries it.
+    describe('persistInteraction', () => {
+        it('saves the rejected referrer host from the request context', async () => {
+            await graphRequestContext.run({ rejectedReferrerHost: 'evil.example' }, () =>
+                helper.persistInteraction({ chatId: 'c1', referringUrl: '' }, { userId: 'u' }));
+
+            expect(InteractionPersistenceService.persistInteraction).toHaveBeenCalledWith(
+                'c1',
+                { chatId: 'c1', referringUrl: '', rejectedReferrerHost: 'evil.example' },
+                { userId: 'u' },
+            );
+        });
+
+        it('saves an empty host outside a chat request (e.g. a batch run)', async () => {
+            await helper.persistInteraction({ chatId: 'c1', referringUrl: 'https://example.com/' }, null);
+
+            expect(InteractionPersistenceService.persistInteraction.mock.calls[0][1].rejectedReferrerHost).toBe('');
         });
     });
 });

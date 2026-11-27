@@ -1842,6 +1842,14 @@
       "colUrl": "Page référente",
       "colCount": "Redirections"
     },
+    "rejectedReferrers": {
+      "title": "Sites référents hors du gouvernement du Canada",
+      "subtitle": "Sites hors du gouvernement du Canada qui ont envoyé des visiteurs non connectés. L’adresse n’a pas servi à répondre.",
+      "trigger": "Tous les sites référents hors du gouvernement du Canada",
+      "colHost": "Site",
+      "colCount": "Conversations",
+      "noData": "Aucun site référent hors du gouvernement du Canada pour cette période."
+    },
     "citations": {
       "title": "Principales pages citées",
       "trigger": "Toutes les principales pages citées",

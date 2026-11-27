@@ -173,6 +173,7 @@ Three things in this flow set AI Answers apart from a general-purpose chatbot.
 - **Scope enforcement**: Strict limitation to Government of Canada sourced content.
 - **Conversation length**: 3 questions per session to prevent manipulation (longer conversations are more at risk of inaccuracy).
 - **Character limits**: 260 character limit per question helps prevent prompt injection and force clearer questions.
+- **Referring page**: For members of the public, the page they came from is used as context only if it is a Government of Canada page. Any other address is not given to the AI or saved. Only the site's name is counted, for reporting.
 - **User warnings**: Blocked questions are shown with the offending words or phrases replaced by "###" symbols. Usability testing confirmed that users understood the issue and rephrased their questions.
 
 ### Accessibility risks

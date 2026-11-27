@@ -12,7 +12,7 @@ import { extractCompletedTurns } from '../util/conversation-turns.js';
 import dbConnect from '../db/db-connect.js';
 import { normalizeObjectIdString } from '../util/db-query.js';
 import { findAccessibleBatch } from '../util/batch-access.js';
-import { normalizeReferringUrl } from '../util/referring-url.js';
+import { classifyReferringUrl } from '../util/referring-url.js';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 
 const REQUIRED_METHOD = 'POST';
@@ -171,9 +171,22 @@ async function handler(req, res) {
   // AIA-006: referringUrl is client-controlled and reaches LLM prompts, logs and the
   // DB without passing the redaction guardrail. Normalize it once, here, so every
   // downstream consumer sees only a validated http(s) URL (or '').
+  // Signed-out visitors may only send a Government of Canada page. Signed-in admins and
+  // partners keep any host: they test department matching against non-GC pages. For a
+  // dropped non-GC referrer only the hostname is kept, for the partner dashboard's
+  // rejected-referrers count — never the URL, whose path can carry injected text or PII.
   const rawReferringUrl = input.referringUrl;
-  input.referringUrl = normalizeReferringUrl(rawReferringUrl);
-  if (!input.referringUrl && typeof rawReferringUrl === 'string' && rawReferringUrl.trim()) {
+  const gcOnly = !['admin', 'partner'].includes(req.user?.role);
+  const referrer = classifyReferringUrl(rawReferringUrl, { gcOnly });
+  input.referringUrl = referrer.url;
+  const rejectedReferrerHost = referrer.droppedReason === 'not_gc' ? referrer.host : '';
+  if (referrer.droppedReason === 'not_gc') {
+    ServerLoggingService.warn('Dropped non-GC referringUrl', req.chatId, {
+      reason: 'not_gc',
+      host: rejectedReferrerHost,
+      rawLength: rawReferringUrl.length,
+    }).catch(() => {});
+  } else if (referrer.droppedReason === 'invalid') {
     // Never log the raw value — it is unvalidated and may contain PII.
     ServerLoggingService.warn('Dropped invalid referringUrl', req.chatId, {
       rawLength: rawReferringUrl.length,
@@ -322,7 +335,10 @@ async function handler(req, res) {
   };
 
   try {
-    const store = { headers: forwardedHeaders, user: req.user, onStatus: handlers.onStatus };
+    // rejectedReferrerHost rides on the request context rather than the graph input:
+    // graph state only keeps the keys its Annotation declares. It is written to the
+    // interaction by GraphWorkflowHelper.persistInteraction.
+    const store = { headers: forwardedHeaders, user: req.user, onStatus: handlers.onStatus, rejectedReferrerHost };
     // Only enable graph event streaming for authenticated users
     if (req.user) {
       store.graphEventWriter = (eventName, data) => {

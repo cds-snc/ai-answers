@@ -94,6 +94,11 @@ export const MOCK_METRICS = {
     { url: 'canada.ca/fr/immigration-refugies-citoyennete/services/visiter-canada.html', count: 21 },
     { url: 'canada.ca/en/services/jobs/opportunities.html', count: 14 },
   ],
+  rejectedHosts: [
+    { host: 'google.com', count: 37 },
+    { host: 'bing.com', count: 9 },
+    { host: 'reddit.com', count: 4 },
+  ],
   topCitations: [
     { url: 'canada.ca/en/revenue-agency/services/tax/individuals.html', count: 87 },
     { url: 'canada.ca/en/services/benefits/ei/ei-regular-benefit.html', count: 61 },
