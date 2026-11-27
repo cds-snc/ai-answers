@@ -121,6 +121,20 @@ banner and compose-box echo. The server ignores that referrer.
   signed out + GC is shown and sent; a partner role arriving after first render shows the
   banner.
 
+## Deferred: remove the `?ref=` reader from the chat page
+
+GC pages don't link to AI Answers with `?ref=`. The referring URL in real traffic is
+`document.referrer`. The chat page still reads `?ref=` (`usePageContext` in
+`src/hooks/usePageParam.js`, called from `ChatAppContainer`), ranks it above
+`document.referrer`, and guesses a department from its path. So a crafted `?ref=` link
+is the only way that path is used.
+
+After PR 1 and PR 2, that is not a safety gap. A non-GC `?ref=` is dropped by the server and
+hidden on the page, like any other non-GC referrer. A crafted link can still swap the real
+referrer for a different GC page. Removing the reader (and the department guess that comes
+with it) is a behaviour change, so do it as its own small PR. The admin pages that call
+`usePageContext` only read `language` from it and can stay as they are.
+
 ## Tests (PR 1)
 
 - `api/util/__tests__/referring-url.test.js`: `classifyReferringUrl` kept / `not_gc` /
