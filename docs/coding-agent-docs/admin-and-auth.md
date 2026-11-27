@@ -166,7 +166,9 @@ fingerprint after HMAC with `FP_PEPPER` (`middleware/fingerprint-pepper.js`). Li
 `SESSION_SECRET`, it is required unless `NODE_ENV` is development or test, and the server
 refuses to start without it. After it changes, existing sessions keep their old hash. They log a
 "visitorId mismatch" warning on every chat request until the session expires. The requests
-still go through.
+still go through. The first deploy with `FP_PEPPER` set counts as a change, since before
+AIA-019 the server used the fallback `'dev-pepper'`: expect a burst of these warnings until
+existing sessions expire. It is not bot activity.
 
 The settings are named like a token bucket, but the limiter (`rate-limiter-flexible`) uses a
 **fixed window**: `points = capacity`, `duration = ceil(capacity / refill × 60)` seconds
