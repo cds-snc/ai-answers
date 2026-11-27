@@ -50,4 +50,17 @@ export function safeHttpHref(url) {
   return url;
 }
 
+// True only for a full http(s) address, for values that must be a complete
+// link, such as an expert's suggested citation. Stricter than safeHttpHref,
+// which also lets relative links through.
+export function isAbsoluteHttpUrl(url) {
+  if (typeof url !== 'string') return false;
+  try {
+    const { protocol } = new URL(url);
+    return protocol === 'http:' || protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 export default safeHttpHref;

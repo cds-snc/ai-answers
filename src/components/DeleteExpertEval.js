@@ -56,6 +56,9 @@ const DeleteExpertEval = ({ lang = 'en' }) => {
 
   const [evaluations, setEvaluations] = useState(null);
   const [selected, setSelected] = useState([]);
+  // Evaluations in the chat this person can't delete: plain text, no
+  // checkbox, with the reviewer so they know who to contact.
+  const [others, setOthers] = useState([]);
   const [deleting, setDeleting] = useState(false);
   const noneSelectedError = useInlineFormError();
   // The list appearing is the lookup's outcome: focus its first checkbox so
@@ -75,6 +78,7 @@ const DeleteExpertEval = ({ lang = 'en' }) => {
     runRef.current += 1;
     setEvaluations(null);
     setSelected([]);
+    setOthers([]);
     noneSelectedError.clearError();
   };
 
@@ -96,18 +100,33 @@ const DeleteExpertEval = ({ lang = 'en' }) => {
   // Returns the interaction IDs whose evaluation is now gone. Sequential: at
   // most 3 rows per chat. A deletedCount of 0 means it was already deleted
   // elsewhere (e.g. the review panel) — gone either way, so it counts.
+  // refusedCount: how many the server refused because someone else wrote them.
   const deleteInteractions = async (interactionIds) => {
     const deletedIds = [];
+    let refusedCount = 0;
     for (const interactionId of interactionIds) {
       try {
         await FeedbackService.deleteExpertFeedback({ interactionId });
         deletedIds.push(interactionId);
       } catch (err) {
         // Counted as not deleted.
+        if (err.status === 403) refusedCount += 1;
         console.error(`Error deleting expert feedback for interaction ${interactionId}:`, err);
       }
     }
-    return deletedIds;
+    return { deletedIds, refusedCount };
+  };
+
+  // Says why only when every failure was a refusal; otherwise "Try again"
+  // stays, since a retry may work.
+  const failureText = (count, total, refusedCount) => {
+    const allRefused = refusedCount > 0 && count + refusedCount === total;
+    if (count === 0) {
+      return allRefused ? t('admin.deleteExpertEval.notOwn') : t('admin.deleteExpertEval.failed');
+    }
+    return (allRefused ? t('admin.deleteExpertEval.partialNotOwn') : t('admin.deleteExpertEval.partial'))
+      .replace('{count}', formatNumber(count, lang))
+      .replace('{total}', formatNumber(total, lang));
   };
 
   const successStatus = (count, extra = {}) => ({
@@ -129,8 +148,31 @@ const DeleteExpertEval = ({ lang = 'en' }) => {
       return;
     }
     const rows = toEvaluations(chat);
-    setEvaluations(rows);
+    // Who may delete each one is the server's rule (canDelete,
+    // api/util/expert-feedback-access.js). At most 3 per chat.
+    let access;
+    try {
+      access = await Promise.all(rows.map((row) => FeedbackService.getExpertFeedback({ interactionId: row.interactionId })));
+    } catch (err) {
+      console.error('Error checking which expert evaluations can be deleted:', err);
+      access = null;
+    }
+    if (run !== runRef.current) {
+      setLoading(false);
+      return;
+    }
     setLoading(false);
+    if (!access) {
+      setStatus({ variant: 'error', text: t('admin.common.fetchFailed') });
+      return;
+    }
+    const deletable = rows.filter((row, i) => access[i]?.canDelete);
+    setOthers(rows.filter((row, i) => !access[i]?.canDelete));
+    if (deletable.length === 0) {
+      setStatus({ variant: 'info', text: t('admin.deleteExpertEval.onlyOthers') });
+      return;
+    }
+    setEvaluations(deletable);
     setFoundCount((n) => n + 1);
   };
 
@@ -149,7 +191,7 @@ const DeleteExpertEval = ({ lang = 'en' }) => {
     setStatus(null);
     const run = runRef.current;
     // Rows that fail stay listed to retry.
-    const deletedIds = await deleteInteractions(selected);
+    const { deletedIds, refusedCount } = await deleteInteractions(selected);
     if (run !== runRef.current) {
       setDeleting(false);
       return;
@@ -170,11 +212,7 @@ const DeleteExpertEval = ({ lang = 'en' }) => {
       setStatus({
         fromDelete: true,
         variant: 'error',
-        text: count === 0
-          ? t('admin.deleteExpertEval.failed')
-          : t('admin.deleteExpertEval.partial')
-            .replace('{count}', formatNumber(count, lang))
-            .replace('{total}', formatNumber(total, lang)),
+        text: failureText(count, total, refusedCount),
       });
       setEvaluations((prev) => prev.filter((row) => !deletedIds.includes(row.interactionId)));
       setSelected((prev) => prev.filter((id) => !deletedIds.includes(id)));
@@ -262,6 +300,16 @@ const DeleteExpertEval = ({ lang = 'en' }) => {
         ) : (
           // Lookup failure (admin.common.fetchFailed).
           <StatusMessage variant={status?.variant} message={status?.text} nonce={statusNonce} />
+        )}
+        {/* After the status, so when none can be deleted the message
+            ("onlyOthers") comes first and this list follows it. */}
+        {others.length > 0 && (
+          <div className="mt-300">
+            <p>{t('admin.deleteExpertEval.othersIntro')}</p>
+            <ul>
+              {others.map((row) => <li key={row.interactionId}>{rowLabel(row)}</li>)}
+            </ul>
+          </div>
         )}
       </div>
     </details>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { safeHttpHref } from '../safeUrl.js';
+import { safeHttpHref, isAbsoluteHttpUrl } from '../safeUrl.js';
 
 describe('safeHttpHref', () => {
   it('allows normal http(s) URLs unchanged', () => {
@@ -52,5 +52,15 @@ describe('safeHttpHref', () => {
     expect(safeHttpHref('   ')).toBe('');
     expect(safeHttpHref(null)).toBe('');
     expect(safeHttpHref(undefined)).toBe('');
+  });
+});
+
+describe('isAbsoluteHttpUrl', () => {
+  it.each(['https://www.canada.ca/en.html', 'http://example.com', ' https://www.canada.ca '])('accepts %s', (url) => {
+    expect(isAbsoluteHttpUrl(url)).toBe(true);
+  });
+
+  it.each(['', 'canada.ca/page', '/en/page', '//evil.example', 'javascript:alert(1)', 'java\tscript:alert(1)', 'data:text/html,x', null, 42])('rejects %s', (url) => {
+    expect(isAbsoluteHttpUrl(url)).toBe(false);
   });
 });

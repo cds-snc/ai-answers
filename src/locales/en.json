@@ -204,6 +204,9 @@
       "noChangesToSave": "No changes to save. Please edit the evaluation.",
       "explanationRequired": "Explanation is required.",
       "explanationRequiredField": "Explanation is required: {field}",
+      "citationUrlField": "Better citation URL",
+      "citationUrlHint": "Include https://",
+      "citationUrlInvalid": "Enter the full link, including https:// at the start.",
       "sentence1": "Sentence 1",
       "sentence2": "Sentence 2",
       "sentence3": "Sentence 3",
@@ -1111,7 +1114,9 @@
       "loading": "Deleting...",
       "notFound": "Cannot delete chat: ID not found.",
       "success": "{chatId} deleted successfully.",
-      "error": "Failed to delete chat: {error}"
+      "error": "Failed to delete chat: {error}",
+      "notOwnChat": "You can't delete this chat because you didn't create it.",
+      "othersEvaluations": "You can't delete this chat because it would also delete someone else's evaluation."
     },
     "deleteExpertEval": {
       "title": "Delete an expert evaluation",
@@ -1127,6 +1132,10 @@
       "success": "Deleted {count} expert evaluation(s) for {chatId}.",
       "failed": "Could not delete the expert evaluation(s). Try again.",
       "partial": "Deleted {count} of {total} expert evaluations. The rest could not be deleted and are still listed.",
+      "notOwn": "You can only delete evaluations you wrote.",
+      "partialNotOwn": "Deleted {count} of {total} expert evaluations. You can only delete evaluations you wrote. The others are still listed.",
+      "othersIntro": "Reviewed by someone else. Contact the reviewer or admin to delete it.",
+      "onlyOthers": "You have no evaluations to delete for this chat ID.",
       "notEvaluated": "Not evaluated."
     }
   },

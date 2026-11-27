@@ -4,6 +4,7 @@ import FeedbackService from '../../../services/FeedbackService.js';
 import { useAnswerNumberLabel } from '../../../hooks/useAnswerNumberLabel.js';
 import { formatNumber } from '../../../utils/numberFormat.js';
 import { formatLocaleDate } from '../../../utils/formatLocaleDate.js';
+import { isAbsoluteHttpUrl } from '../../../utils/safeUrl.js';
 import { resolveDisplayContent, toLangAttr, getAnswerLanguage } from '../../../utils/answerLanguage.js';
 import OriginalLanguagePill from './OriginalLanguagePill.js';
 import StatusMessage from '../../admin/StatusMessage.js';
@@ -283,6 +284,9 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
 
     return (
         <details className="review-details" lang={lang} onToggle={(e) => {
+            // React passes up toggles from the edit form's own <details>
+            // (sentences, citation) too - only this panel opening loads.
+            if (e && e.target !== e.currentTarget) return;
             // e.target is the native <details> element; check its open property
             try {
                 // call load when panel is being opened
@@ -471,7 +475,10 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                                     {efSource.expertCitationUrl && (
                                         <div>
                                             <strong>{t('reviewPanels.suggestedCitation')}</strong>{' '}
-                                            <GcdsLink href={efSource.expertCitationUrl} target="_blank" lang={lang}>{efSource.expertCitationUrl}</GcdsLink>
+                                            {/* Saved before links were checked, it may not be a full http(s) address - shown as text then. */}
+                                            {isAbsoluteHttpUrl(efSource.expertCitationUrl)
+                                                ? <GcdsLink href={efSource.expertCitationUrl} target="_blank" lang={lang}>{efSource.expertCitationUrl}</GcdsLink>
+                                                : efSource.expertCitationUrl}
                                         </div>
                                     )}
                                 </>
@@ -523,7 +530,8 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                             <div className="canada-ca-button-stack mt-200">
                                 {/* From the server, so it only appears once the
                                     evaluation has loaded - the form never starts
-                                    from the chat's older copy. */}
+                                    from the chat's older copy. Edit and Delete
+                                    have their own rules (api/util/expert-feedback-access.js). */}
                                 {data?.canEdit && (
                                     <GcdsButton
                                         ref={editButtonRef}
@@ -535,15 +543,17 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t, lang = 'en', answer
                                         {t('reviewPanels.editExpertFeedback')}
                                     </GcdsButton>
                                 )}
-                                <GcdsButton
-                                    onClick={handleDelete}
-                                    buttonRole="danger"
-                                    disabled={deleting}
-                                    className="hydrated"
-                                    aria-label={withAnswerNumber(deleting ? (t('common.deleting')) : (t('reviewPanels.deleteExpertFeedback')))}
-                                >
-                                    {deleting ? (t('common.deleting')) : (t('reviewPanels.deleteExpertFeedback'))}
-                                </GcdsButton>
+                                {data?.canDelete && (
+                                    <GcdsButton
+                                        onClick={handleDelete}
+                                        buttonRole="danger"
+                                        disabled={deleting}
+                                        className="hydrated"
+                                        aria-label={withAnswerNumber(deleting ? (t('common.deleting')) : (t('reviewPanels.deleteExpertFeedback')))}
+                                    >
+                                        {deleting ? (t('common.deleting')) : (t('reviewPanels.deleteExpertFeedback'))}
+                                    </GcdsButton>
+                                )}
                             </div>
                             {savedCount > 0 && (
                                 <StatusMessage variant="success" message={t('reviewPanels.expertFeedbackUpdated')} nonce={savedCount} />

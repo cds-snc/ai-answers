@@ -9,6 +9,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { resolveDisplayContent, toLangAttr } from '../../utils/answerLanguage.js';
 import OriginalLanguagePill from './review/OriginalLanguagePill.js';
 import { detectUrlLanguage } from '../../utils/dashboard/urlLanguage.js';
+import { isAbsoluteHttpUrl } from '../../utils/safeUrl.js';
 
 // Shows ratings for a maximum of 4 sentences, and for the citation score
 // if there are somehow 5 sentences, the 5th sentence is ignored _YES THIS IS A HACK
@@ -109,19 +110,26 @@ const ExpertFeedbackComponent = ({
 
   const explanationRequiredFor = (key) => badScoresFor(key).includes(expertFeedback[scoreFieldFor(key)]);
   const isExplanationMissing = (key) => explanationRequiredFor(key) && !expertFeedback[explanationFieldFor(key)].trim();
+  // The suggested citation link: blank, or a full http(s) address - the rule
+  // the server saves by (api/util/expert-feedback-scoring.js).
+  const suggestedCitationUrl = expertFeedback.expertCitationUrl.trim();
+  const isCitationUrlInvalid = () => explanationRequiredFor('citation') && suggestedCitationUrl !== '' && !isAbsoluteHttpUrl(suggestedCitationUrl);
+  // 'citationUrl' is not an explanation, but its error works the same way:
+  // flagged on Save, shown above its field, listed in the summary.
+  const isFieldInError = (key) => (key === 'citationUrl' ? isCitationUrlInvalid() : isExplanationMissing(key));
 
   // Document order: sentences first, then citation. Used both to decide
   // submit-time blocking (every currently-missing field) and, further down,
   // to decide which single field gets focused when more than one is flagged.
   const sentenceIndices = [...Array(Math.min(4, sentenceCount))].map((_, i) => i + 1);
-  const explanationFieldKeys = [...sentenceIndices.map((i) => `sentence${i}`), 'citation'];
-  const missingExplanationFields = explanationFieldKeys.filter(isExplanationMissing);
+  const explanationFieldKeys = [...sentenceIndices.map((i) => `sentence${i}`), 'citation', 'citationUrl'];
+  const missingExplanationFields = explanationFieldKeys.filter(isFieldInError);
 
   // What's actually shown as an error: fields flagged by the last failed
   // submit attempt that are *still* missing (re-filtered live so an error
   // clears the moment its field is filled in, same as before) — never a
   // field that's newly missing but hasn't been part of a submit attempt yet.
-  const visibleExplanationErrors = flaggedExplanationFields.filter(isExplanationMissing);
+  const visibleExplanationErrors = flaggedExplanationFields.filter(isFieldInError);
   // Only set (and thus only auto-focused) in the single-error case — once
   // there's more than one, focus goes to the summary instead, see the
   // summaryRef effect below.
@@ -134,8 +142,10 @@ const ExpertFeedbackComponent = ({
 
   // Shared label per field key, reused by the per-field error message and
   // the summary's jump links below, so all three always agree.
-  const explanationFieldLabel = (key) =>
-    key === 'citation' ? t('homepage.expertRating.citation') : t(`homepage.expertRating.${key}`);
+  const explanationFieldLabel = (key) => {
+    if (key === 'citationUrl') return t('homepage.expertRating.citationUrlField');
+    return key === 'citation' ? t('homepage.expertRating.citation') : t(`homepage.expertRating.${key}`);
+  };
   // Two distinct templates rather than one with the field toggled in/out —
   // hiding {field} inside a single "...required: {field}" template left a
   // dangling colon with nothing visibly after it in the single-error case.
@@ -147,6 +157,8 @@ const ExpertFeedbackComponent = ({
   // and the field name still appended for screen readers only (.sr-only) —
   // never omitted, just not visibly duplicated next to its own field.
   const explanationErrorMessage = (key) => {
+    // Says which field and what to do, so no field name is added.
+    if (key === 'citationUrl') return t('homepage.expertRating.citationUrlInvalid');
     const fieldLabel = explanationFieldLabel(key);
     if (showFieldInMessage) {
       const [before, after = ''] = t('homepage.expertRating.explanationRequiredField').split('{field}');
@@ -165,7 +177,7 @@ const ExpertFeedbackComponent = ({
   // inline error + auto-focus.
   const explanationSummaryLinks = visibleExplanationErrors.length > 1
     ? visibleExplanationErrors.map((key) => ({
-        fieldId: `${uid}-${key}-explanation`,
+        fieldId: key === 'citationUrl' ? `${uid}-expert-citation-url` : `${uid}-${key}-explanation`,
         label: explanationFieldLabel(key),
       }))
     : null;
@@ -267,6 +279,7 @@ const ExpertFeedbackComponent = ({
 
     const feedbackWithScore = {
       ...expertFeedback,
+      expertCitationUrl: suggestedCitationUrl,
       totalScore,
       feedback: 'negative',
     };
@@ -305,12 +318,8 @@ const ExpertFeedbackComponent = ({
   };
 
   return (
-    // TODO: review and confirm — noValidate was added for the required
-    // explanation textareas' custom validation, but it also silently drops
-    // native format checking on the unrelated, unrequired expertCitationUrl
-    // (type="url") input, with no replacement check in its place. Confirm
-    // whether that's an acceptable gap (optional field, trusted admin
-    // input) before adding a replacement check — not adding one blind.
+    // noValidate: the form runs its own checks, the citation link included
+    // (isCitationUrlInvalid), in place of the browser's.
     <form
       onSubmit={handleSubmit}
       className={`expert-rating-container${initialFeedback ? ' expert-rating-container--editing' : ''}`}
@@ -584,17 +593,33 @@ const ExpertFeedbackComponent = ({
 
           {explanationRequiredFor('citation') && (
             <div className="explanation-field">
+              {visibleExplanationErrors.includes('citationUrl') && (
+                <FeedbackInlineError
+                  id={`${uid}-expert-citation-url-error`}
+                  message={explanationErrorMessage('citationUrl')}
+                  errorCount={submitAttemptCount}
+                  inputRef={firstVisibleExplanationError === 'citationUrl' ? explanationErrorRef : undefined}
+                  announce={!explanationSummaryLinks}
+                />
+              )}
               <label className="expert-citation-url" htmlFor={`${uid}-expert-citation-url`}>
                 {t('homepage.expertRating.options.betterCitation')}
-                <input
-                  type="url"
-                  id={`${uid}-expert-citation-url`}
-                  name="expertCitationUrl"
-                  value={expertFeedback.expertCitationUrl}
-                  onChange={handleInputChange}
-                  onKeyDown={handleKeyPress}
-                />
               </label>
+              <p id={`${uid}-expert-citation-url-hint`} className="field-hint">
+                {t('homepage.expertRating.citationUrlHint')}
+              </p>
+              <input
+                type="url"
+                id={`${uid}-expert-citation-url`}
+                name="expertCitationUrl"
+                value={expertFeedback.expertCitationUrl}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyPress}
+                aria-invalid={visibleExplanationErrors.includes('citationUrl') ? 'true' : undefined}
+                aria-describedby={visibleExplanationErrors.includes('citationUrl')
+                  ? `${uid}-expert-citation-url-hint ${uid}-expert-citation-url-error`
+                  : `${uid}-expert-citation-url-hint`}
+              />
             </div>
           )}
         </details>

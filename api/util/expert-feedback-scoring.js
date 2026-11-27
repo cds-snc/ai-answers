@@ -1,4 +1,5 @@
 import { Answer } from '../../models/answer.js';
+import { isAbsoluteHttpUrl } from '../../src/utils/safeUrl.js';
 
 // The rating options the expert form offers (ExpertFeedbackComponent.js).
 const SENTENCE_SCORES = [100, 80, 0];
@@ -17,13 +18,30 @@ export const FLAG_FIELDS = [
 
 // The first score that isn't a form option or blank (null), or null if none.
 // Thumbs up sends no scores at all, hence allowMissing for creating a review.
-export function findInvalidScore(form, { allowMissing = false } = {}) {
+function findInvalidScore(form, { allowMissing = false } = {}) {
   return SCORE_FIELDS.find((field) => {
     const value = form[field];
     if (value === undefined && allowMissing) return false;
     const allowed = field === 'citationScore' ? CITATION_SCORES : SENTENCE_SCORES;
     return value !== null && !allowed.includes(value);
   }) || null;
+}
+
+// Blank, or an absolute http(s) link: it is shown as a link, so nothing like
+// javascript: may be saved.
+function isHttpUrlOrBlank(value) {
+  return value === '' || isAbsoluteHttpUrl(value);
+}
+
+// The first field that is the wrong type or not allowed, or null if none.
+// Editing replaces every field, so each must be sent. Creating allows missing
+// ones (allowMissing): thumbs up sends none.
+export function findInvalidField(form, { allowMissing = false } = {}) {
+  const sent = (field) => !(allowMissing && form[field] === undefined);
+  return findInvalidScore(form, { allowMissing })
+    || TEXT_FIELDS.find((f) => sent(f) && typeof form[f] !== 'string')
+    || FLAG_FIELDS.find((f) => sent(f) && typeof form[f] !== 'boolean')
+    || (sent('expertCitationUrl') && !isHttpUrlOrBlank(form.expertCitationUrl) ? 'expertCitationUrl' : null);
 }
 
 // Same sum as the form's computeTotalScore. The server's result is the one

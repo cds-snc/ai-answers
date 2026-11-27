@@ -10,7 +10,7 @@ import { requireString } from '../util/db-query.js';
 import { withProtection, authMiddleware, partnerOrAdminMiddleware } from '../../middleware/auth.js';
 import EmbeddingMetadataService from '../../services/EmbeddingMetadataService.js';
 import {
-  SCORE_FIELDS, TEXT_FIELDS, FLAG_FIELDS, findInvalidScore, computeTotalScore, feedbackLabel, getAnswerSentenceCount,
+  SCORE_FIELDS, TEXT_FIELDS, FLAG_FIELDS, findInvalidField, computeTotalScore, feedbackLabel, getAnswerSentenceCount,
 } from '../util/expert-feedback-scoring.js';
 
 async function feedbackPersistExpertHandler(req, res) {
@@ -24,9 +24,9 @@ async function feedbackPersistExpertHandler(req, res) {
     if (!chatId || !interactionId || !expertFeedback || typeof expertFeedback !== 'object') {
       return res.status(400).json({ message: 'Missing required fields' });
     }
-    const invalidScore = findInvalidScore(expertFeedback, { allowMissing: true });
-    if (invalidScore) {
-      return res.status(400).json({ message: `Invalid field: ${invalidScore}` });
+    const invalidField = findInvalidField(expertFeedback, { allowMissing: true });
+    if (invalidField) {
+      return res.status(400).json({ message: `Invalid field: ${invalidField}` });
     }
     chatId = requireString(chatId, 'chatId');
     let chat = await Chat.findOne({ chatId }).populate({ path: 'interactions' });
